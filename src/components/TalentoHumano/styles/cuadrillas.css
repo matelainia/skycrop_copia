@@ -1,0 +1,83 @@
+/* Squads (Cuadrillas) Specific Styles */
+
+.cuadrilla-manager-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 16px;
+}
+
+.cuadrilla-manage-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+}
+
+.cuadrilla-manage-card:hover {
+  border-color: var(--primary-border);
+}
+
+.cuadrilla-manage-header {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.cuadrilla-manage-header h4 {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.cuadrilla-members-list {
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.cuadrilla-member-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  transition: background 0.15s;
+}
+
+.cuadrilla-member-row:hover {
+  background: var(--bg-card-hover);
+}
+
+.cuadrilla-member-row button {
+  margin-left: auto;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-muted);
+  padding: 2px;
+  border-radius: 4px;
+  transition: color 0.15s;
+  line-height: 0;
+}
+
+.cuadrilla-member-row button:hover {
+  color: var(--accent-red);
+}
+
+.cuadrilla-add-member {
+  padding: 8px 14px 14px;
+}
+
+@media (max-width: 768px) {
+  .cuadrilla-manager-grid {
+    grid-template-columns: 1fr;
+  }
+}

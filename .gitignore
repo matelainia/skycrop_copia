@@ -1,5 +1,66 @@
-# Logs
-logs
+# ==========================================
+# SkyCrop – .gitignore
+# Vite (React) + Node.js Backend + Supabase + GEE
+# ==========================================
+
+# ─── Dependencias ──────────────────────────────
+node_modules/
+.pnp
+.pnp.js
+
+# ─── Build & Output ────────────────────────────
+dist/
+dist-ssr/
+build/
+out/
+.vercel/
+.output/
+
+# ─── ⚠️  VARIABLES DE ENTORNO Y SECRETOS ────────
+# Nunca subir archivos con claves reales al repositorio.
+# Usar .env.example como referencia pública (sin valores reales).
+
+# Frontend (Vite)
+.env
+.env.local
+.env.development
+.env.development.local
+.env.production
+.env.production.local
+.env.staging
+.env.staging.local
+.env.test
+.env.test.local
+.env.*.local
+.env.*
+
+# Backend
+backend/.env
+backend/.env.local
+backend/.env.*
+
+# ─── Claves de Servicio (Google / GCP / GEE) ───
+# Credenciales de Service Account de Google Earth Engine
+# y cualquier JSON de clave privada generado desde GCP
+*.json.key
+service-account*.json
+gee-credentials*.json
+*-service-account.json
+*credentials*.json
+*-key.json
+*.pem
+*.p12
+*.pfx
+*.key
+
+# ─── Supabase ───────────────────────────────────
+# Las claves ANON y SERVICE ROLE deben vivir solo en .env
+# No versionar archivos de configuración exportados de Supabase CLI
+supabase/.branches/
+supabase/config.toml
+
+# ─── Logs ───────────────────────────────────────
+logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
@@ -7,18 +68,43 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
-*.local
+# ─── Caché de herramientas ──────────────────────
+.cache/
+.parcel-cache/
+.eslintcache
+.stylelintcache
+.turbo/
+*.tsbuildinfo
 
-# Editor directories and files
+# ─── IDEs y Editores ────────────────────────────
 .vscode/*
 !.vscode/extensions.json
-.idea
-.DS_Store
+!.vscode/settings.json
+.idea/
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
+*.swp
 *.sw?
+
+# ─── OS / Sistema ───────────────────────────────
+.DS_Store
+.DS_Store?
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ─── Testing ────────────────────────────────────
+coverage/
+*.lcov
+.nyc_output/
+
+# ─── Temporales y Scratchpads ───────────────────
+scratch/
+tmp/
+temp/
+*.tmp
+*.bak
+*.orig
+

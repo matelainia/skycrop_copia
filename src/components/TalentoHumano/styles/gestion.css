@@ -1,0 +1,86 @@
+/* Personnel (Gestión de Personal) Specific Styles */
+
+.cuadrilla-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 20px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  scrollbar-width: thin;
+}
+
+.cuadrilla-card {
+  min-width: 180px;
+  flex: 0 0 auto;
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.cuadrilla-card:hover {
+  border-color: var(--primary-border);
+  box-shadow: var(--glow-shadow);
+  transform: translateY(-2px);
+}
+
+.cuadrilla-card.selected {
+  border-color: var(--primary);
+  background: var(--primary-light);
+}
+
+.cuadrilla-card h4 {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.cuadrilla-stats {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 12px;
+  font-size: 11px;
+}
+
+.cuadrilla-stats dt {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.cuadrilla-stats dd {
+  color: var(--text-primary);
+  font-weight: 700;
+  text-align: right;
+}
+
+/* Card view vs table view responsive layout */
+.worker-card-responsive {
+  display: none !important;
+}
+
+.workers-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+@media (max-width: 768px) {
+  .cuadrilla-row {
+    flex-direction: column;
+  }
+  .cuadrilla-card {
+    min-width: unset;
+  }
+  
+  .table-container {
+    display: none !important;
+  }
+  
+  .worker-card-responsive {
+    display: flex !important;
+  }
+}

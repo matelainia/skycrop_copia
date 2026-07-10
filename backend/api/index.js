@@ -29,7 +29,7 @@ const allowedOrigins = [
 app.use(cors({
   origin: (origin, callback) => {
     // Permitir peticiones sin origen (como apps móviles, curl o llamadas del mismo servidor)
-    if (!origin || allowedOrigins.indexOf(origin) !== -1) {
+    if (!origin || allowedOrigins.indexOf(origin) !== -1 || /^http:\/\/localhost(:\d+)?$/.test(origin)) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
@@ -38,16 +38,16 @@ app.use(cors({
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: [
-    'Content-Type', 
-    'Authorization', 
-    'apikey', 
-    'X-Client-Info', 
-    'x-client-info', 
-    'Prefer', 
-    'Range', 
-    'Accept-Encoding', 
-    'accept-profile', 
-    'content-profile', 
+    'Content-Type',
+    'Authorization',
+    'apikey',
+    'X-Client-Info',
+    'x-client-info',
+    'Prefer',
+    'Range',
+    'Accept-Encoding',
+    'accept-profile',
+    'content-profile',
     'x-retry-count'
   ]
 }));
@@ -84,7 +84,7 @@ async function initGEE() {
     }
 
     console.log("🔄 GEE: Autenticando con Google Earth Engine...");
-    
+
     await new Promise((resolve, reject) => {
       ee.data.authenticateViaPrivateKey(
         privateKey,
@@ -128,7 +128,7 @@ function getPolygonHash(coordinates, indexType) {
 
 async function getCachedTile(hash) {
   const now = new Date();
-  
+
   // 1. Caché en memoria
   if (memoryCache.has(hash)) {
     const cached = memoryCache.get(hash);
@@ -187,13 +187,13 @@ async function saveTileToCache(hash, loteId, tileUrl, avgValue, indexType, extra
     histogram: extraData?.histogram || null,
     createdAt: now
   };
-  
+
   memoryCache.set(hash, cacheObj);
 
   if (supabaseDb) {
     try {
       await supabaseDb.from('gee_cache').delete().eq('polygon_hash', hash);
-      
+
       const insertData = {
         lote_id: loteId || null,
         polygon_hash: hash,
@@ -206,11 +206,11 @@ async function saveTileToCache(hash, loteId, tileUrl, avgValue, indexType, extra
       if (extraData) {
         insertData.histogram_data = extraData;
       }
-      
+
       const { error } = await supabaseDb
         .from('gee_cache')
         .insert([insertData]);
-      
+
       if (error) {
         console.warn("⚠️ GEE CACHE: No se pudo insertar en la DB (¿falta ejecutar script SQL?). Detalles:", error.message);
         // Fallback si la columna histogram_data no existe en la DB
@@ -270,7 +270,7 @@ function generateMockHistogramAndStats(indexType, sumCoordinates) {
     const val = startVal + i * step;
     const exponent = -0.5 * Math.pow((val - mean) / stdDev, 2);
     let count = Math.round(18000 * Math.exp(exponent));
-    
+
     // Ruido aleatorio moderado
     count = Math.max(10, count + Math.round((Math.random() - 0.5) * 500));
     totalPixels += count;
@@ -308,7 +308,7 @@ function generateMockHistogramAndStats(indexType, sumCoordinates) {
       alto: Math.round((altoPixels / totalPixels) * 100) || 30,
       excelente: Math.round((excelentePixels / totalPixels) * 100) || 10
     };
-    
+
     const sum = distribution.critico + distribution.bajo + distribution.medio + distribution.alto + distribution.excelente;
     if (sum !== 100 && sum > 0) {
       const diff = 100 - sum;
@@ -353,7 +353,7 @@ app.post('/api/gee/index', express.json(), async (req, res) => {
   // 2. Fallback a Modo Simulado/Mock si GEE no está inicializado
   if (!geeInitialized) {
     console.log(`[GEE MOCK MODE] Generando datos simulados para el polígono e índice: ${indexType}`);
-    
+
     const mockData = generateMockHistogramAndStats(indexType, sumCoords);
     const mockTileUrl = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
     const avgValue = mockData.stats.mean;
@@ -376,7 +376,7 @@ app.post('/api/gee/index', express.json(), async (req, res) => {
   // 3. Procesamiento real en Google Earth Engine
   try {
     console.log(`[GEE ACTIVE] Procesando índice ${indexType} para polígono de ${coordinates.length} vértices`);
-    
+
     // Invertir coordenadas Leaflet [lat, lng] -> GEE [lng, lat]
     const coordinatesGEE = coordinates.map(coord => [coord[1], coord[0]]);
     const polygonEE = ee.Geometry.Polygon([coordinatesGEE]);
@@ -414,9 +414,9 @@ app.post('/api/gee/index', express.json(), async (req, res) => {
     } else if (indexType === 'SAVI') {
       indexImage = image.expression(
         '((NIR - RED) / (NIR + RED + 0.5)) * 1.5', {
-          'NIR': image.select('B8'),
-          'RED': image.select('B4')
-        }
+        'NIR': image.select('B8'),
+        'RED': image.select('B4')
+      }
       ).rename('SAVI');
       visParams = {
         min: 0.15,
@@ -438,7 +438,7 @@ app.post('/api/gee/index', express.json(), async (req, res) => {
         palette: ['#d73027', '#fdae61', '#fee08b', '#d9ef8b', '#66bd63', '#1a9850']
       };
     }
-    
+
     // OPTIMIZACIÓN: Recorte al final
     const clippedImage = indexImage.clip(polygonEE);
 
@@ -533,7 +533,7 @@ app.post('/api/gee/index', express.json(), async (req, res) => {
       finalHistogram = buckets.map((count, idx) => {
         const val = bMin + idx * bWidth;
         totalPixels += count;
-        
+
         if (indexType === 'HUMEDAD') {
           if (val < 0.0) criticoCount += count;
           else if (val < 0.3) medioCount += count;
@@ -602,7 +602,7 @@ app.post('/api/gee/index', express.json(), async (req, res) => {
 
   } catch (geeErr) {
     console.error(`❌ GEE: Falló el procesamiento en la API de Google Earth Engine para ${indexType}:`, geeErr.message);
-    
+
     const fallbackTile = 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
     const mock = generateMockHistogramAndStats(indexType, sumCoords);
 
@@ -622,14 +622,397 @@ app.post('/api/gee/index', express.json(), async (req, res) => {
 });
 
 // Endpoint de salud
-
 app.get('/api/health', (req, res) => {
-  res.json({ 
-    status: 'ok', 
+  res.json({
+    status: 'ok',
     message: 'Backend proxy is running',
     target: supabaseUrl
   });
 });
+
+// =============================================================================
+// ENDPOINTS MASTER DATA: PRODUCTOS FITOSANITARIOS
+// Deben ir ANTES del proxy para no ser reenviados a Supabase
+// =============================================================================
+
+// Helper: cliente Supabase con service_role para queries SQL directas
+function getSupabaseAdmin() {
+  const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || supabaseAnonKey;
+  return createClient(supabaseUrl, serviceKey);
+}
+
+/**
+ * GET /api/productos?q=glifosato
+ * Búsqueda rápida de productos por nombre comercial o ingrediente activo (autocompletado).
+ * Devuelve lista resumida mapeada para la UI.
+ */
+app.get('/api/productos', async (req, res) => {
+  try {
+    const q = (req.query.q || '').trim();
+    const db = getSupabaseAdmin();
+
+    let query = db
+      .from('productos')
+      .select(`
+        id,
+        nombre_producto,
+        reg_ica,
+        ingrediente_activo,
+        concentracion,
+        categoria_toxicologica,
+        clase_producto,
+        tipo_formulacion
+      `)
+      .limit(15)
+      .order('nombre_producto', { ascending: true });
+
+    if (q.length > 0) {
+      // Búsqueda en nombre_producto o ingrediente_activo
+      query = query.or(`nombre_producto.ilike.%${q}%,ingrediente_activo.ilike.%${q}%`);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('[PRODUCTOS SEARCH] Error:', error.message);
+      return res.status(500).json({ error: 'Error buscando productos', detail: error.message });
+    }
+
+    const result = (data || []).map(p => ({
+      id: p.id,
+      nombre: p.nombre_producto,
+      tipo: p.clase_producto,
+      tipo_formulacion: p.tipo_formulacion,
+      ingrediente_activo: p.ingrediente_activo,
+      concentracion: p.concentracion,
+      categoria_toxicologica: p.categoria_toxicologica,
+      registro_ica: p.reg_ica || '—',
+      fabricante: '—'
+    }));
+
+    return res.json(result);
+  } catch (err) {
+    console.error('[PRODUCTOS SEARCH] Excepción:', err.message);
+    return res.status(500).json({ error: 'Error interno', detail: err.message });
+  }
+});
+
+/**
+ * GET /api/productos/:id
+ * Detalle completo de un producto mapeado a la estructura que consume el frontend.
+ */
+app.get('/api/productos/:id', async (req, res) => {
+  try {
+    const productId = parseInt(req.params.id, 10);
+    if (isNaN(productId)) {
+      return res.status(400).json({ error: 'ID de producto inválido' });
+    }
+
+    const db = getSupabaseAdmin();
+
+    const { data: producto, error: prodErr } = await db
+      .from('productos')
+      .select(`
+        id,
+        nombre_producto,
+        reg_ica,
+        ingrediente_activo,
+        concentracion,
+        categoria_toxicologica,
+        clase_producto,
+        tipo_formulacion,
+        codigo_frac,
+        codigo_irac,
+        codigo_hrac,
+        grupo_quimico
+      `)
+      .eq('id', productId)
+      .single();
+
+    if (prodErr || !producto) {
+      return res.status(404).json({ error: 'Producto no encontrado' });
+    }
+
+    // Fallbacks locales para alertas de categoría IA/IB si no están en base de datos
+    const FALLBACK_ALERTAS = {
+      IA: {
+        categoria: 'IA',
+        titulo: 'PELIGRO EXTREMO (Categoría IA)',
+        mensaje: 'Este ingrediente activo es altamente mortal si se inhala o se tiene exposición prolongada. Es extremadamente peligroso para las personas, entomofauna y animales acuáticos. Su manipulación requiere capacitación, uso obligatorio de EPP completo y prescripción por parte de un ingeniero agrónomo.',
+        recomendaciones: [
+          'Utilizar EPP completo.',
+          'No inhalar vapores ni nieblas.',
+          'Evitar el contacto con piel y ojos.',
+          'No contaminar fuentes de agua.',
+          'Mantener fuera del alcance de niños y animales.'
+        ]
+      },
+      IB: {
+        categoria: 'IB',
+        titulo: 'ALTA TOXICIDAD (Categoría IB)',
+        mensaje: 'Este ingrediente activo pertenece a la categoría toxicológica IB. Mortal en exposiciones prolongadas, mortal a la entomofauna y animales acuáticos. Utilice EPP completo y evite cualquier exposición directa durante la preparación y aplicación. Su formulación requiere prescripción por parte de un ingeniero agrónomo.',
+        recomendaciones: [
+          'Utilizar EPP completo.',
+          'No inhalar vapores ni nieblas.',
+          'Evitar el contacto con piel y ojos.',
+          'No contaminar fuentes de agua.',
+          'Mantener fuera del alcance de niños y animales.'
+        ]
+      }
+    };
+
+    // Intentar cargar relaciones
+    let ingredientes = [];
+    try {
+      const { data: rels, error: relsErr } = await db
+        .from('producto_ingrediente')
+        .select(`
+          ingrediente:ingredientes (
+            id,
+            nombre,
+            propiedades (
+              categoria_toxicologica,
+              titulo_alerta,
+              mensaje_alerta,
+              recomendaciones
+            )
+          )
+        `)
+        .eq('producto_id', productId);
+
+      if (!relsErr && rels && rels.length > 0) {
+        ingredientes = rels.map(r => {
+          const ing = r.ingrediente;
+          if (!ing) return null;
+
+          // Buscar propiedad que coincida con la categoría toxicológica del producto
+          const targetCat = (producto.categoria_toxicologica || '').toUpperCase().trim();
+          const prop = Array.isArray(ing.propiedades)
+            ? ing.propiedades.find(p => (p.categoria_toxicologica || '').toUpperCase().trim() === targetCat)
+            : null;
+
+          let alerta = null;
+          if (prop) {
+            alerta = {
+              categoria: prop.categoria_toxicologica,
+              titulo: prop.titulo_alerta,
+              mensaje: prop.mensaje_alerta,
+              recomendaciones: prop.recomendaciones
+            };
+          } else if (targetCat === 'IA' || targetCat === 'IB' || targetCat === '1A' || targetCat === '1B') {
+            const normalCat = targetCat.includes('A') ? 'IA' : 'IB';
+            alerta = FALLBACK_ALERTAS[normalCat];
+          }
+
+          return {
+            nombre: ing.nombre,
+            concentracion: producto.concentracion || '',
+            grupo_quimico: (producto.grupo_quimico || '').replace(/\r?\n|\r/g, ' ').replace(/\s+/g, ' ').trim() || '—',
+            registro_ica: producto.reg_ica || '—',
+            frac: (producto.codigo_frac || '').replace(/\r?\n|\r/g, ' ').replace(/\s+/g, ' ').trim() || '—',
+            irac: (producto.codigo_irac || '').replace(/\r?\n|\r/g, ' ').replace(/\s+/g, ' ').trim() || '—',
+            hrac: (producto.codigo_hrac || '').replace(/\r?\n|\r/g, ' ').replace(/\s+/g, ' ').trim() || '—',
+            funcion: producto.clase_producto || '—',
+            carencia_dias: 0,
+            residualidad_dias: 0,
+            cat_toxicologica: producto.categoria_toxicologica || '—',
+            alerta
+          };
+        }).filter(Boolean);
+      }
+    } catch (err) {
+      console.warn('[PRODUCTOS DETAIL] Error consultando relación ingredientes:', err.message);
+    }
+
+    // Fallback si no hay ingredientes asociados en la tabla intermedia
+    if (ingredientes.length === 0) {
+      const targetCat = (producto.categoria_toxicologica || '').toUpperCase().trim();
+      let alerta = null;
+      if (targetCat === 'IA' || targetCat === 'IB' || targetCat === '1A' || targetCat === '1B') {
+        const normalCat = targetCat.includes('A') ? 'IA' : 'IB';
+        alerta = FALLBACK_ALERTAS[normalCat];
+      }
+
+      ingredientes = [{
+        nombre: producto.ingrediente_activo || '',
+        concentracion: producto.concentracion || '',
+        grupo_quimico: (producto.grupo_quimico || '').replace(/\r?\n|\r/g, ' ').replace(/\s+/g, ' ').trim() || '—',
+        registro_ica: producto.reg_ica || '—',
+        frac: (producto.codigo_frac || '').replace(/\r?\n|\r/g, ' ').replace(/\s+/g, ' ').trim() || '—',
+        irac: (producto.codigo_irac || '').replace(/\r?\n|\r/g, ' ').replace(/\s+/g, ' ').trim() || '—',
+        hrac: (producto.codigo_hrac || '').replace(/\r?\n|\r/g, ' ').replace(/\s+/g, ' ').trim() || '—',
+        funcion: producto.clase_producto || '—',
+        carencia_dias: 0,
+        residualidad_dias: 0,
+        cat_toxicologica: producto.categoria_toxicologica || '—',
+        alerta
+      }];
+    }
+
+    return res.json({
+      id: producto.id,
+      nombre: producto.nombre_producto,
+      fabricante: '—',
+      tipo: producto.clase_producto,
+      tipo_formulacion: producto.tipo_formulacion,
+      dosis_recomendada: 0,
+      dosis_max: 0,
+      unidad_dosis: 'L/ha',
+      costo_estimado: 0,
+      registro_ica: producto.reg_ica || '—',
+      ingredientes,
+      carencia_dias: 0,
+      residualidad_dias: 0
+    });
+  } catch (err) {
+    console.error('[PRODUCTOS DETAIL] Excepción:', err.message);
+    return res.status(500).json({ error: 'Error interno', detail: err.message });
+  }
+});
+
+// =============================================================================
+// FIN ENDPOINTS MASTER DATA
+// =============================================================================
+
+// =============================================================================
+// ENDPOINT AUDITORÍA: CONFIRMACIÓN DE ADVERTENCIA ALTA TOXICIDAD (IA/IB)
+// =============================================================================
+
+/**
+ * POST /api/auditoria/alta-toxicidad
+ * Registra en Supabase la confirmación del profesional responsable de haber
+ * leído y aceptado las advertencias de seguridad de ingredientes IA/IB antes
+ * de generar una prescripción fitosanitaria.
+ *
+ * Body esperado:
+ *   {
+ *     aplicacion_id         : string,
+ *     usuario_id            : string  (opcional, default 'anonimo'),
+ *     ingredientes          : [{ nombre, categoria }],
+ *     advertencia_confirmada: boolean,
+ *     declaracion_profesional: boolean,
+ *     geolocalizacion       : { lat, lng, accuracy } | null
+ *   }
+ */
+app.post('/api/auditoria/alta-toxicidad', express.json(), async (req, res) => {
+  try {
+    const {
+      aplicacion_id,
+      usuario_id = 'anonimo',
+      ingredientes = [],
+      advertencia_confirmada = false,
+      declaracion_profesional = false,
+      geolocalizacion = null
+    } = req.body;
+
+    if (!aplicacion_id) {
+      return res.status(400).json({ error: 'aplicacion_id es requerido.' });
+    }
+
+    // Capturar IP real (soporte para proxies / Vercel / Cloudflare)
+    const ip_cliente =
+      (req.headers['x-forwarded-for'] || '').split(',')[0].trim() ||
+      req.headers['x-real-ip'] ||
+      req.socket?.remoteAddress ||
+      null;
+
+    // Extraer categorías únicas de los ingredientes
+    const categorias_toxicologicas = [
+      ...new Set((ingredientes).map(i => (i.categoria || '').toUpperCase()).filter(Boolean))
+    ];
+
+    const db = getSupabaseAdmin();
+
+    const { data, error } = await db
+      .from('auditoria_prescripcion_alta_toxicidad')
+      .insert([{
+        usuario_id,
+        aplicacion_id,
+        ingredientes_detectados: ingredientes,
+        categorias_toxicologicas,
+        advertencia_confirmada,
+        declaracion_profesional,
+        ip_cliente,
+        geolocalizacion: geolocalizacion || null,
+        created_at: new Date().toISOString()
+      }])
+      .select('id')
+      .single();
+
+    if (error) {
+      console.error('[AUDITORÍA AT] Error insertando registro:', error.message);
+      return res.status(500).json({ error: 'Error al registrar la auditoría.', detail: error.message });
+    }
+
+    console.log(`[AUDITORÍA AT] Registro guardado. ID: ${data.id} | App: ${aplicacion_id} | IP: ${ip_cliente}`);
+    return res.json({ success: true, audit_id: data.id });
+
+  } catch (err) {
+    console.error('[AUDITORÍA AT] Excepción:', err.message);
+    return res.status(500).json({ error: 'Error interno al registrar auditoría.', detail: err.message });
+  }
+});
+
+// =============================================================================
+// FIN AUDITORÍA
+// =============================================================================
+
+// =============================================================================
+// ENDPOINT AUDITORÍA: CAMBIO DE ESTADO DE APLICACIÓN
+// Completa el registro de auditoría generado por el trigger PostgreSQL añadiendo
+// la IP real del cliente y el User-Agent (no accesibles desde un trigger).
+// =============================================================================
+
+/**
+ * POST /api/auditoria/estado-aplicacion
+ *
+ * Body esperado:
+ *   { aplicacion_id: string (UUID) }
+ *
+ * El trigger trg_auditoria_estado ya insertó la fila en auditoria_aplicaciones.
+ * Este endpoint llama a rpc_completar_auditoria para añadir ip_address y user_agent.
+ */
+app.post('/api/auditoria/estado-aplicacion', express.json(), async (req, res) => {
+  try {
+    const { aplicacion_id } = req.body;
+
+    if (!aplicacion_id) {
+      return res.status(400).json({ error: 'aplicacion_id es requerido.' });
+    }
+
+    // Capturar IP real (soporte para proxies / Vercel / Cloudflare)
+    const ip_address =
+      (req.headers['x-forwarded-for'] || '').split(',')[0].trim() ||
+      req.headers['x-real-ip'] ||
+      req.socket?.remoteAddress ||
+      null;
+
+    const user_agent = req.headers['user-agent'] || null;
+
+    const db = getSupabaseAdmin();
+
+    const { error } = await db.rpc('rpc_completar_auditoria', {
+      p_aplicacion_id: aplicacion_id,
+      p_ip_address:    ip_address,
+      p_user_agent:    user_agent
+    });
+
+    if (error) {
+      console.warn('[AUDITORÍA ESTADO] RPC falló:', error.message);
+      // No retornar error al cliente — la auditoría básica ya fue guardada por el trigger
+    } else {
+      console.log(`[AUDITORÍA ESTADO] IP capturada para app ${aplicacion_id}: ${ip_address}`);
+    }
+
+    return res.json({ success: true });
+
+  } catch (err) {
+    console.error('[AUDITORÍA ESTADO] Excepción:', err.message);
+    // No bloquear al cliente — es un enriquecimiento opcional
+    return res.json({ success: false, detail: err.message });
+  }
+});
+
 
 // Middleware de Proxy para interceptar peticiones a Supabase (usando interfaz legacy)
 app.use('/api', legacyCreateProxyMiddleware({
@@ -648,7 +1031,7 @@ app.use('/api', legacyCreateProxyMiddleware({
     if (apiKey === 'dummy-key' || !apiKey) {
       proxyReq.setHeader('apikey', supabaseAnonKey);
     }
-    
+
     // Si la autorización es con la dummy key, reemplazarla por la real.
     // Si no hay cabecera de autorización (usuario no autenticado), no enviamos nada
     // para evitar errores con claves que no son JWT (ej. sb_publishable_*).
@@ -659,7 +1042,7 @@ app.use('/api', legacyCreateProxyMiddleware({
       // Si el cliente envía un JWT real de usuario, nos aseguramos de mantenerlo
       proxyReq.setHeader('authorization', auth);
     }
-    
+
     // Evitar problemas de compresión en las respuestas
     proxyReq.setHeader('accept-encoding', 'identity');
 

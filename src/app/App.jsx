@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { Users, Package, Tractor, HeartPulse, Sprout, Sun, Moon, CloudSun, Calendar } from 'lucide-react';
-import TalentoHumano from '../components/TalentoHumano/TalentoHumano';
+import TalentoHumano from '../components/TalentoHumano';
 import InventarioBodegas from '../components/InventarioBodegas/InventarioBodegas';
 import Maquinaria from '../components/Maquinaria/Maquinaria';
-import ManejoSanitario from '../components/ManejoSanitario/ManejoSanitario';
+import ManejoSanitario from '../components/manejo-sanitario/ManejoSanitarioModule';
 import CosechaPostcosecha from '../components/CosechaPostcosecha/CosechaPostcosecha';
 import { supabase } from '../lib/supabaseClient';
 
