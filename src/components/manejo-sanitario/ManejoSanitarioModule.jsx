@@ -25,7 +25,7 @@ import { Compass, BookOpen, Activity, Calendar, DollarSign, FileSpreadsheet, Map
 
 function ManejoSanitarioContent({ subTab, setSubTab }) {
   const activeSubView = subTab && [
-    'lotes', 'mapa', 'aplicaciones', 'monitoreos', 'cosecha_plan',
+    'lotes', 'aplicaciones', 'monitoreos', 'cosecha_plan',
     'costos_san', 'historial_traz', 'reportes_san'
   ].includes(subTab) ? subTab : 'lotes';
 
@@ -72,7 +72,7 @@ function ManejoSanitarioContent({ subTab, setSubTab }) {
       </div>
 
       {/* Render active subview */}
-      {(activeSubView === 'lotes' || activeSubView === 'mapa') && <DashboardView />}
+      {activeSubView === 'lotes' && <DashboardView />}
       {activeSubView === 'aplicaciones' && <ApplicationsView setSubTab={setSubTab} />}
       {activeSubView === 'monitoreos' && <MonitoringView />}
       {activeSubView === 'cosecha_plan' && <HarvestView />}

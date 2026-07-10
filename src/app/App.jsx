@@ -221,7 +221,6 @@ export default function App() {
                 <ul style={{ listStyle: 'none', paddingLeft: '28px', marginTop: '6px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
                   {[
                     { id: 'lotes', label: 'Lotes / Sectores' },
-                    { id: 'mapa', label: 'Mapa de Lotes' },
                     { id: 'aplicaciones', label: 'Aplicaciones' },
                     { id: 'monitoreos', label: 'Monitoreos y Evaluaciones' },
                     { id: 'cosecha_plan', label: 'Planificación de Cosecha' },
