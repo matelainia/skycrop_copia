@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Users, Package, Tractor, HeartPulse, Sprout, Sun, Moon, CloudSun, Calendar } from 'lucide-react';
 import TalentoHumano from '../components/TalentoHumano';
 import InventarioBodegas from '../components/InventarioBodegas/InventarioBodegas';
-import Maquinaria from '../components/Maquinaria/Maquinaria';
+import Maquinaria from '../modules/maquinaria';
 import ManejoSanitario from '../components/manejo-sanitario/ManejoSanitarioModule';
 import CosechaPostcosecha from '../components/CosechaPostcosecha/CosechaPostcosecha';
 import { supabase } from '../lib/supabaseClient';
