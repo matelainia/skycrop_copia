@@ -1,0 +1,10 @@
+{
+  "name": "@skycrop/services",
+  "version": "0.1.0",
+  "private": true,
+  "main": "./index.ts",
+  "dependencies": {
+    "@skycrop/types": "*",
+    "@skycrop/utils": "*"
+  }
+}

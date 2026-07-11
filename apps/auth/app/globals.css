@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@300;400;500;600;700;800&display=swap');
+
+:root {
+  /* SkyCrop Emerald & Ivory Light Theme - Default */
+  --primary-h: 142;
+  --primary-s: 72%;
+  --primary-l: 40%;
+  --primary: hsl(var(--primary-h), var(--primary-s), var(--primary-l));
+  --primary-hover: hsl(var(--primary-h), var(--primary-s), 32%);
+  --primary-light: hsla(var(--primary-h), var(--primary-s), var(--primary-l), 0.1);
+  --primary-border: hsla(var(--primary-h), var(--primary-s), var(--primary-l), 0.25);
+
+  /* Backgrounds & Surfaces (Warm Ivory) */
+  --bg-app: hsl(44, 45%, 95%);
+  --bg-sidebar: hsl(44, 25%, 89%);
+  --bg-card: rgba(255, 255, 255, 0.75);
+  --bg-card-hover: rgba(255, 255, 255, 0.95);
+  --border-color: rgba(60, 50, 40, 0.08);
+  --border-color-hover: rgba(60, 50, 40, 0.16);
+
+  /* Text Colors (Warm Charcoal) */
+  --text-primary: hsl(30, 25%, 15%);
+  --text-secondary: hsl(30, 15%, 35%);
+  --text-muted: hsl(30, 10%, 55%);
+
+  /* Accent states */
+  --accent-cyan: hsl(174, 85%, 35%);
+  --accent-gold: hsl(38, 92%, 45%);
+  --accent-gold-light: rgba(217, 119, 6, 0.1);
+  --accent-red: hsl(0, 74%, 50%);
+  --accent-red-light: rgba(220, 38, 38, 0.1);
+  --accent-blue: hsl(200, 85%, 45%);
+  --accent-blue-light: rgba(29, 78, 216, 0.1);
+
+  /* Shadows & Blur */
+  --backdrop-blur: blur(16px);
+  --card-shadow: 0 8px 32px 0 rgba(60, 50, 40, 0.06);
+  --glow-shadow: 0 0 15px rgba(21, 128, 61, 0.15);
+
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-display: 'Outfit', sans-serif;
+}
+
+[data-theme="dark"], .dark-theme {
+  --bg-app: hsl(30, 15%, 8%);
+  --bg-sidebar: hsl(30, 15%, 5%);
+  --bg-card: rgba(40, 36, 32, 0.5);
+  --bg-card-hover: rgba(50, 46, 42, 0.65);
+  --border-color: rgba(255, 255, 255, 0.08);
+  --border-color-hover: rgba(255, 255, 255, 0.15);
+
+  --text-primary: hsl(44, 40%, 93%);
+  --text-secondary: hsl(44, 20%, 75%);
+  --text-muted: hsl(44, 10%, 55%);
+
+  --card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.4);
+  --glow-shadow: 0 0 15px rgba(34, 197, 94, 0.2);
+}
+
+@theme {
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-bg-app: var(--bg-app);
+  --color-bg-card: var(--bg-card);
+  --color-border-color: var(--border-color);
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-muted: var(--text-muted);
+  --font-sans: var(--font-sans);
+  --font-display: var(--font-display);
+}
+
+body {
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  min-height: 100vh;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  transition: background-color 0.3s, color 0.3s;
+}
+
+/* Custom Glassmorphism styles */
+.glass-container {
+  background: var(--bg-card);
+  backdrop-filter: var(--backdrop-blur);
+  -webkit-backdrop-filter: var(--backdrop-blur);
+  border: 1px solid var(--border-color);
+  box-shadow: var(--card-shadow);
+  border-radius: 24px;
+}
+
+.glass-container:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-color-hover);
+  box-shadow: var(--card-shadow), var(--glow-shadow);
+}

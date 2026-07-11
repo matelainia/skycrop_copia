@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Package, Tractor, HeartPulse, Sprout, Sun, Moon, CloudSun, Calendar } from 'lucide-react';
+import { Users, Package, Tractor, HeartPulse, Sprout, Sun, Moon, CloudSun, Calendar, LogOut } from 'lucide-react';
 import TalentoHumano from '../components/TalentoHumano';
 import InventarioBodegas from '../components/InventarioBodegas/InventarioBodegas';
 import Maquinaria from '../modules/maquinaria';
@@ -7,8 +7,20 @@ import ManejoSanitario from '../components/manejo-sanitario/ManejoSanitarioModul
 import CosechaPostcosecha from '../components/CosechaPostcosecha/CosechaPostcosecha';
 import Climate from '../modules/Climate';
 import { supabase } from '../lib/supabaseClient';
+import { useAuthContext } from '../context/AuthContext';
 
 export default function App() {
+  const { user, empresa, role, permissions, logout, hasPermission } = useAuthContext();
+
+  const menuItems = [
+    { id: 'talento', label: 'Talento Humano', icon: <Users size={18} />, recurso: 'laboral' },
+    { id: 'inventario', label: 'Inventario y Bodegas', icon: <Package size={18} />, recurso: 'inventario' },
+    { id: 'maquinaria', label: 'Maquinaria', icon: <Tractor size={18} />, recurso: 'maquinaria' },
+    { id: 'sanitario', label: 'Manejo Sanitario', icon: <HeartPulse size={18} />, recurso: 'aplicaciones' },
+    { id: 'cosecha', label: 'Cosecha y Postcosecha', icon: <Sprout size={18} />, recurso: 'cosechas' },
+    { id: 'clima', label: 'Clima', icon: <Sun size={18} />, recurso: 'lotes' },
+  ].filter(item => hasPermission(item.recurso, 'leer'));
+
   const [activeTab, setActiveTab] = useState(() => {
     return localStorage.getItem('skycrop_active_tab') || 'talento';
   });
@@ -16,6 +28,13 @@ export default function App() {
   const [activeSubTab, setActiveSubTab] = useState(() => {
     return localStorage.getItem('skycrop_active_subtab') || 'flota';
   });
+
+  // Si la pestaña activa no está permitida por el rol, cambiar a la primera permitida
+  useEffect(() => {
+    if (menuItems.length > 0 && !menuItems.some(item => item.id === activeTab)) {
+      setActiveTab(menuItems[0].id);
+    }
+  }, [permissions]);
 
   useEffect(() => {
     localStorage.setItem('skycrop_active_subtab', activeSubTab);
@@ -139,14 +158,6 @@ export default function App() {
     }
   };
 
-  const menuItems = [
-    { id: 'talento', label: 'Talento Humano', icon: <Users size={18} /> },
-    { id: 'inventario', label: 'Inventario y Bodegas', icon: <Package size={18} /> },
-    { id: 'maquinaria', label: 'Maquinaria', icon: <Tractor size={18} /> },
-    { id: 'sanitario', label: 'Manejo Sanitario', icon: <HeartPulse size={18} /> },
-    { id: 'cosecha', label: 'Cosecha y Postcosecha', icon: <Sprout size={18} /> },
-    { id: 'clima', label: 'Clima', icon: <Sun size={18} /> },
-  ];
 
   return (
     <div className="app-wrapper">
@@ -298,7 +309,7 @@ export default function App() {
           </div>
         </div>
 
-        <div className="sidebar-footer">
+        <div className="sidebar-footer" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <button 
             className="theme-toggle-btn" 
             onClick={() => setIsDark(!isDark)}
@@ -314,6 +325,15 @@ export default function App() {
                 <span>Modo Oscuro</span>
               </>
             )}
+          </button>
+          
+          <button 
+            className="theme-toggle-btn" 
+            onClick={logout}
+            style={{ color: 'var(--accent-red)' }}
+          >
+            <LogOut size={16} />
+            <span>Cerrar Sesión</span>
           </button>
         </div>
       </aside>
@@ -347,10 +367,16 @@ export default function App() {
 
             {/* Profile Avatar */}
             <div className="user-profile">
-              <div className="avatar">AC</div>
+              <div className="avatar">
+                {user ? `${user.nombre?.[0] || ''}${user.apellido?.[0] || ''}`.toUpperCase() || user.email?.slice(0, 2).toUpperCase() : 'US'}
+              </div>
               <div className="user-info">
-                <span className="user-name">Agr. Andrés Castro</span>
-                <span className="user-role">Administrador General</span>
+                <span className="user-name">
+                  {user ? `${user.nombre || ''} ${user.apellido || ''}`.trim() || user.email : 'Cargando...'}
+                </span>
+                <span className="user-role">
+                  {role?.nombre || 'Usuario'} {empresa ? `| ${empresa.nombre}` : ''}
+                </span>
               </div>
             </div>
           </div>

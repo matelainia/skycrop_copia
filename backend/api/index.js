@@ -5,11 +5,58 @@ import dotenv from 'dotenv';
 import ee from '@google/earthengine';
 import crypto from 'crypto';
 import { createClient } from '@supabase/supabase-js';
+import jwt from 'jsonwebtoken';
+import { createClerkClient } from '@clerk/backend';
+import { Webhook } from 'svix';
 
 // Cargar variables de entorno localmente si están disponibles
 dotenv.config();
 
 const app = express();
+
+// --- CONFIGURACIÓN DE CLERK Y JWT DE SUPABASE ---
+const clerkClient = createClerkClient({
+  secretKey: process.env.CLERK_SECRET_KEY || 'sk_test_mock_secret_key_for_local_development',
+  publishableKey: process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || 'pk_test_mock_publishable_key',
+});
+
+const supabaseJwtSecret = process.env.SUPABASE_JWT_SECRET || 'super-secret-supabase-jwt-key-change-me-in-prod';
+const jwtCache = new Map();
+
+function getCachedSupabaseToken(userId) {
+  const cached = jwtCache.get(userId);
+  if (cached && cached.expiresAt > Date.now()) {
+    console.log(`[JWT CACHE HIT] Reutilizando token de Supabase para usuario: ${userId}`);
+    return cached.token;
+  }
+  return null;
+}
+
+function cacheSupabaseToken(userId, token, expiresInMs = 10 * 60 * 1000) {
+  jwtCache.set(userId, {
+    token,
+    expiresAt: Date.now() + expiresInMs
+  });
+}
+
+function generateSupabaseJwt(userId, email, empresaId, roleId) {
+  const payload = {
+    aud: 'authenticated',
+    exp: Math.floor(Date.now() / 1000) + 60 * 15, // Válido por 15 minutos
+    sub: userId,
+    email: email,
+    role: 'authenticated',
+    app_metadata: {
+      provider: 'clerk',
+      providers: ['clerk']
+    },
+    user_metadata: {},
+    empresa_id: empresaId,
+    rol_id: roleId
+  };
+  
+  return jwt.sign(payload, supabaseJwtSecret);
+}
 
 // Middleware global de logging para depurar peticiones
 app.use((req, res, next) => {
@@ -1354,6 +1401,319 @@ app.post('/api/auditoria/estado-aplicacion', express.json(), async (req, res) =>
     // No bloquear al cliente — es un enriquecimiento opcional
     return res.json({ success: false, detail: err.message });
   }
+});
+
+
+
+// Webhook de Clerk para sincronización de usuarios, empresas y roles
+app.post('/api/webhooks/clerk', express.raw({ type: 'application/json' }), async (req, res) => {
+  const SIGNING_SECRET = process.env.CLERK_WEBHOOK_SECRET;
+
+  if (!SIGNING_SECRET) {
+    console.error('CLERK_WEBHOOK_SECRET no está configurada.');
+    return res.status(500).json({ error: 'Webhook secret is not configured' });
+  }
+
+  // Obtener headers de svix
+  const svix_id = req.headers['svix-id'];
+  const svix_timestamp = req.headers['svix-timestamp'];
+  const svix_signature = req.headers['svix-signature'];
+
+  if (!svix_id || !svix_timestamp || !svix_signature) {
+    return res.status(400).json({ error: 'Faltan headers de Svix' });
+  }
+
+  // El cuerpo debe ser raw para verificar la firma
+  const payload = req.body.toString();
+  const headers = {
+    'svix-id': svix_id,
+    'svix-timestamp': svix_timestamp,
+    'svix-signature': svix_signature,
+  };
+
+  const wh = new Webhook(SIGNING_SECRET);
+  let evt;
+
+  try {
+    evt = wh.verify(payload, headers);
+  } catch (err) {
+    console.error('Firma de webhook de Clerk no válida:', err.message);
+    return res.status(400).json({ error: 'Firma inválida' });
+  }
+
+  const { id: userId, email_addresses, first_name, last_name } = evt.data;
+  const eventType = evt.type;
+  const email = email_addresses?.[0]?.email_address || '';
+
+  const db = getSupabaseAdmin();
+
+  try {
+    if (eventType === 'user.created') {
+      console.log(`[Clerk Webhook] Creando usuario: ${userId} (${email})`);
+      
+      // 1. Crear una nueva empresa por defecto para el usuario nuevo
+      const empresaNombre = `Mi Empresa de ${first_name || 'Cultivo'}`;
+      const { data: empresa, error: empErr } = await db
+        .from('empresas')
+        .insert([{ nombre: empresaNombre }])
+        .select()
+        .single();
+        
+      if (empErr) {
+        console.error('Error creando empresa:', empErr.message);
+        throw empErr;
+      }
+
+      // 2. Insertar usuario en Supabase con rol administrador
+      const { error: usrErr } = await db
+        .from('usuarios')
+        .insert([{
+          id: userId,
+          email: email,
+          nombre: first_name || '',
+          apellido: last_name || '',
+          empresa_id: empresa.id,
+          rol_id: 'administrador'
+        }]);
+
+      if (usrErr) {
+        console.error('Error creando usuario en Supabase:', usrErr.message);
+        throw usrErr;
+      }
+
+      // 3. Escribir metadatos privados en Clerk
+      await clerkClient.users.updateUserMetadata(userId, {
+        privateMetadata: {
+          empresa_id: empresa.id,
+          rol_id: 'administrador'
+        }
+      });
+      
+      console.log(`[Clerk Webhook] Sincronización exitosa para user.created: ${userId}`);
+
+    } else if (eventType === 'user.updated') {
+      console.log(`[Clerk Webhook] Actualizando usuario: ${userId}`);
+      
+      const { error: usrErr } = await db
+        .from('usuarios')
+        .update({
+          nombre: first_name || '',
+          apellido: last_name || '',
+          email: email
+        })
+        .eq('id', userId);
+
+      if (usrErr) {
+        console.error('Error actualizando usuario en Supabase:', usrErr.message);
+        throw usrErr;
+      }
+      
+      console.log(`[Clerk Webhook] Sincronización exitosa para user.updated: ${userId}`);
+
+    } else if (eventType === 'user.deleted') {
+      console.log(`[Clerk Webhook] Eliminando usuario: ${userId}`);
+      
+      const { error: usrErr } = await db
+        .from('usuarios')
+        .delete()
+        .eq('id', userId);
+
+      if (usrErr) {
+        console.error('Error eliminando usuario de Supabase:', usrErr.message);
+        throw usrErr;
+      }
+      
+      console.log(`[Clerk Webhook] Sincronización exitosa para user.deleted: ${userId}`);
+    }
+
+    return res.json({ success: true });
+  } catch (err) {
+    console.error('Excepción procesando webhook de Clerk:', err.message);
+    return res.status(500).json({ error: 'Internal Server Error', detail: err.message });
+  }
+});
+
+// Endpoint para obtener el perfil completo y el JWT de Supabase
+app.get('/api/auth/me', async (req, res) => {
+  try {
+    const authHeader = req.headers['authorization'];
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ error: 'No autorizado. Token de Clerk faltante.' });
+    }
+    const clerkToken = authHeader.split(' ')[1];
+
+    // Verificar token con Clerk
+    let requestState;
+    try {
+      requestState = await clerkClient.verifyToken(clerkToken);
+    } catch (err) {
+      console.error('Error al verificar token con Clerk:', err.message);
+      return res.status(401).json({ error: 'Token de Clerk inválido o expirado.' });
+    }
+
+    const clerkUserId = requestState.sub;
+    const email = requestState.email || '';
+
+    // Intentar obtener del caché primero
+    const cachedToken = getCachedSupabaseToken(clerkUserId);
+    if (cachedToken) {
+      const { data: usuario, error: uErr } = await getSupabaseAdmin()
+        .from('usuarios')
+        .select('*, empresas(*), roles(*)')
+        .eq('id', clerkUserId)
+        .single();
+
+      if (!uErr && usuario) {
+        const { data: permisos } = await getSupabaseAdmin()
+          .from('permisos')
+          .select('*')
+          .eq('rol_id', usuario.rol_id);
+
+        return res.json({
+          user: {
+            id: usuario.id,
+            email: usuario.email,
+            nombre: usuario.nombre,
+            apellido: usuario.apellido,
+            empresa_id: usuario.empresa_id,
+            rol_id: usuario.rol_id,
+            created_at: usuario.created_at
+          },
+          empresa: usuario.empresas,
+          role: usuario.roles,
+          permissions: permisos || [],
+          supabaseToken: cachedToken
+        });
+      }
+    }
+
+    // Si no está en caché, obtener de Supabase y generar nuevo token
+    let { data: usuario, error: uErr } = await getSupabaseAdmin()
+      .from('usuarios')
+      .select('*, empresas(*), roles(*)')
+      .eq('id', clerkUserId)
+      .single();
+
+    if (uErr || !usuario) {
+      console.warn(`Usuario ${clerkUserId} no encontrado en Supabase. Intentando sincronización bajo demanda...`);
+      const clerkUser = await clerkClient.users.getUser(clerkUserId);
+      const userEmail = clerkUser.emailAddresses[0]?.emailAddress || email;
+
+      const { data: nuevaEmpresa, error: empErr } = await db
+        .from('empresas')
+        .insert([{ nombre: `Mi Empresa de ${clerkUser.firstName || 'Cultivo'}` }])
+        .select()
+        .single();
+
+      if (empErr) throw empErr;
+
+      const { data: nuevoUsuario, error: insErr } = await db
+        .from('usuarios')
+        .insert([{
+          id: clerkUserId,
+          email: userEmail,
+          nombre: clerkUser.firstName,
+          apellido: clerkUser.lastName,
+          empresa_id: nuevaEmpresa.id,
+          rol_id: 'administrador'
+        }])
+        .select('*, empresas(*), roles(*)')
+        .single();
+
+      if (insErr) throw insErr;
+      usuario = nuevoUsuario;
+
+      await clerkClient.users.updateUserMetadata(clerkUserId, {
+        privateMetadata: {
+          empresa_id: nuevaEmpresa.id,
+          rol_id: 'administrador'
+        }
+      });
+    }
+
+    const { data: permisos } = await getSupabaseAdmin()
+      .from('permisos')
+      .select('*')
+      .eq('rol_id', usuario.rol_id);
+
+    const supabaseToken = generateSupabaseJwt(
+      usuario.id,
+      usuario.email,
+      usuario.empresa_id,
+      usuario.rol_id
+    );
+
+    cacheSupabaseToken(usuario.id, supabaseToken);
+
+    return res.json({
+      user: {
+        id: usuario.id,
+        email: usuario.email,
+        nombre: usuario.nombre,
+        apellido: usuario.apellido,
+        empresa_id: usuario.empresa_id,
+        rol_id: usuario.rol_id,
+        created_at: usuario.created_at
+      },
+      empresa: usuario.empresas,
+      role: usuario.roles,
+      permissions: permisos || [],
+      supabaseToken
+    });
+
+  } catch (err) {
+    console.error('Excepción en /api/auth/me:', err);
+    return res.status(500).json({ error: 'Internal Server Error', detail: err.message });
+  }
+});
+
+// Middleware para traducir el token de Clerk al token de Supabase con RLS en el Proxy
+app.use('/api', async (req, res, next) => {
+  // Ignorar endpoints que son locales y no deben ir al proxy de Supabase
+  if (req.path === '/webhooks/clerk' || req.path === '/auth/me' || req.path === '/auditoria/estado-aplicacion') {
+    return next();
+  }
+
+  const authHeader = req.headers['authorization'];
+  if (authHeader && authHeader.startsWith('Bearer ') && authHeader !== 'Bearer dummy-key') {
+    const clerkToken = authHeader.split(' ')[1];
+    
+    try {
+      const requestState = await clerkClient.verifyToken(clerkToken);
+      const clerkUserId = requestState.sub;
+      
+      let supabaseToken = getCachedSupabaseToken(clerkUserId);
+      
+      if (!supabaseToken) {
+        const { data: usuario } = await getSupabaseAdmin()
+          .from('usuarios')
+          .select('id, email, empresa_id, rol_id')
+          .eq('id', clerkUserId)
+          .single();
+          
+        if (usuario) {
+          supabaseToken = generateSupabaseJwt(
+            usuario.id,
+            usuario.email,
+            usuario.empresa_id,
+            usuario.rol_id
+          );
+          cacheSupabaseToken(clerkUserId, supabaseToken);
+        }
+      }
+      
+      if (supabaseToken) {
+        req.headers['authorization'] = `Bearer ${supabaseToken}`;
+        // Reemplazar la apikey en el header
+        req.headers['apikey'] = process.env.SUPABASE_ANON_KEY;
+      }
+    } catch (err) {
+      console.warn('[PROXY AUTH] Error traduciendo token de Clerk:', err.message);
+      return res.status(401).json({ error: 'Token de autenticación inválido o expirado.' });
+    }
+  }
+  
+  next();
 });
 
 
