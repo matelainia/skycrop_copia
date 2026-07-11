@@ -1472,3 +1472,42 @@ h6 {
   display: flex;
   align-items: center;
 }
+
+/* =============================================================================
+   MÓDULO CLIMA - ESTILOS ADICIONALES PREMIUM
+   ============================================================================= */
+
+/* Animación de rotación del spinner */
+.spin-anim {
+  animation: spin 1.2s linear infinite;
+  display: inline-block;
+}
+
+/* Animación de levitación flotante para iconos */
+@keyframes float {
+  0% { transform: translateY(0px); }
+  50% { transform: translateY(-4px); }
+  100% { transform: translateY(0px); }
+}
+.floating-anim {
+  animation: float 4s ease-in-out infinite;
+}
+
+/* Ocultar barra de desplazamiento manteniendo funcionalidad */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Responsive para Dashboard de Clima */
+@media (max-width: 1200px) {
+  .climate-grid-main {
+    grid-template-columns: 1fr !important;
+  }
+  .climate-grid-bottom {
+    grid-template-columns: 1fr !important;
+  }
+}

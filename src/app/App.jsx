@@ -5,6 +5,7 @@ import InventarioBodegas from '../components/InventarioBodegas/InventarioBodegas
 import Maquinaria from '../modules/maquinaria';
 import ManejoSanitario from '../components/manejo-sanitario/ManejoSanitarioModule';
 import CosechaPostcosecha from '../components/CosechaPostcosecha/CosechaPostcosecha';
+import Climate from '../modules/Climate';
 import { supabase } from '../lib/supabaseClient';
 
 export default function App() {
@@ -119,6 +120,8 @@ export default function App() {
         return <ManejoSanitario subTab={activeSubTab} setSubTab={setActiveSubTab} />;
       case 'cosecha':
         return <CosechaPostcosecha />;
+      case 'clima':
+        return <Climate />;
       default:
         return <TalentoHumano />;
     }
@@ -131,6 +134,7 @@ export default function App() {
       case 'maquinaria': return 'Flota de Maquinaria';
       case 'sanitario': return 'Manejo Sanitario';
       case 'cosecha': return 'Rendimiento Cosecha y Postcosecha';
+      case 'clima': return 'Centro de Inteligencia Climática';
       default: return 'Panel Principal';
     }
   };
@@ -141,6 +145,7 @@ export default function App() {
     { id: 'maquinaria', label: 'Maquinaria', icon: <Tractor size={18} /> },
     { id: 'sanitario', label: 'Manejo Sanitario', icon: <HeartPulse size={18} /> },
     { id: 'cosecha', label: 'Cosecha y Postcosecha', icon: <Sprout size={18} /> },
+    { id: 'clima', label: 'Clima', icon: <Sun size={18} /> },
   ];
 
   return (

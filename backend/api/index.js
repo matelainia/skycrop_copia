@@ -621,6 +621,349 @@ app.post('/api/gee/index', express.json(), async (req, res) => {
   }
 });
 
+// Memoria caché en backend como contingencia
+const weatherMemoryCache = new Map();
+
+// Endpoint de Clima Inteligente (V1)
+app.get('/api/weather', async (req, res) => {
+  try {
+    const { latitude, longitude } = req.query;
+
+    if (!latitude || !longitude) {
+      return res.status(400).json({ success: false, error: 'Coordenadas (latitude y longitude) son requeridas.' });
+    }
+
+    const latVal = parseFloat(latitude);
+    const lonVal = parseFloat(longitude);
+
+    if (isNaN(latVal) || isNaN(lonVal)) {
+      return res.status(400).json({ success: false, error: 'Coordenadas numéricas inválidas.' });
+    }
+
+    // Hash de coordenadas redondeado a 3 decimales (grilla ~110m)
+    const roundedLat = latVal.toFixed(3);
+    const roundedLon = lonVal.toFixed(3);
+    const coordHash = `${roundedLat}_${roundedLon}`;
+    const now = new Date();
+
+    // 1. Intentar obtener desde caché en Supabase
+    const db = getSupabaseAdmin();
+    if (db) {
+      try {
+        const { data, error } = await db
+          .from('clima_cache')
+          .select('weather_data, expires_at')
+          .eq('coord_hash', coordHash)
+          .single();
+
+        if (!error && data) {
+          const expiresAt = new Date(data.expires_at);
+          if (expiresAt > now) {
+            console.log(`[WEATHER CACHE HIT - PostgreSQL] coords: ${coordHash}`);
+            const cachedResponse = data.weather_data;
+            cachedResponse.metadata.cached = true;
+            return res.json(cachedResponse);
+          }
+        }
+      } catch (dbErr) {
+        console.warn(`[WEATHER CACHE] Error consultando Supabase, usando contingencia:`, dbErr.message);
+      }
+    }
+
+    // 2. Intentar obtener desde caché en memoria del backend
+    if (weatherMemoryCache.has(coordHash)) {
+      const cached = weatherMemoryCache.get(coordHash);
+      if (cached.expiresAt > now.getTime()) {
+        console.log(`[WEATHER CACHE HIT - Memoria] coords: ${coordHash}`);
+        const cachedResponse = cached.data;
+        cachedResponse.metadata.cached = true;
+        return res.json(cachedResponse);
+      } else {
+        weatherMemoryCache.delete(coordHash);
+      }
+    }
+
+    // 3. Consultar la API correspondiente (Google Weather API o Open-Meteo como fallback)
+    const googleApiKey = process.env.GOOGLE_WEATHER_API_KEY;
+    let normalized;
+
+    // Helper para mapear tipos de Google a WMO
+    const mapGoogleTypeToWmo = (type) => {
+      switch (type?.toUpperCase()) {
+        case 'CLEAR': return 0;
+        case 'MOSTLY_CLEAR': return 1;
+        case 'PARTLY_CLOUDY': return 2;
+        case 'MOSTLY_CLOUDY': return 3;
+        case 'CLOUDY': return 3;
+        case 'FOG': return 45;
+        case 'DRIZZLE': return 51;
+        case 'LIGHT_RAIN': return 61;
+        case 'RAIN': return 63;
+        case 'HEAVY_RAIN': return 65;
+        case 'SHOWER': return 80;
+        case 'STORM': return 95;
+        case 'THUNDERSTORM': return 95;
+        case 'SNOW': return 71;
+        case 'HAIL': return 77;
+        default: return 1;
+      }
+    };
+
+    const generatedAtStr = now.toISOString();
+    const expiresAtMs = now.getTime() + 15 * 60 * 1000; // 15 minutos
+    const expiresAtStr = new Date(expiresAtMs).toISOString();
+
+    if (googleApiKey) {
+      console.log(`[WEATHER API FETCH] Consultando Google Weather API para coords: ${roundedLat}, ${roundedLon}`);
+      
+      const currentUrl = `https://weather.googleapis.com/v1/currentConditions:lookup?key=${googleApiKey}&location.latitude=${roundedLat}&location.longitude=${roundedLon}`;
+      const hourlyUrl = `https://weather.googleapis.com/v1/forecast/hours:lookup?key=${googleApiKey}&location.latitude=${roundedLat}&location.longitude=${roundedLon}&hours=24`;
+      const dailyUrl = `https://weather.googleapis.com/v1/forecast/days:lookup?key=${googleApiKey}&location.latitude=${roundedLat}&location.longitude=${roundedLon}&days=7`;
+
+      const [resCurrent, resHourly, resDaily] = await Promise.all([
+        fetch(currentUrl).then(r => r.ok ? r.json() : null),
+        fetch(hourlyUrl).then(r => r.ok ? r.json() : null),
+        fetch(dailyUrl).then(r => r.ok ? r.json() : null)
+      ]);
+
+      if (!resCurrent) {
+        throw new Error('Google Weather API falló al retornar condiciones actuales o la API key es inválida.');
+      }
+
+      const currentWind = resCurrent.wind?.speed?.value || 0;
+      const currentRain = resCurrent.precipitation?.qpf?.quantity || 0;
+      const currentUv = resCurrent.uvIndex || 0;
+
+      // Mapear alertas
+      const alerts = [];
+      if (currentWind > 20) {
+        alerts.push({
+          type: 'wind',
+          severity: 'warn',
+          title: 'Rachas de viento moderadas',
+          message: `Vientos de hasta ${currentWind.toFixed(1)} km/h detectados por Google Weather.`
+        });
+      }
+      if (currentRain > 2.0) {
+        alerts.push({
+          type: 'rain',
+          severity: 'danger',
+          title: 'Lluvia persistente',
+          message: `Precipitación de ${currentRain.toFixed(1)} mm detectada por Google Weather.`
+        });
+      }
+      if (currentUv >= 8) {
+        alerts.push({
+          type: 'uv',
+          severity: 'warn',
+          title: 'Índice UV Extremo',
+          message: `Radiación UV solar de ${currentUv.toFixed(1)} (Evitar exposición).`
+        });
+      }
+
+      // Mapear pronóstico horario (24 horas)
+      const hourlyData = [];
+      if (resHourly && Array.isArray(resHourly.forecastHours)) {
+        const limit = Math.min(resHourly.forecastHours.length, 24);
+        for (let i = 0; i < limit; i++) {
+          const h = resHourly.forecastHours[i];
+          hourlyData.push({
+            time: h.forecastTime,
+            temperature: h.temperature?.degrees || 0,
+            precipitationProbability: h.precipitation?.probability?.percent || 0,
+            relativeHumidity: h.relativeHumidity || 80,
+            windSpeed: h.wind?.speed?.value || 0
+          });
+        }
+      }
+
+      // Mapear pronóstico diario (7 días)
+      const dailyData = [];
+      if (resDaily && Array.isArray(resDaily.forecastDays)) {
+        const limit = Math.min(resDaily.forecastDays.length, 7);
+        for (let i = 0; i < limit; i++) {
+          const d = resDaily.forecastDays[i];
+          const year = d.displayDate?.year;
+          const month = String(d.displayDate?.month || 1).padStart(2, '0');
+          const dayNum = String(d.displayDate?.day || 1).padStart(2, '0');
+          const dateStr = `${year}-${month}-${dayNum}`;
+
+          dailyData.push({
+            date: dateStr,
+            temperatureMax: d.daytimeForecast?.temperature?.degrees || d.temperatureMax?.degrees || 30,
+            temperatureMin: d.nighttimeForecast?.temperature?.degrees || d.temperatureMin?.degrees || 20,
+            precipitationProbability: d.daytimeForecast?.precipitation?.probability?.percent || 0,
+            weatherCode: mapGoogleTypeToWmo(d.daytimeForecast?.weatherCondition?.type)
+          });
+        }
+      }
+
+      normalized = {
+        version: 1,
+        metadata: {
+          provider: 'google-weather-api',
+          generatedAt: generatedAtStr,
+          cached: false,
+          expires: expiresAtStr,
+          location: {
+            lat: latVal,
+            lon: lonVal
+          },
+          timezone: resCurrent.timeZone?.id || 'America/Bogota'
+        },
+        current: {
+          temperature: resCurrent.temperature?.degrees || 0,
+          apparentTemperature: resCurrent.feelsLikeTemperature?.degrees || resCurrent.temperature?.degrees || 0,
+          relativeHumidity: resCurrent.relativeHumidity || 0,
+          windSpeed: currentWind,
+          windDirection: resCurrent.wind?.direction?.degrees || 0,
+          pressure: resCurrent.pressure || 1013,
+          precipitationProbability: resCurrent.precipitation?.probability?.percent || 0,
+          uvIndex: currentUv,
+          visibility: resCurrent.visibility?.distance || 10,
+          dewPoint: resCurrent.dewPoint?.degrees || 0,
+          weatherCode: mapGoogleTypeToWmo(resCurrent.weatherCondition?.type)
+        },
+        hourly: hourlyData,
+        daily: dailyData,
+        alerts: alerts
+      };
+
+    } else {
+      console.log(`[WEATHER API FETCH] Consultando Open-Meteo (contingencia) para coords: ${roundedLat}, ${roundedLon}`);
+      const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${roundedLat}&longitude=${roundedLon}&current=temperature_2m,relative_humidity_2m,apparent_temperature,precipitation,rain,showers,snowfall,weather_code,cloud_cover,pressure_msl,wind_speed_10m,wind_direction_10m&hourly=temperature_2m,relative_humidity_2m,dew_point_2m,apparent_temperature,precipitation_probability,precipitation,weather_code,pressure_msl,wind_speed_10m,wind_direction_10m,uv_index,visibility&daily=weather_code,temperature_2m_max,temperature_2m_min,apparent_temperature_max,apparent_temperature_min,uv_index_max,precipitation_sum,precipitation_probability_max,wind_speed_10m_max,wind_direction_10m_dominant&timezone=auto`;
+
+      const apiResponse = await fetch(weatherUrl);
+      if (!apiResponse.ok) {
+        throw new Error(`Open-Meteo respondió con estado ${apiResponse.status}`);
+      }
+
+      const raw = await apiResponse.json();
+
+      const currentWind = raw.current?.wind_speed_10m || 0;
+      const currentRain = raw.current?.rain || raw.current?.precipitation || 0;
+      const currentUv = raw.hourly?.uv_index ? raw.hourly.uv_index[0] : 0;
+
+      const alerts = [];
+      if (currentWind > 20) {
+        alerts.push({
+          type: 'wind',
+          severity: 'warn',
+          title: 'Rachas de viento moderadas',
+          message: `Vientos de hasta ${currentWind.toFixed(1)} km/h en curso. Tenga precaución con aplicaciones y derivas.`
+        });
+      }
+      if (currentRain > 2.0) {
+        alerts.push({
+          type: 'rain',
+          severity: 'danger',
+          title: 'Lluvia persistente',
+          message: `Precipitación de ${currentRain.toFixed(1)} mm detectada. Alto riesgo de lavado para fitosanitarios.`
+        });
+      }
+      if (currentUv >= 8) {
+        alerts.push({
+          type: 'uv',
+          severity: 'warn',
+          title: 'Índice UV Extremo',
+          message: `Radiación UV solar de ${currentUv.toFixed(1)}. Evite la exposición prolongada de operarios en campo.`
+        });
+      }
+
+      const hourlyData = [];
+      if (raw.hourly && Array.isArray(raw.hourly.time)) {
+        const limit = Math.min(raw.hourly.time.length, 24);
+        for (let i = 0; i < limit; i++) {
+          hourlyData.push({
+            time: raw.hourly.time[i],
+            temperature: raw.hourly.temperature_2m[i],
+            precipitationProbability: raw.hourly.precipitation_probability ? raw.hourly.precipitation_probability[i] : 0,
+            relativeHumidity: raw.hourly.relative_humidity_2m[i],
+            windSpeed: raw.hourly.wind_speed_10m[i]
+          });
+        }
+      }
+
+      const dailyData = [];
+      if (raw.daily && Array.isArray(raw.daily.time)) {
+        const limit = Math.min(raw.daily.time.length, 7);
+        for (let i = 0; i < limit; i++) {
+          dailyData.push({
+            date: raw.daily.time[i],
+            temperatureMax: raw.daily.temperature_2m_max[i],
+            temperatureMin: raw.daily.temperature_2m_min[i],
+            precipitationProbability: raw.daily.precipitation_probability_max ? raw.daily.precipitation_probability_max[i] : 0,
+            weatherCode: raw.daily.weather_code[i]
+          });
+        }
+      }
+
+      normalized = {
+        version: 1,
+        metadata: {
+          provider: 'open-meteo',
+          generatedAt: generatedAtStr,
+          cached: false,
+          expires: expiresAtStr,
+          location: {
+            lat: latVal,
+            lon: lonVal
+          },
+          timezone: raw.timezone || 'America/Bogota'
+        },
+        current: {
+          temperature: raw.current?.temperature_2m || 0,
+          apparentTemperature: raw.current?.apparent_temperature || raw.current?.temperature_2m || 0,
+          relativeHumidity: raw.current?.relative_humidity_2m || 0,
+          windSpeed: currentWind,
+          windDirection: raw.current?.wind_direction_10m || 0,
+          pressure: raw.current?.pressure_msl || 1013,
+          precipitationProbability: raw.hourly?.precipitation_probability ? raw.hourly.precipitation_probability[0] : 0,
+          uvIndex: currentUv,
+          visibility: raw.hourly?.visibility ? (raw.hourly.visibility[0] / 1000) : 10,
+          dewPoint: raw.hourly?.dew_point_2m ? raw.hourly.dew_point_2m[0] : 0,
+          weatherCode: raw.current?.weather_code || 0
+        },
+        hourly: hourlyData,
+        daily: dailyData,
+        alerts: alerts
+      };
+    }
+
+    // 5. Guardar en cachés
+    if (db) {
+      try {
+        await db.from('clima_cache').upsert([{
+          coord_hash: coordHash,
+          latitude: latVal,
+          longitude: lonVal,
+          weather_data: normalized,
+          expires_at: expiresAtStr
+        }], { onConflict: 'coord_hash' });
+        console.log(`[WEATHER CACHE SET - PostgreSQL] coords: ${coordHash}`);
+      } catch (dbErr) {
+        console.warn(`[WEATHER CACHE SET] Error insertando en Supabase (¿falta ejecutar script SQL?):`, dbErr.message);
+      }
+    }
+
+    weatherMemoryCache.set(coordHash, {
+      data: normalized,
+      expiresAt: expiresAtMs
+    });
+    console.log(`[WEATHER CACHE SET - Memoria] coords: ${coordHash}`);
+
+    return res.json(normalized);
+
+  } catch (err) {
+    console.error('❌ [WEATHER ERROR] Falló la API de clima:', err.message);
+    return res.status(500).json({
+      success: false,
+      error: 'Error interno al consultar datos del clima.',
+      detail: err.message
+    });
+  }
+});
+
 // Endpoint de salud
 app.get('/api/health', (req, res) => {
   res.json({

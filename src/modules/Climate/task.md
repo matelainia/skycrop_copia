@@ -1,0 +1,41 @@
+# Checklist de Tareas - Módulo de Inteligencia Climática
+
+- `[x]` **Fase 1: Backend & SQL Seed**
+  - `[x]` Crear SQL de base de datos para `clima_cache` en `backend/seed/climaCache.sql`.
+  - `[x]` Implementar ruta `GET /api/weather` en `backend/api/index.js` con soporte para Open-Meteo, normalización de contrato V1, y caché por coordenadas (grilla 110m).
+- `[x]` **Fase 2: Capa de Dominio en el Frontend**
+  - `[x]` Crear configuración de umbrales `src/modules/Climate/config/agronomicThresholds.js`.
+  - `[x]` Implementar reglas de interpretación:
+    - `[x]` `weatherRules.js` (Códigos climáticos WMO)
+    - `[x]` `sprayingRules.js` (Motor de riesgo fitosanitario de 0 a 100)
+    - `[x]` `irrigationRules.js` (Reglas de riego)
+    - `[x]` `diseaseRules.js` (Riesgos biológicos/patógenos)
+    - `[x]` `harvestRules.js` (Viabilidad de cosecha)
+  - `[x]` Implementar utilidades generales en `src/modules/Climate/utils/climateUtils.js`.
+- `[x]` **Fase 3: Servicios & Repositorios**
+  - `[x]` Crear cliente API en `src/modules/Climate/services/weatherService.js`.
+  - `[x]` Crear almacenamiento de caché local en `src/modules/Climate/services/weatherCacheService.js`.
+  - `[x]` Crear repositorio `src/modules/Climate/repository/WeatherRepository.js`.
+  - `[x]` Crear intérprete `src/modules/Climate/interpreter/WeatherInterpreter.js`.
+- `[x]` **Fase 4: Contexto & Hooks**
+  - `[x]` Crear `src/modules/Climate/context/ClimateContext.jsx`.
+  - `[x]` Crear hooks independientes:
+    - `[x]` `useClimate.js`
+    - `[x]` `useForecast.js`
+    - `[x]` `useWeatherCache.js`
+- `[x]` **Fase 5: Componentes de Interfaz de Usuario**
+  - `[x]` `WeatherIcon.jsx` (Icono con animaciones CSS)
+  - `[x]` `ClimateHeader.jsx` y `ClimateStatusBar.jsx` (Encabezados de estado)
+  - `[x]` `ClimateIndicators.jsx` (Tarjetas de métricas actuales)
+  - `[x]` `ClimateTabs.jsx` (Selectores del gráfico)
+  - `[x]` `ClimateHourlyChart.jsx` (Gráfico interactivo de área SVG suavizada y Tooltip)
+  - `[x]` `ClimateForecast.jsx` (Lista de pronóstico de 7 días)
+  - `[x]` `ClimateRecommendationCard.jsx` (Interpretación de riesgo y alertas)
+  - `[x]` `ClimateDashboard.jsx` (Diseño principal de 3 columnas)
+  - `[x]` `src/modules/Climate/index.jsx` (Wrapper de entrada)
+- `[x]` **Fase 6: Integración y Navegación**
+  - `[x]` Registrar el módulo `Climate` y la pestaña "Clima" con icono en `src/app/App.jsx`.
+  - `[x]` Añadir estilos globales del módulo de clima en `src/app/index.css`.
+- `[ ]` **Fase 7: Verificación**
+  - `[/]` Correr `npm run lint` y `npm run build` para asegurar que compila sin errores.
+  - `[ ]` Validar funcionamiento en tiempo de ejecución.
