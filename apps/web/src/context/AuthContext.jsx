@@ -6,7 +6,7 @@ import { setSupabaseToken } from '../lib/supabaseClient';
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const { isLoaded, isSignedIn, getToken } = useAuth();
+  const { isLoaded, isSignedIn, getToken, signOut } = useAuth();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -19,6 +19,8 @@ export function AuthProvider({ children }) {
         setProfile(null);
         setSupabaseToken(null);
         setLoading(false);
+        const authUrl = import.meta.env.VITE_AUTH_URL || 'http://localhost:3001';
+        window.location.href = `${authUrl}/sign-in?redirect_url=${encodeURIComponent(window.location.href)}`;
         return;
       }
 
@@ -66,9 +68,12 @@ export function AuthProvider({ children }) {
     };
   }, [isLoaded, isSignedIn]);
 
-  const logout = () => {
-    const authUrl = import.meta.env.VITE_AUTH_URL || 'http://localhost:3001';
-    AuthService.logout(authUrl);
+  const logout = async () => {
+    try {
+      await signOut();
+    } catch (err) {
+      console.error('Error cerrando sesión:', err);
+    }
   };
 
   const hasPermission = (recurso, accion) => {
