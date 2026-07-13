@@ -12,7 +12,7 @@ ALTER TABLE maquinaria ADD COLUMN IF NOT EXISTS empresa_id UUID DEFAULT '0000000
 ALTER TABLE inventario ADD COLUMN IF NOT EXISTS empresa_id UUID DEFAULT '00000000-0000-0000-0000-000000000000' REFERENCES empresas(id) ON DELETE SET NULL;
 ALTER TABLE trabajadores ADD COLUMN IF NOT EXISTS empresa_id UUID DEFAULT '00000000-0000-0000-0000-000000000000' REFERENCES empresas(id) ON DELETE SET NULL;
 ALTER TABLE cosechas ADD COLUMN IF NOT EXISTS empresa_id UUID DEFAULT '00000000-0000-0000-0000-000000000000' REFERENCES empresas(id) ON DELETE SET NULL;
-ALTER TABLE costos ADD COLUMN IF NOT EXISTS empresa_id UUID DEFAULT '00000000-0000-0000-0000-000000000000' REFERENCES empresas(id) ON DELETE SET NULL;
+-- ALTER TABLE costos ADD COLUMN IF NOT EXISTS empresa_id UUID DEFAULT '00000000-0000-0000-0000-000000000000' REFERENCES empresas(id) ON DELETE SET NULL;
 ALTER TABLE monitoreos ADD COLUMN IF NOT EXISTS empresa_id UUID DEFAULT '00000000-0000-0000-0000-000000000000' REFERENCES empresas(id) ON DELETE SET NULL;
 ALTER TABLE aplicaciones ADD COLUMN IF NOT EXISTS empresa_id UUID DEFAULT '00000000-0000-0000-0000-000000000000' REFERENCES empresas(id) ON DELETE SET NULL;
 ALTER TABLE bodegas ADD COLUMN IF NOT EXISTS empresa_id UUID DEFAULT '00000000-0000-0000-0000-000000000000' REFERENCES empresas(id) ON DELETE SET NULL;
@@ -29,7 +29,7 @@ ALTER TABLE maquinaria ENABLE ROW LEVEL SECURITY;
 ALTER TABLE inventario ENABLE ROW LEVEL SECURITY;
 ALTER TABLE trabajadores ENABLE ROW LEVEL SECURITY;
 ALTER TABLE cosechas ENABLE ROW LEVEL SECURITY;
-ALTER TABLE costos ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE costos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE monitoreos ENABLE ROW LEVEL SECURITY;
 ALTER TABLE aplicaciones ENABLE ROW LEVEL SECURITY;
 ALTER TABLE bodegas ENABLE ROW LEVEL SECURITY;
@@ -61,9 +61,9 @@ CREATE POLICY cosechas_isolation_policy ON cosechas FOR ALL TO authenticated
   USING (empresa_id = (auth.jwt() ->> 'empresa_id')::uuid)
   WITH CHECK (empresa_id = (auth.jwt() ->> 'empresa_id')::uuid);
 
-CREATE POLICY costos_isolation_policy ON costos FOR ALL TO authenticated
-  USING (empresa_id = (auth.jwt() ->> 'empresa_id')::uuid)
-  WITH CHECK (empresa_id = (auth.jwt() ->> 'empresa_id')::uuid);
+-- CREATE POLICY costos_isolation_policy ON costos FOR ALL TO authenticated
+--   USING (empresa_id = (auth.jwt() ->> 'empresa_id')::uuid)
+--   WITH CHECK (empresa_id = (auth.jwt() ->> 'empresa_id')::uuid);
 
 CREATE POLICY monitoreos_isolation_policy ON monitoreos FOR ALL TO authenticated
   USING (empresa_id = (auth.jwt() ->> 'empresa_id')::uuid)

@@ -13,9 +13,11 @@ export function AuthProvider({ children }) {
 
   useEffect(() => {
     async function loadProfile() {
+      console.log('[DEBUG FRONTEND] loadProfile ejecutado. isLoaded:', isLoaded, 'isSignedIn:', isSignedIn);
       if (!isLoaded) return;
 
       if (!isSignedIn) {
+        console.log('[DEBUG FRONTEND] El usuario no está autenticado, redirigiendo a sign-in');
         setProfile(null);
         setSupabaseToken(null);
         setLoading(false);
@@ -26,18 +28,22 @@ export function AuthProvider({ children }) {
 
       try {
         setLoading(true);
+        console.log('[DEBUG FRONTEND] Obteniendo token de sesión de Clerk...');
         const token = await getToken();
+        console.log('[DEBUG FRONTEND] Token de Clerk obtenido:', token ? 'Token presente' : 'Token vacío/nulo');
         if (!token) {
           throw new Error('No se pudo obtener el token de sesión de Clerk');
         }
 
+        console.log('[DEBUG FRONTEND] Llamando a fetchUserProfile con token...');
         const data = await AuthService.fetchUserProfile(token);
+        console.log('[DEBUG FRONTEND] fetchUserProfile respuesta exitosa:', data);
         
         setProfile(data);
         setSupabaseToken(data.supabaseToken);
         setError(null);
       } catch (err) {
-        console.error('Error cargando perfil de usuario:', err);
+        console.error('[DEBUG FRONTEND] Excepción atrapada en loadProfile:', err);
         setError(err.message || 'Error de autenticación');
       } finally {
         setLoading(false);
@@ -91,6 +97,15 @@ export function AuthProvider({ children }) {
     logout,
     hasPermission
   };
+
+  console.log('[DEBUG FRONTEND] AuthProvider rendering. Value:', {
+    user: value.user,
+    empresa: value.empresa,
+    role: value.role,
+    permissionsCount: value.permissions.length,
+    loading: value.loading,
+    error: value.error
+  });
 
   if (!isLoaded || loading) {
     return (

@@ -19,10 +19,18 @@ export default function App() {
     { id: 'sanitario', label: 'Manejo Sanitario', icon: <HeartPulse size={18} />, recurso: 'aplicaciones' },
     { id: 'cosecha', label: 'Cosecha y Postcosecha', icon: <Sprout size={18} />, recurso: 'cosechas' },
     { id: 'clima', label: 'Clima', icon: <Sun size={18} />, recurso: 'lotes' },
-  ].filter(item => hasPermission(item.recurso, 'leer'));
+  ].filter(item => {
+    const permitted = hasPermission(item.recurso, 'leer');
+    console.log(`[DEBUG FRONTEND] Permiso de recurso '${item.recurso}' (leer):`, permitted);
+    return permitted;
+  });
+
+  console.log('[DEBUG FRONTEND] App render. menuItems calculated:', menuItems.map(m => m.id));
 
   const [activeTab, setActiveTab] = useState(() => {
-    return localStorage.getItem('skycrop_active_tab') || 'talento';
+    const saved = localStorage.getItem('skycrop_active_tab') || 'talento';
+    console.log('[DEBUG FRONTEND] activeTab inicializado de localStorage:', saved);
+    return saved;
   });
 
   const [activeSubTab, setActiveSubTab] = useState(() => {

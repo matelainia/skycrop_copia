@@ -6,7 +6,7 @@ import ee from '@google/earthengine';
 import crypto from 'crypto';
 import { createClient } from '@supabase/supabase-js';
 import jwt from 'jsonwebtoken';
-import { createClerkClient } from '@clerk/backend';
+import { createClerkClient, verifyToken } from '@clerk/backend';
 import { Webhook } from 'svix';
 
 // Cargar variables de entorno localmente si están disponibles
@@ -1028,6 +1028,8 @@ app.get('/api/health', (req, res) => {
 // Helper: cliente Supabase con service_role para queries SQL directas
 function getSupabaseAdmin() {
   const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || supabaseAnonKey;
+  console.log('[DEBUG BACKEND] getSupabaseAdmin: SUPABASE_SERVICE_ROLE_KEY en process.env:', process.env.SUPABASE_SERVICE_ROLE_KEY ? 'SI (empieza con ' + process.env.SUPABASE_SERVICE_ROLE_KEY.substring(0, 10) + ')' : 'NO (es null/undefined)');
+  console.log('[DEBUG BACKEND] getSupabaseAdmin: utilizando key:', serviceKey ? serviceKey.substring(0, 10) + '...' : 'NULA/VACIA');
   return createClient(supabaseUrl, serviceKey);
 }
 
@@ -1536,8 +1538,10 @@ app.post('/api/webhooks/clerk', express.raw({ type: 'application/json' }), async
 // Endpoint para obtener el perfil completo y el JWT de Supabase
 app.get('/api/auth/me', async (req, res) => {
   try {
+    console.log('[DEBUG BACKEND] Petición recibida en /api/auth/me');
     const authHeader = req.headers['authorization'];
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      console.warn('[DEBUG BACKEND] No se encontró el header Authorization o no empieza con Bearer');
       return res.status(401).json({ error: 'No autorizado. Token de Clerk faltante.' });
     }
     const clerkToken = authHeader.split(' ')[1];
@@ -1545,14 +1549,18 @@ app.get('/api/auth/me', async (req, res) => {
     // Verificar token con Clerk
     let requestState;
     try {
-      requestState = await clerkClient.verifyToken(clerkToken);
+      requestState = await verifyToken(clerkToken, {
+        secretKey: process.env.CLERK_SECRET_KEY || 'sk_test_mock_secret_key_for_local_development'
+      });
+      console.log('[DEBUG BACKEND] Token verificado correctamente con Clerk:', requestState);
     } catch (err) {
-      console.error('Error al verificar token con Clerk:', err.message);
+      console.error('[DEBUG BACKEND] Error al verificar token con Clerk:', err.message);
       return res.status(401).json({ error: 'Token de Clerk inválido o expirado.' });
     }
 
     const clerkUserId = requestState.sub;
     const email = requestState.email || '';
+    console.log('[DEBUG BACKEND] clerkUserId:', clerkUserId, 'email:', email);
 
     // Intentar obtener del caché primero
     const cachedToken = getCachedSupabaseToken(clerkUserId);
@@ -1596,6 +1604,7 @@ app.get('/api/auth/me', async (req, res) => {
 
     if (uErr || !usuario) {
       console.warn(`Usuario ${clerkUserId} no encontrado en Supabase. Intentando sincronización bajo demanda...`);
+      const db = getSupabaseAdmin();
       const clerkUser = await clerkClient.users.getUser(clerkUserId);
       const userEmail = clerkUser.emailAddresses[0]?.emailAddress || email;
 
@@ -1662,7 +1671,8 @@ app.get('/api/auth/me', async (req, res) => {
     });
 
   } catch (err) {
-    console.error('Excepción en /api/auth/me:', err);
+    console.error('[DEBUG BACKEND] Excepción atrapada en /api/auth/me:', err);
+    console.error('[DEBUG BACKEND] Mensaje:', err.message, 'Stack:', err.stack);
     return res.status(500).json({ error: 'Internal Server Error', detail: err.message });
   }
 });
@@ -1679,7 +1689,9 @@ app.use('/api', async (req, res, next) => {
     const clerkToken = authHeader.split(' ')[1];
     
     try {
-      const requestState = await clerkClient.verifyToken(clerkToken);
+      const requestState = await verifyToken(clerkToken, {
+        secretKey: process.env.CLERK_SECRET_KEY || 'sk_test_mock_secret_key_for_local_development'
+      });
       const clerkUserId = requestState.sub;
       
       let supabaseToken = getCachedSupabaseToken(clerkUserId);
