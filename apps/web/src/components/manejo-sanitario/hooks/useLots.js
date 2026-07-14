@@ -4,6 +4,7 @@ import { lotRepository } from '../repositories/lotRepository';
 import { createLot } from '../types/Lot';
 import { validateLot } from '../validators/lot.validator';
 import { calculateArea, calculatePerimeter, calculateCentroid } from '../utils/geo.utils';
+import { useCompanyContext } from '../../../context/CompanyContext';
 
 const INITIAL_LOTES_MOCK = [
   {
@@ -170,6 +171,8 @@ const INITIAL_LOTES_MOCK = [
 ];
 
 export const useLots = () => {
+  const { companyId } = useCompanyContext();
+
   const [lotes, setLotes] = useState(() => {
     try {
       const saved = localStorage.getItem('skycrop_lotes_cc');
@@ -192,6 +195,11 @@ export const useLots = () => {
   const [isFichaModalOpen, setIsFichaModalOpen] = useState(false);
   const [modalActiveTab, setModalActiveTab] = useState('trazabilidad');
   const [lotesLoading, setLotesLoading] = useState(true);
+
+  // Cargar lotes al montar o al cambiar de inquilino
+  useEffect(() => {
+    loadLotes();
+  }, [companyId]);
 
   const [newLote, setNewLote] = useState({
     codigo_interno: '',

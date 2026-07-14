@@ -3,6 +3,7 @@ import { createContext, useContext, useEffect, useState, useCallback } from 'rea
 import { supabase } from '../../../lib/supabaseClient';
 import { WeatherRepository } from '../repository/WeatherRepository';
 import { WeatherInterpreter } from '../interpreter/WeatherInterpreter';
+import { useCompanyContext } from '../../../context/CompanyContext';
 
 const ClimateContext = createContext(null);
 
@@ -40,6 +41,7 @@ const MOCK_LOTES_CLIMA = [
 ];
 
 export const ClimateProvider = ({ children }) => {
+  const { companyId } = useCompanyContext();
   const [lotes, setLotes] = useState([]);
   const [selectedLote, setSelectedLote] = useState(null);
   const [weatherData, setWeatherData] = useState(null);
@@ -47,7 +49,7 @@ export const ClimateProvider = ({ children }) => {
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('temperatura'); // 'temperatura', 'precipitación', 'humedad', 'viento'
 
-  // Cargar lotes al inicio
+  // Cargar lotes al inicio o cuando cambie la empresa activa
   useEffect(() => {
     const loadLotes = async () => {
       try {
@@ -68,18 +70,18 @@ export const ClimateProvider = ({ children }) => {
           setLotes(mapped);
           setSelectedLote(mapped[0]);
         } else {
-          setLotes(MOCK_LOTES_CLIMA);
-          setSelectedLote(MOCK_LOTES_CLIMA[0]);
+          setLotes([]);
+          setSelectedLote(null);
         }
       } catch (err) {
-        console.warn('[ClimateContext] Error consultando lotes, usando mock de contingencia:', err.message);
-        setLotes(MOCK_LOTES_CLIMA);
-        setSelectedLote(MOCK_LOTES_CLIMA[0]);
+        console.warn('[ClimateContext] Error consultando lotes:', err.message);
+        setLotes([]);
+        setSelectedLote(null);
       }
     };
 
     loadLotes();
-  }, []);
+  }, [companyId]);
 
   // Consultar clima para el lote activo
   const fetchWeatherForLote = useCallback(async (lote, forceRefresh = false) => {

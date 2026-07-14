@@ -1,0 +1,223 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "SkyCrop Backend API",
+    "description": "Especificación de API modular y de arquitectura hexagonal para SkyCrop SaaS Agrícola.",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "/api/v1",
+      "description": "Servidor Local / Producción"
+    }
+  ],
+  "paths": {
+    "/auth/me": {
+      "get": {
+        "summary": "Obtener perfil del usuario y token JWT Supabase RLS",
+        "description": "Verifica el token de sesión de Clerk del usuario, mapea su rol organizativo y genera un JWT de Supabase con claims RLS inyectados.",
+        "headers": {
+          "Authorization": {
+            "schema": {
+              "type": "string",
+              "example": "Bearer clk_..."
+            },
+            "description": "Token de Clerk"
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Perfil del usuario cargado y token Supabase generado.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "success": { "type": "boolean" },
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "user": { "type": "object" },
+                        "company": { "type": "object" },
+                        "role": { "type": "object" },
+                        "permissions": { "type": "array" },
+                        "supabaseToken": { "type": "string" }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "ORGANIZATION_REQUIRED - El usuario no tiene una organización activa seleccionada."
+          },
+          "401": {
+            "description": "No autorizado. Token inválido o faltante."
+          }
+        }
+      }
+    },
+    "/auth/webhooks/clerk": {
+      "post": {
+        "summary": "Webhook de Clerk para Sincronización de Perfiles, Empresas y Roles",
+        "description": "Recibe eventos de creación, actualización o borrado de usuarios y organizaciones de Clerk. Actualiza el esquema de base de datos e invalida las cachés correspondientes.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Webhook procesado exitosamente."
+          },
+          "400": {
+            "description": "Firma Svix inválida."
+          }
+        }
+      }
+    },
+    "/weather": {
+      "get": {
+        "summary": "Obtener pronóstico y alertas de clima",
+        "description": "Obtiene pronóstico actual, 24 horas y 7 días usando el proveedor seleccionado por la estrategia (Google Weather o Open-Meteo) y aplica cacheo geográfico.",
+        "parameters": [
+          {
+            "name": "latitude",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "number", "example": 4.609 }
+          },
+          {
+            "name": "longitude",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "number", "example": -74.081 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Datos climáticos normalizados y alertas fitosanitarias."
+          },
+          "400": {
+            "description": "Coordenadas faltantes o inválidas."
+          }
+        }
+      }
+    },
+    "/gee/index": {
+      "post": {
+        "summary": "Procesar índices de análisis satelital",
+        "description": "Evalúa imágenes satelitales multiespectrales (NDVI, NDRE, SAVI, HUMEDAD) recortadas al polígono del lote a través de Google Earth Engine.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "coordinates": { "type": "array", "example": [[4.60, -74.08], [4.61, -74.08], [4.60, -74.07]] },
+                  "indexType": { "type": "string", "example": "NDVI" },
+                  "loteId": { "type": "string", "example": "UUID-del-lote" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "TileUrl del mapa para renderizado, estadísticas de dispersión e histograma de Gauss."
+          }
+        }
+      }
+    },
+    "/productos": {
+      "get": {
+        "summary": "Búsqueda autocompletada de productos fitosanitarios",
+        "description": "Busca insumos agrícolas registrados por coincidencia ilike en nombre comercial o ingrediente activo.",
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "string", "example": "glifosato" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Lista resumida de productos coincidentes."
+          }
+        }
+      }
+    },
+    "/productos/{id}": {
+      "get": {
+        "summary": "Obtener ficha técnica de producto",
+        "description": "Detalle extendido del producto incluyendo sus registros ICA, familias químicas FRAC/IRAC/HRAC e ingredientes activos con advertencias de toxicidad extrema.",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "integer", "example": 150 }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Estructura extendida de ficha técnica con alertas toxicológicas."
+          },
+          "404": {
+            "description": "Producto no encontrado."
+          }
+        }
+      }
+    },
+    "/auditoria/alta-toxicidad": {
+      "post": {
+        "summary": "Registrar confirmación de lectura de ingrediente de alta toxicidad",
+        "description": "Registra que el profesional o supervisor ha leído y aceptado los riesgos asociados a la prescripción de agroquímicos de clase extrema (IA/IB).",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Confirmación registrada exitosamente."
+          }
+        }
+      }
+    },
+    "/auditoria/estado-aplicacion": {
+      "post": {
+        "summary": "Enriquecer auditoría de cambio de estado de aplicación",
+        "description": "Agrega información del agente de usuario e IP externa al log de cambio de estado gatillado en base de datos.",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Auditoría enriquecida correctamente."
+          }
+        }
+      }
+    }
+  }
+}

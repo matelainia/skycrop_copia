@@ -11,6 +11,16 @@
     "dev:backend": "npm run dev --prefix backend",
     "build:web": "npm run build --workspace=apps/web",
     "build:auth": "npm run build --workspace=apps/auth",
-    "build:all": "npm run build --workspaces"
+    "build:all": "npm run build --workspaces",
+    "prepare": "husky"
+  },
+  "devDependencies": {
+    "husky": "^9.0.11",
+    "lint-staged": "^15.2.2"
+  },
+  "lint-staged": {
+    "backend/src/**/*.js": [
+      "prettier --write"
+    ]
   }
 }
