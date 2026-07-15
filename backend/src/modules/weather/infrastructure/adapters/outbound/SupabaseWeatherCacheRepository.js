@@ -1,6 +1,6 @@
 import { WeatherCacheRepositoryPort } from '../../../domain/ports/WeatherCacheRepositoryPort.js';
-import { supabaseAdmin } from '../../../../shared/database/supabase.js';
-import { DatabaseError } from '../../../../shared/errors/AppErrors.js';
+import { supabaseAdmin } from '../../../../../shared/database/supabase.js';
+import { DatabaseError } from '../../../../../shared/errors/AppErrors.js';
 
 export class SupabaseWeatherCacheRepository extends WeatherCacheRepositoryPort {
   async getCachedWeather(coordHash) {

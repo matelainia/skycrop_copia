@@ -1,5 +1,5 @@
 import { WeatherProviderPort } from '../../../domain/ports/WeatherProviderPort.js';
-import { ExternalApiError } from '../../../../shared/errors/AppErrors.js';
+import { ExternalApiError } from '../../../../../shared/errors/AppErrors.js';
 
 export class OpenMeteoWeatherAdapter extends WeatherProviderPort {
   getName() {

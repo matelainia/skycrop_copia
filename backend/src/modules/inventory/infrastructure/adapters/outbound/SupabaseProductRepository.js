@@ -1,6 +1,6 @@
 import { ProductRepositoryPort } from '../../../domain/ports/ProductRepositoryPort.js';
-import { supabaseAdmin } from '../../../../shared/database/supabase.js';
-import { DatabaseError } from '../../../../shared/errors/AppErrors.js';
+import { supabaseAdmin } from '../../../../../shared/database/supabase.js';
+import { DatabaseError } from '../../../../../shared/errors/AppErrors.js';
 
 export class SupabaseProductRepository extends ProductRepositoryPort {
   async searchProducts(query, limit = 15) {

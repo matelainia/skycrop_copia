@@ -44,11 +44,12 @@ export function AuthProvider({ children }) {
         }
 
         console.log('[DEBUG FRONTEND] Llamando a fetchUserProfile con token...');
-        const data = await AuthService.fetchUserProfile(token);
-        console.log('[DEBUG FRONTEND] fetchUserProfile respuesta exitosa:', data);
+        const resData = await AuthService.fetchUserProfile(token);
+        console.log('[DEBUG FRONTEND] fetchUserProfile respuesta exitosa:', resData);
         
-        setProfile(data);
-        setSupabaseToken(data.supabaseToken, orgId);
+        const profileData = resData?.data || resData;
+        setProfile(profileData);
+        setSupabaseToken(profileData.supabaseToken, orgId);
         setError(null);
       } catch (err) {
         console.error('[DEBUG FRONTEND] Excepción atrapada en loadProfile:', err);
@@ -67,9 +68,10 @@ export function AuthProvider({ children }) {
         try {
           const token = await getToken();
           if (token) {
-            const data = await AuthService.fetchUserProfile(token);
-            setProfile(data);
-            setSupabaseToken(data.supabaseToken, orgId);
+            const resData = await AuthService.fetchUserProfile(token);
+            const profileData = resData?.data || resData;
+            setProfile(profileData);
+            setSupabaseToken(profileData.supabaseToken, orgId);
           }
         } catch (err) {
           console.warn('Error refrescando token de Supabase:', err);

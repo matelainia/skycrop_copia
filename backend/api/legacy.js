@@ -1,5 +1,4 @@
 import express from 'express';
-import cors from 'cors';
 import { legacyCreateProxyMiddleware } from 'http-proxy-middleware';
 import dotenv from 'dotenv';
 import crypto from 'crypto';
@@ -64,39 +63,6 @@ app.use((req, res, next) => {
   next();
 });
 
-// Configurar CORS
-const allowedOrigins = [
-  'http://localhost:5173',
-  'https://skycrop.app',
-  'https://www.skycrop.app',
-  'https://backend.skycrop.app'
-];
-
-app.use(cors({
-  origin: (origin, callback) => {
-    // Permitir peticiones sin origen (como apps móviles, curl o llamadas del mismo servidor)
-    if (!origin || allowedOrigins.indexOf(origin) !== -1 || /^http:\/\/localhost(:\d+)?$/.test(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('Not allowed by CORS'));
-    }
-  },
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: [
-    'Content-Type',
-    'Authorization',
-    'apikey',
-    'X-Client-Info',
-    'x-client-info',
-    'Prefer',
-    'Range',
-    'Accept-Encoding',
-    'accept-profile',
-    'content-profile',
-    'x-retry-count'
-  ]
-}));
 
 // Obtener variables de entorno (configuradas en Vercel)
 const supabaseUrl = process.env.SUPABASE_URL || 'https://fxcasqkwkiytbckvtgag.supabase.co';
@@ -148,7 +114,7 @@ app.use('/api', async (req, res, next) => {
       let supabaseToken = getCachedSupabaseToken(clerkUserId);
 
       if (!supabaseToken) {
-        const orgId = requestState.org_id || requestState.orgId;
+        const orgId = requestState.org_id || requestState.orgId || requestState.o?.id;
 
         if (orgId) {
           const { data: compUser } = await getSupabaseAdmin()

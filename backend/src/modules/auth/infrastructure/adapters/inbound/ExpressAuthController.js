@@ -1,5 +1,5 @@
-import { ValidationError } from '../../../../shared/errors/AppErrors.js';
-import { AuthenticationError } from '../../../../shared/errors/AppErrors.js';
+import { ValidationError } from '../../../../../shared/errors/AppErrors.js';
+import { AuthenticationError } from '../../../../../shared/errors/AppErrors.js';
 
 export class ExpressAuthController {
   constructor(getUserProfileUseCase, processClerkWebhookUseCase) {

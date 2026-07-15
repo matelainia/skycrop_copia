@@ -1,6 +1,6 @@
 import { AuthRepositoryPort } from '../../../domain/ports/AuthRepositoryPort.js';
-import { supabaseAdmin } from '../../../../shared/database/supabase.js';
-import { DatabaseError } from '../../../../shared/errors/AppErrors.js';
+import { supabaseAdmin } from '../../../../../shared/database/supabase.js';
+import { DatabaseError } from '../../../../../shared/errors/AppErrors.js';
 
 export class SupabaseAuthRepository extends AuthRepositoryPort {
   async getCompanyById(companyId) {

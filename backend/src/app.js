@@ -1,4 +1,5 @@
 import express from 'express';
+import cors from 'cors';
 import crypto from 'crypto';
 import path from 'path';
 import legacyApp from '../api/legacy.js';
@@ -12,6 +13,48 @@ import { productRouter } from './modules/inventory/infrastructure/adapters/inbou
 import { applicationAuditRouter } from './modules/application/infrastructure/adapters/inbound/ExpressApplicationAuditRouter.js';
 
 const app = express();
+
+// Configurar CORS global
+const allowedOrigins = [
+  'http://localhost:5173',
+  'http://localhost:3000',
+  'http://localhost:3001',
+  'https://skycrop.app',
+  'https://www.skycrop.app',
+  'https://backend.skycrop.app'
+];
+
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Permitir peticiones sin origen (como apps móviles, curl o llamadas del mismo servidor)
+      if (
+        !origin ||
+        allowedOrigins.indexOf(origin) !== -1 ||
+        /^http:\/\/localhost(:\d+)?$/.test(origin)
+      ) {
+        callback(null, true);
+      } else {
+        callback(new Error('Not allowed by CORS'));
+      }
+    },
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: [
+      'Content-Type',
+      'Authorization',
+      'apikey',
+      'X-Client-Info',
+      'x-client-info',
+      'Prefer',
+      'Range',
+      'Accept-Encoding',
+      'accept-profile',
+      'content-profile',
+      'x-retry-count'
+    ]
+  })
+);
 
 // Middlewares globales para la nueva arquitectura
 app.use(express.json());

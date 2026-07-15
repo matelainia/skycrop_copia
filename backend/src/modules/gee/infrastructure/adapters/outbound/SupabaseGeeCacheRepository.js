@@ -1,7 +1,7 @@
 import { GeeCacheRepositoryPort } from '../../../domain/ports/GeeCacheRepositoryPort.js';
-import { supabaseAdmin } from '../../../../shared/database/supabase.js';
-import { DatabaseError } from '../../../../shared/errors/AppErrors.js';
-import cacheService from '../../../../shared/cache/cache.service.js';
+import { supabaseAdmin } from '../../../../../shared/database/supabase.js';
+import { DatabaseError } from '../../../../../shared/errors/AppErrors.js';
+import cacheService from '../../../../../shared/cache/cache.service.js';
 
 export class SupabaseGeeCacheRepository extends GeeCacheRepositoryPort {
   async getCachedTile(polygonHash) {

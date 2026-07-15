@@ -1,7 +1,7 @@
 import ee from '@google/earthengine';
 import { GeeServicePort } from '../../../domain/ports/GeeServicePort.js';
-import env from '../../../../shared/config/env.js';
-import { ExternalApiError } from '../../../../shared/errors/AppErrors.js';
+import env from '../../../../../shared/config/env.js';
+import { ExternalApiError } from '../../../../../shared/errors/AppErrors.js';
 
 export class EarthEngineServiceAdapter extends GeeServicePort {
   constructor() {

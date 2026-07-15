@@ -1,9 +1,9 @@
 import { verifyToken } from '@clerk/backend';
 import { Webhook } from 'svix';
 import { ClerkServicePort } from '../../../domain/ports/ClerkServicePort.js';
-import { clerkClient } from '../../../../shared/database/clerk.js';
-import env from '../../../../shared/config/env.js';
-import { AuthenticationError, ExternalApiError } from '../../../../shared/errors/AppErrors.js';
+import { clerkClient } from '../../../../../shared/database/clerk.js';
+import env from '../../../../../shared/config/env.js';
+import { AuthenticationError, ExternalApiError } from '../../../../../shared/errors/AppErrors.js';
 
 export class ClerkAuthService extends ClerkServicePort {
   async verifySessionToken(token) {
@@ -46,6 +46,24 @@ export class ClerkAuthService extends ClerkServicePort {
     } catch (err) {
       throw new ExternalApiError(
         `Error al consultar detalles de la organización ${orgId} en Clerk`,
+        'ClerkAPI',
+        err
+      );
+    }
+  }
+
+  async getUserDetails(userId) {
+    try {
+      const user = await clerkClient.users.getUser(userId);
+      return {
+        id: user.id,
+        nombre: user.firstName || '',
+        apellido: user.lastName || '',
+        email: user.emailAddresses?.[0]?.emailAddress || ''
+      };
+    } catch (err) {
+      throw new ExternalApiError(
+        `Error al consultar detalles del usuario ${userId} en Clerk`,
         'ClerkAPI',
         err
       );

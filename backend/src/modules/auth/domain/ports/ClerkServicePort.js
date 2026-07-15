@@ -14,6 +14,10 @@ export class ClerkServicePort {
   async getOrganizationDetails(orgId) {
     throw new Error('Método no implementado');
   }
+
+  async getUserDetails(userId) {
+    throw new Error('Método no implementado');
+  }
 }
 
 export default ClerkServicePort;

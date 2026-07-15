@@ -1,6 +1,6 @@
 import { ApplicationAuditRepositoryPort } from '../../../domain/ports/ApplicationAuditRepositoryPort.js';
-import { supabaseAdmin } from '../../../../shared/database/supabase.js';
-import { DatabaseError } from '../../../../shared/errors/AppErrors.js';
+import { supabaseAdmin } from '../../../../../shared/database/supabase.js';
+import { DatabaseError } from '../../../../../shared/errors/AppErrors.js';
 
 export class SupabaseApplicationAuditRepository extends ApplicationAuditRepositoryPort {
   async saveHighToxicityConfirmation(confirmation) {

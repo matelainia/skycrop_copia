@@ -1,6 +1,6 @@
 import { WeatherProviderPort } from '../../../domain/ports/WeatherProviderPort.js';
-import env from '../../../../shared/config/env.js';
-import { ExternalApiError } from '../../../../shared/errors/AppErrors.js';
+import env from '../../../../../shared/config/env.js';
+import { ExternalApiError } from '../../../../../shared/errors/AppErrors.js';
 
 export class GoogleWeatherAdapter extends WeatherProviderPort {
   getName() {

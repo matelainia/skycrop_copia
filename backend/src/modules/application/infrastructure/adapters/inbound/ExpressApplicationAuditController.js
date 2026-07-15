@@ -1,4 +1,4 @@
-import { ValidationError } from '../../../../shared/errors/AppErrors.js';
+import { ValidationError } from '../../../../../shared/errors/AppErrors.js';
 
 export class ExpressApplicationAuditController {
   constructor(confirmHighToxicityAuditUseCase, enrichApplicationStateAuditUseCase) {
