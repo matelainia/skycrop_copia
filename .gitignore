@@ -16,7 +16,7 @@ out/
 .vercel/
 .output/
 
-# ─── ⚠️  VARIABLES DE ENTORNO Y SECRETOS ────────
+# ───  VARIABLES DE ENTORNO Y SECRETOS ────────
 # Nunca subir archivos con claves reales al repositorio.
 # Usar .env.example como referencia pública (sin valores reales).
 
@@ -58,7 +58,8 @@ gee-credentials*.json
 # No versionar archivos de configuración exportados de Supabase CLI
 supabase/.branches/
 supabase/config.toml
-
+supabase/migrations/
+supabase/migrations_v1_backup/
 # ─── Logs ───────────────────────────────────────
 logs/
 *.log

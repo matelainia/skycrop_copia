@@ -65,7 +65,7 @@ app.use((req, res, next) => {
 
 
 // Obtener variables de entorno (configuradas en Vercel)
-const supabaseUrl = process.env.SUPABASE_URL || 'https://fxcasqkwkiytbckvtgag.supabase.co';
+const supabaseUrl = process.env.SUPABASE_URL || 'https://gynttnymneanbziywqqr.supabase.co';
 const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
 
 // Inicializar cliente Supabase localmente para gestionar la caché
@@ -117,21 +117,31 @@ app.use('/api', async (req, res, next) => {
         const orgId = requestState.org_id || requestState.orgId || requestState.o?.id;
 
         if (orgId) {
-          const { data: compUser } = await getSupabaseAdmin()
-            .from('company_users')
-            .select('role')
-            .eq('company_id', orgId)
-            .eq('clerk_user_id', clerkUserId)
-            .single();
+          // Resolve Clerk Org ID to Company UUID
+          const { data: company } = await getSupabaseAdmin()
+            .from('companies')
+            .select('id')
+            .eq('clerk_org_id', orgId)
+            .maybeSingle();
 
-          if (compUser) {
-            supabaseToken = generateSupabaseJwt(
-              clerkUserId,
-              requestState.email || '',
-              orgId,
-              compUser.role
-            );
-            cacheSupabaseToken(clerkUserId, supabaseToken);
+          if (company) {
+            const companyUuid = company.id;
+            const { data: compUser } = await getSupabaseAdmin()
+              .from('company_users')
+              .select('role')
+              .eq('company_id', companyUuid)
+              .eq('clerk_user_id', clerkUserId)
+              .single();
+
+            if (compUser) {
+              supabaseToken = generateSupabaseJwt(
+                clerkUserId,
+                requestState.email || '',
+                companyUuid, // JWT contains UUID
+                compUser.role
+              );
+              cacheSupabaseToken(clerkUserId, supabaseToken);
+            }
           }
         }
       }

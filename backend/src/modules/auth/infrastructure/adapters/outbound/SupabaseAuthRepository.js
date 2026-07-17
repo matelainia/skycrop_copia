@@ -16,13 +16,26 @@ export class SupabaseAuthRepository extends AuthRepositoryPort {
     return data;
   }
 
+  async getCompanyByClerkId(clerkOrgId) {
+    const { data, error } = await supabaseAdmin
+      .from('companies')
+      .select('*')
+      .eq('clerk_org_id', clerkOrgId)
+      .maybeSingle();
+
+    if (error) {
+      throw new DatabaseError(`Error al consultar empresa por Clerk ID ${clerkOrgId}`, error);
+    }
+    return data;
+  }
+
   async saveCompany(company) {
     const { data, error } = await supabaseAdmin
       .from('companies')
       .upsert(
         [
           {
-            id: company.id,
+            clerk_org_id: company.clerk_org_id || company.id,
             nombre: company.nombre,
             slug: company.slug || null,
             logo: company.logo || null,
@@ -30,7 +43,7 @@ export class SupabaseAuthRepository extends AuthRepositoryPort {
             updated_at: new Date().toISOString()
           }
         ],
-        { onConflict: 'id' }
+        { onConflict: 'clerk_org_id' }
       )
       .select()
       .single();
@@ -73,6 +86,18 @@ export class SupabaseAuthRepository extends AuthRepositoryPort {
   }
 
   async saveCompanyUser(companyUser) {
+    const roleMap = {
+      owner: 'gerente',
+      administrator: 'administrador',
+      supervisor: 'supervisor',
+      operario: 'operario',
+      ingeniero: 'ingeniero',
+      'org:admin': 'administrador',
+      'org:member': 'operario'
+    };
+    const inputRole = (companyUser.role_id || companyUser.role || 'operario').toLowerCase();
+    const roleId = roleMap[inputRole] || inputRole;
+
     const { data, error } = await supabaseAdmin
       .from('company_users')
       .upsert(
@@ -80,7 +105,7 @@ export class SupabaseAuthRepository extends AuthRepositoryPort {
           {
             company_id: companyUser.company_id,
             clerk_user_id: companyUser.clerk_user_id,
-            role: companyUser.role,
+            role_id: roleId,
             status: companyUser.status || 'active'
           }
         ],
@@ -112,8 +137,12 @@ export class SupabaseAuthRepository extends AuthRepositoryPort {
   }
 
   async saveUserProfile(userProfile) {
+    // Escribimos directamente en la tabla 'profiles' (no en la vista 'usuarios')
+    // porque las vistas no tienen constraints físicos y Supabase upsert genera
+    // INSERT ... ON CONFLICT (id) DO UPDATE, que requiere un constraint real.
+    // profiles tiene PRIMARY KEY (id), por lo que ON CONFLICT funciona correctamente.
     const { data, error } = await supabaseAdmin
-      .from('usuarios')
+      .from('profiles')
       .upsert(
         [
           {
@@ -121,7 +150,7 @@ export class SupabaseAuthRepository extends AuthRepositoryPort {
             email: userProfile.email,
             nombre: userProfile.nombre || '',
             apellido: userProfile.apellido || '',
-            created_at: userProfile.created_at || new Date().toISOString()
+            updated_at: new Date().toISOString()
           }
         ],
         { onConflict: 'id' }
@@ -136,7 +165,9 @@ export class SupabaseAuthRepository extends AuthRepositoryPort {
   }
 
   async deleteUserProfile(clerkUserId) {
-    const { error } = await supabaseAdmin.from('usuarios').delete().eq('id', clerkUserId);
+    // Eliminamos de 'profiles' directamente (nunca de la vista 'usuarios').
+    // ON DELETE CASCADE en company_users limpiará las membresías automáticamente.
+    const { error } = await supabaseAdmin.from('profiles').delete().eq('id', clerkUserId);
 
     if (error) {
       throw new DatabaseError(`Error al eliminar perfil del usuario ${clerkUserId}`, error);
@@ -168,6 +199,86 @@ export class SupabaseAuthRepository extends AuthRepositoryPort {
       role: role || { id: roleId, nombre: roleId },
       permissions: permisos || []
     };
+  }
+
+  async createDefaultLote(companyId) {
+    // Upsert idempotente: si ya existe un lote con ese codigo_interno para la empresa,
+    // no falla ni duplica. UNIQUE(company_id, codigo_interno) garantiza la seguridad.
+    const { data, error } = await supabaseAdmin
+      .from('lotes')
+      .upsert(
+        [
+          {
+            company_id: companyId,
+            codigo_interno: 'LM',
+            nombre: 'Las Margaritas',
+            cultivo: 'Café',
+            centroide_lat: 4.1234,
+            centroide_lng: -73.6543,
+            area_ha: 15.5
+          }
+        ],
+        { onConflict: 'company_id,codigo_interno', ignoreDuplicates: true }
+      )
+      .select()
+      .maybeSingle();
+
+    if (error) {
+      throw new DatabaseError(`Error al crear predio por defecto para empresa ${companyId}`, error);
+    }
+    return data;
+  }
+
+  /**
+   * Ejecuta el bootstrap completo de usuario/organización en una sola transacción
+   * PostgreSQL mediante la función RPC `bootstrap_user_org`.
+   *
+   * La función en la BD garantiza:
+   *  1. Upsert en profiles
+   *  2. Upsert en companies
+   *  3. Lote por defecto si no existe ninguno (idempotente)
+   *  4. Upsert en company_users
+   *
+   * @returns {{ company_id: string, user_id: string, role_id: string }}
+   */
+  async bootstrapUserOrg({
+    userId,
+    email,
+    nombre,
+    apellido,
+    clerkOrgId,
+    orgNombre,
+    orgSlug,
+    orgLogo,
+    roleId
+  }) {
+    const { data, error } = await supabaseAdmin.rpc('bootstrap_user_org', {
+      p_user_id: userId,
+      p_email: email,
+      p_nombre: nombre || '',
+      p_apellido: apellido || '',
+      p_clerk_org_id: clerkOrgId,
+      p_org_nombre: orgNombre,
+      p_org_slug: orgSlug || null,
+      p_org_logo: orgLogo || null,
+      p_role_id: roleId
+    });
+
+    if (error) {
+      throw new DatabaseError(
+        `bootstrap_user_org falló para usuario ${userId} en org ${clerkOrgId}`,
+        error
+      );
+    }
+
+    if (!data?.company_id) {
+      throw new DatabaseError(
+        'bootstrap_user_org no retornó company_id. Verifica que la función exista en la BD.',
+        {}
+      );
+    }
+
+    return data; // { company_id, user_id, role_id }
   }
 }
 

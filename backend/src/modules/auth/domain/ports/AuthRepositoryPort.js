@@ -7,6 +7,10 @@ export class AuthRepositoryPort {
     throw new Error('Método no implementado');
   }
 
+  async getCompanyByClerkId(clerkOrgId) {
+    throw new Error('Método no implementado');
+  }
+
   async saveCompany(company) {
     throw new Error('Método no implementado');
   }
@@ -36,6 +40,10 @@ export class AuthRepositoryPort {
   }
 
   async getRoleWithPermissions(roleId) {
+    throw new Error('Método no implementado');
+  }
+
+  async createDefaultLote(companyId, companyName) {
     throw new Error('Método no implementado');
   }
 }

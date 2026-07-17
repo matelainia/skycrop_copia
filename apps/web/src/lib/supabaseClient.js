@@ -6,7 +6,7 @@ const backendUrl = isDev
   : 'https://backend.skycrop.app/api';
 
 // Configuración de Supabase Directo
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://fxcasqkwkiytbckvtgag.supabase.co';
+const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://gynttnymneanbziywqqr.supabase.co';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_mock_key';
 
 // 1. Cliente por defecto (apunta al backend proxy con la dummy key)

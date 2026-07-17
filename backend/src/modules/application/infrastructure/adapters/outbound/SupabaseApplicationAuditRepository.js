@@ -6,7 +6,7 @@ export class SupabaseApplicationAuditRepository extends ApplicationAuditReposito
   async saveHighToxicityConfirmation(confirmation) {
     try {
       const { data, error } = await supabaseAdmin
-        .from('auditoria_alta_toxicidad')
+        .from('auditoria_prescripcion_alta_toxicidad')
         .insert([
           {
             aplicacion_id: confirmation.aplicacion_id,

@@ -49,7 +49,9 @@ export function AuthProvider({ children }) {
         
         const profileData = resData?.data || resData;
         setProfile(profileData);
-        setSupabaseToken(profileData.supabaseToken, orgId);
+        
+        const companyUuid = profileData.company?.id || profileData.empresa?.id || orgId;
+        setSupabaseToken(profileData.supabaseToken, companyUuid);
         setError(null);
       } catch (err) {
         console.error('[DEBUG FRONTEND] Excepción atrapada en loadProfile:', err);
@@ -71,7 +73,9 @@ export function AuthProvider({ children }) {
             const resData = await AuthService.fetchUserProfile(token);
             const profileData = resData?.data || resData;
             setProfile(profileData);
-            setSupabaseToken(profileData.supabaseToken, orgId);
+            
+            const companyUuid = profileData.company?.id || profileData.empresa?.id || orgId;
+            setSupabaseToken(profileData.supabaseToken, companyUuid);
           }
         } catch (err) {
           console.warn('Error refrescando token de Supabase:', err);

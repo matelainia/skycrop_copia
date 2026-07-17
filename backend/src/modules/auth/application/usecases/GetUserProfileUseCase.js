@@ -2,6 +2,31 @@ import { ValidationError } from '../../../../shared/errors/AppErrors.js';
 import { generateSupabaseJwt } from '../../../../shared/utils/jwt.js';
 import cacheService from '../../../../shared/cache/cache.service.js';
 
+// Mapa canónico de roles de Clerk a roles internos de SkyCrop
+const CLERK_ROLE_MAP = {
+  'org:admin': 'administrador',
+  'org:member': 'operario',
+  owner: 'gerente',
+  administrator: 'administrador',
+  supervisor: 'supervisor',
+  ingeniero: 'ingeniero',
+  admin: 'administrador',
+  member: 'operario'
+};
+
+// Roles válidos en la base de datos (sincronizado con 005_roles.sql)
+const VALID_ROLES = new Set([
+  'super_admin',
+  'gerente',
+  'administrador',
+  'ingeniero',
+  'supervisor',
+  'operario',
+  'auditor',
+  'invitado',
+  'consulta'
+]);
+
 export class GetUserProfileUseCase {
   constructor(authRepository, clerkService) {
     this.authRepository = authRepository;
@@ -9,12 +34,23 @@ export class GetUserProfileUseCase {
   }
 
   async execute(clerkToken) {
-    // 1. Verificar el token de sesión con Clerk
+    // ── 1. Verificar y decodificar el token de Clerk ───────────────────────
     const decoded = await this.clerkService.verifySessionToken(clerkToken);
-
     const clerkUserId = decoded.sub;
 
-    // Obtener detalles del usuario (nombre, apellido, email) desde Clerk (con caché local de 15 mins)
+    // ── 2. Validaciones explícitas antes de tocar la base de datos ─────────
+    if (!clerkUserId) {
+      throw new ValidationError('Token inválido: falta el campo sub (user ID).');
+    }
+
+    const orgId = decoded.org_id || decoded.orgId || decoded.o?.id;
+    const orgRole = decoded.org_role || decoded.orgRole || decoded.o?.rol;
+
+    if (!orgId) {
+      throw new ValidationError('ORGANIZATION_REQUIRED');
+    }
+
+    // ── 3. Obtener detalles del usuario desde Clerk (con caché de 15 min) ──
     const cacheKeyUser = `user-details:${clerkUserId}`;
     let userDetails = cacheService.get(cacheKeyUser);
     if (!userDetails) {
@@ -23,85 +59,84 @@ export class GetUserProfileUseCase {
     }
 
     const email = userDetails.email || decoded.email || '';
-    const orgId = decoded.org_id || decoded.orgId || decoded.o?.id;
-    const orgRole = decoded.org_role || decoded.orgRole || decoded.o?.rol;
+    const nombre = userDetails.nombre || '';
+    const apellido = userDetails.apellido || '';
 
-    if (!orgId) {
-      throw new ValidationError('ORGANIZATION_REQUIRED');
+    if (!email) {
+      throw new ValidationError('No se pudo obtener el email del usuario desde Clerk.');
     }
 
-    const cacheKey = `jwt:${clerkUserId}:${orgId}`;
+    // ── 4. Mapear el rol de Clerk a un rol interno válido ──────────────────
+    const rawRole = (orgRole || '').toLowerCase();
+    const mappedRoleId = CLERK_ROLE_MAP[rawRole] || 'operario';
 
-    // 2. Intentar recuperar el token Supabase de la caché
-    let supabaseToken = cacheService.get(cacheKey);
-
-    // 3. Obtener o crear de forma diferida (on-demand) la empresa
-    let company = await this.authRepository.getCompanyById(orgId);
-    if (!company) {
-      console.log(`[GetUserProfileUseCase] Sincronizando empresa ${orgId} de forma diferida...`);
-      const orgDetails = await this.clerkService.getOrganizationDetails(orgId);
-      company = await this.authRepository.saveCompany({
-        id: orgId,
-        nombre: orgDetails.nombre,
-        slug: orgDetails.slug,
-        logo: orgDetails.logo,
-        estado: 'active'
-      });
+    // Confirmación de seguridad: el rol mapeado debe existir en la BD
+    if (!VALID_ROLES.has(mappedRoleId)) {
+      throw new ValidationError(`Rol mapeado '${mappedRoleId}' no es un rol válido del sistema.`);
     }
 
-    // 4. Obtener o crear de forma diferida la membresía de usuario
-    let compUser = await this.authRepository.getCompanyUser(orgId, clerkUserId);
-    if (!compUser) {
-      const clerkRoleMap = {
-        'org:admin': 'Administrator',
-        'org:member': 'Operario',
-        admin: 'Administrator',
-        member: 'Operario'
-      };
-      const mappedRole = clerkRoleMap[orgRole] || 'Operario';
-      console.log(
-        `[GetUserProfileUseCase] Creando membresía diferida para ${clerkUserId} en org ${orgId} con rol: ${mappedRole}`
-      );
-      compUser = await this.authRepository.saveCompanyUser({
-        company_id: orgId,
-        clerk_user_id: clerkUserId,
-        role: mappedRole,
-        status: 'active'
-      });
+    // ── 5. Obtener detalles de la organización desde Clerk ─────────────────
+    const cacheKeyOrg = `org-details:${orgId}`;
+    let orgDetails = cacheService.get(cacheKeyOrg);
+    if (!orgDetails) {
+      orgDetails = await this.clerkService.getOrganizationDetails(orgId);
+      cacheService.set(cacheKeyOrg, orgDetails, 15 * 60 * 1000);
     }
 
-    // 5. Mapear roles de la empresa a IDs de permisos de la base de datos
-    const dbRoleMap = {
-      Owner: 'administrador',
-      Administrator: 'administrador',
-      Supervisor: 'supervisor',
-      Operario: 'operario'
-    };
-    const dbRoleId = dbRoleMap[compUser.role] || 'operario';
+    // ── 6. Bootstrap atómico e idempotente (1 round-trip a la BD) ──────────
+    // La función PostgreSQL `bootstrap_user_org` garantiza en una sola transacción:
+    //  - Upsert en profiles
+    //  - Upsert en companies
+    //  - Lote por defecto si la empresa no tiene ninguno
+    //  - Upsert en company_users
+    console.log(
+      `[GetUserProfileUseCase] Bootstrap atómico para usuario ${clerkUserId} en org ${orgId}`
+    );
+    const bootstrapResult = await this.authRepository.bootstrapUserOrg({
+      userId: clerkUserId,
+      email,
+      nombre,
+      apellido,
+      clerkOrgId: orgId,
+      orgNombre: orgDetails.nombre,
+      orgSlug: orgDetails.slug || null,
+      orgLogo: orgDetails.logo || null,
+      roleId: mappedRoleId
+    });
 
+    const companyUuid = bootstrapResult.company_id;
+    const dbRoleId = bootstrapResult.role_id;
+
+    // ── 7. Obtener rol y permisos desde la BD ──────────────────────────────
     const { role: dbRole, permissions } =
       await this.authRepository.getRoleWithPermissions(dbRoleId);
 
-    // 6. Regenerar token si no estaba en caché
+    // ── 8. Obtener datos completos de la empresa ───────────────────────────
+    const company = await this.authRepository.getCompanyById(companyUuid);
+
+    // ── 9. Generar token JWT de Supabase (con caché condicional) ───────────
+    // El JWT solo se guarda en caché una vez que el bootstrap completó con éxito.
+    // Esto evita cachear un token que corresponde a un estado inconsistente.
+    const cacheKey = `jwt:${clerkUserId}:${orgId}`;
+    let supabaseToken = cacheService.get(cacheKey);
     if (!supabaseToken) {
-      supabaseToken = generateSupabaseJwt(clerkUserId, email, orgId, compUser.role);
-      // Guardar token en caché por 10 minutos
+      supabaseToken = generateSupabaseJwt(clerkUserId, email, companyUuid, dbRoleId);
       cacheService.set(cacheKey, supabaseToken, 10 * 60 * 1000);
     }
 
+    // ── 10. Retornar perfil completo ───────────────────────────────────────
     return {
       user: {
         id: clerkUserId,
-        email: email,
-        nombre: userDetails?.nombre || '',
-        apellido: userDetails?.apellido || '',
+        email,
+        nombre,
+        apellido,
         company_id: orgId,
         rol_id: dbRoleId,
-        role: compUser.role,
-        created_at: compUser.created_at
+        role: dbRole?.nombre || dbRoleId
       },
       company,
-      empresa: company, // Compatibilidad hacia atrás
+      empresa: company, // compatibilidad hacia atrás
       role: dbRole,
       permissions: permissions || [],
       supabaseToken
