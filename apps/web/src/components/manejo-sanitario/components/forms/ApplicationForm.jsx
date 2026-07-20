@@ -6,10 +6,11 @@ export default function ApplicationForm() {
   const { lotes } = useLotsContext();
   const { newAplicacion, setNewAplicacion, addAplicacion, setIsAppDrawerOpen } = useApplicationsContext();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    addAplicacion();
+    await addAplicacion();
   };
+
 
   return (
     <form className="drawer-form" onSubmit={handleSubmit}>

@@ -6,10 +6,11 @@ export default function CosechaForm() {
   const { lotes } = useLotsContext();
   const { newCosecha, setNewCosecha, addCosecha, setIsCosechaDrawerOpen } = useApplicationsContext();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    addCosecha();
+    await addCosecha();
   };
+
 
   return (
     <form className="drawer-form" onSubmit={handleSubmit}>

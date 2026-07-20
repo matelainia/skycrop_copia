@@ -23,7 +23,8 @@ export default function ApplicationsView({ setSubTab }) {
     changeEstadoAplicacion,
     aplicarCambioEstado,
     reintentarSync,
-    getLoteCarenciaStatus
+    getLoteCarenciaStatus,
+    handleDeleteAplicacion
   } = useApplicationsContext();
 
   const [planificadorPreLoteId, setPlanificadorPreLoteId] = useState('');
@@ -53,10 +54,8 @@ export default function ApplicationsView({ setSubTab }) {
     aplicarCambioEstado(app, ESTADOS_APLICACION.EJECUTADA);
   };
 
-  const handleDelete = (id) => {
-    if (window.confirm("¿Estás seguro de que deseas eliminar esta aplicación?")) {
-      setAplicaciones(prev => prev.filter(p => p.id !== id));
-    }
+  const handleDelete = async (id) => {
+    await handleDeleteAplicacion(id);
   };
 
   return (

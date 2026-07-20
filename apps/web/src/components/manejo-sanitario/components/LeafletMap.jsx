@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 export default function LeafletMap({
   lotes,
@@ -12,6 +12,7 @@ export default function LeafletMap({
   const mapRef = useRef(null);
   const polygonsRef = useRef([]);
   const geeLayerRef = useRef(null);
+  const [map, setMap] = useState(null);
 
   // 1. Initialise Map and Base Layers
   useEffect(() => {
@@ -24,8 +25,9 @@ export default function LeafletMap({
       mapRef.current = null;
     }
 
-    const map = L.map('sanitary-gis-map').setView([3.518, -76.305], 14);
-    mapRef.current = map;
+    const mapInst = L.map('sanitary-gis-map').setView([3.518, -76.305], 14);
+    mapRef.current = mapInst;
+    setMap(mapInst);
 
     // Satellite Tile Layer
     const satelliteTile = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
@@ -38,21 +40,9 @@ export default function LeafletMap({
     });
 
     if (mapLayer === 'callejero') {
-      streetTile.addTo(map);
+      streetTile.addTo(mapInst);
     } else {
-      satelliteTile.addTo(map);
-    }
-
-    // Auto center map boundary
-    const validPolys = lotes
-      .filter(l => Array.isArray(l.coordinates) && l.coordinates.length > 0)
-      .map(l => l.coordinates);
-
-    if (validPolys.length > 0) {
-      const bounds = L.latLngBounds(validPolys.flat());
-      if (bounds.isValid()) {
-        map.fitBounds(bounds, { padding: [15, 15] });
-      }
+      satelliteTile.addTo(mapInst);
     }
 
     return () => {
@@ -60,12 +50,12 @@ export default function LeafletMap({
         mapRef.current.remove();
         mapRef.current = null;
       }
+      setMap(null);
     };
   }, []);
 
   // 2. Sync Base Layer changes (Street vs Satellite)
   useEffect(() => {
-    const map = mapRef.current;
     if (!map || typeof window === 'undefined' || !window.L) return;
     const L = window.L;
 
@@ -89,11 +79,33 @@ export default function LeafletMap({
     } else {
       satelliteTile.addTo(map);
     }
-  }, [mapLayer]);
+  }, [map, mapLayer]);
 
-  // 3. Render Lotes Polygons
+  // 3. Auto center map when map or lotes geometry change
   useEffect(() => {
-    const map = mapRef.current;
+    if (!map || typeof window === 'undefined' || !window.L) return;
+    const L = window.L;
+
+    const validPolys = lotes
+      .filter(l => Array.isArray(l.coordinates) && l.coordinates.length > 0);
+
+    if (validPolys.length > 0) {
+      const bounds = L.latLngBounds(validPolys.map(l => l.coordinates).flat());
+      if (bounds.isValid()) {
+        map.fitBounds(bounds, {
+          padding: [40, 40],
+          maxZoom: 18,
+          animate: true
+        });
+      }
+    } else {
+      // Default view if no lotes exist
+      map.setView([3.518, -76.305], 14);
+    }
+  }, [map, JSON.stringify(lotes.map(l => ({ id: l.id, coords: l.coordinates })))]);
+
+  // 4. Render Lotes Polygons
+  useEffect(() => {
     if (!map || typeof window === 'undefined' || !window.L) return;
     const L = window.L;
 
@@ -159,11 +171,10 @@ export default function LeafletMap({
 
       polygonsRef.current.push(polygon);
     });
-  }, [lotes, mapLayer, loteFilterCultivo, loteFilterEstado, selectedLote?.id]);
+  }, [map, lotes, mapLayer, loteFilterCultivo, loteFilterEstado, selectedLote?.id]);
 
-  // 4. Sync GEE Tile Layers
+  // 5. Sync GEE Tile Layers
   useEffect(() => {
-    const map = mapRef.current;
     if (!map || typeof window === 'undefined' || !window.L) return;
     const L = window.L;
 
@@ -187,7 +198,7 @@ export default function LeafletMap({
       geeLayerRef.current = layer;
       map.fitBounds(bounds, { padding: [25, 25], maxZoom: 17 });
     }
-  }, [geeTileUrl, mapLayer, selectedLote?.id]);
+  }, [map, geeTileUrl, mapLayer, selectedLote?.id]);
 
   return (
     <div id="sanitary-gis-map" className="gis-map-element" style={{ height: '100%', width: '100%' }}></div>

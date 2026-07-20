@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import JSZip from 'jszip';
 import { lotRepository } from '../repositories/lotRepository';
+import { agronomyRepository } from '../repositories/agronomyRepository';
 import { createLot } from '../types/Lot';
 import { validateLot } from '../validators/lot.validator';
 import { calculateArea, calculatePerimeter, calculateCentroid } from '../utils/geo.utils';
@@ -173,6 +174,25 @@ const INITIAL_LOTES_MOCK = [
 export const useLots = () => {
   const { companyId } = useCompanyContext();
 
+  // ── Catálogo dinámico de cultivos
+  const [cultivos, setCultivos] = useState([]);
+  const [cultivosCargando, setCultivosCargando] = useState(false);
+
+  useEffect(() => {
+    const cargarCultivos = async () => {
+      setCultivosCargando(true);
+      try {
+        const data = await agronomyRepository.getCultivos();
+        setCultivos(data);
+      } catch (err) {
+        console.warn('[useLots] Error cargando catálogo de cultivos:', err.message);
+      } finally {
+        setCultivosCargando(false);
+      }
+    };
+    cargarCultivos();
+  }, []);
+
   const [lotes, setLotes] = useState(() => {
     try {
       const saved = localStorage.getItem('skycrop_lotes_cc');
@@ -205,6 +225,7 @@ export const useLots = () => {
     codigo_interno: '',
     nombre: '',
     cultivo: 'Maíz',
+    cultivo_id: null,
     variedad: '',
     fecha_siembra: '',
     estado_fenológico: 'Vegetativo',
@@ -264,11 +285,23 @@ export const useLots = () => {
       if (dbLotes && dbLotes.length > 0) {
         setLotes(dbLotes.map(l => {
           const localLote = INITIAL_LOTES_MOCK.find(il => il.codigo_interno === l.codigo_interno || il.nombre === l.nombre);
+
+          let coordinates = l.coordinates;
+          if (!coordinates || coordinates.length === 0) {
+            if (l.geom) {
+              if (l.geom.type === 'Polygon' && Array.isArray(l.geom.coordinates) && l.geom.coordinates[0]) {
+                coordinates = l.geom.coordinates[0].map(c => [c[1], c[0]]); // Invert [lng, lat] to [lat, lng]
+              } else if (l.geom.type === 'MultiPolygon' && Array.isArray(l.geom.coordinates) && l.geom.coordinates[0] && l.geom.coordinates[0][0]) {
+                coordinates = l.geom.coordinates[0][0].map(c => [c[1], c[0]]);
+              }
+            }
+          }
+
           return createLot({
             ...localLote,
             ...l,
             estado_fenológico: l.estado_fenologico || l.estado_fenológico || localLote?.estado_fenologico,
-            coordinates: l.coordinates || localLote?.coordinates || [],
+            coordinates: coordinates || localLote?.coordinates || [],
             trabajadores: l.trabajadores || localLote?.trabajadores || [],
             adjuntos: l.adjuntos || localLote?.adjuntos || []
           });
@@ -284,7 +317,7 @@ export const useLots = () => {
     }
   };
 
-  const handleAddLote = (onAuditLogged) => {
+  const handleAddLote = async (onAuditLogged) => {
     const val = validateLot(newLote);
     if (!val.isValid) return { success: false, errors: val.errors };
 
@@ -308,63 +341,95 @@ export const useLots = () => {
       centroid = [lat, lng];
     }
 
-    const item = createLot({
-      id: `lote-${Date.now()}`,
+    const dbPayload = {
       codigo_interno: newLote.codigo_interno,
       nombre: newLote.nombre,
       cultivo: newLote.cultivo,
-      variedad: newLote.variedad,
-      fecha_siembra: newLote.fecha_siembra,
-      estado_fenologico: newLote.estado_fenológico,
-      sistema_productivo: newLote.sistema_productivo,
-      responsable_tecnico: newLote.responsable_tecnico,
-      observaciones: newLote.observaciones,
+      cultivo_id: newLote.cultivo_id || null,
+      variedad: newLote.variedad || null,
+      fecha_siembra: newLote.fecha_siembra || null,
+      estado_fenologico: newLote.estado_fenológico || null,
+      sistema_productivo: newLote.sistema_productivo || null,
+      responsable_tecnico: newLote.responsable_tecnico || null,
+      observaciones: newLote.observaciones || null,
       area_ha: area,
       perimetro_m: perimeter,
       centroide_lat: centroid[0],
       centroide_lng: centroid[1],
-      coordinates: defaultCoords
-    });
+      geom: defaultCoords ? {
+        type: 'Polygon',
+        coordinates: [
+          defaultCoords.map(c => [c[1], c[0]]) // Invert [lat, lng] to [lng, lat] for GeoJSON
+        ]
+      } : null
+    };
 
-    setLotes(prev => [item, ...prev]);
-    setIsLoteDrawerOpen(false);
-    setSelectedLote(item);
-    if (onAuditLogged) {
-      onAuditLogged(item.codigo_interno, "Registro de nuevo lote agrícola");
+    try {
+      const savedLote = await lotRepository.create(dbPayload);
+
+      const item = createLot({
+        ...savedLote,
+        coordinates: defaultCoords,
+        trabajadores: [],
+        adjuntos: []
+      });
+
+      setLotes(prev => [item, ...prev]);
+      setIsLoteDrawerOpen(false);
+      setSelectedLote(item);
+      if (onAuditLogged) {
+        onAuditLogged(item.codigo_interno, "Registro de nuevo lote agrícola");
+      }
+
+      // Reset Form
+      setNewLote({
+        codigo_interno: '',
+        nombre: '',
+        cultivo: 'Maíz',
+        cultivo_id: null,
+        variedad: '',
+        fecha_siembra: '',
+        estado_fenológico: 'Vegetativo',
+        sistema_productivo: 'Convencional',
+        responsable_tecnico: '',
+        observaciones: '',
+        geom: null,
+        coordinates: null,
+        area_ha: 0,
+        perimetro_m: 0,
+        centroide_lat: 3.518,
+        centroide_lng: -76.305
+      });
+
+      return { success: true, item };
+    } catch (err) {
+      console.error('[handleAddLote] Error saving lote to Supabase:', err);
+      alert(`Error al guardar el lote en la base de datos: ${err.message}`);
+      return { success: false, errors: { database: err.message } };
     }
-
-    // Reset Form
-    setNewLote({
-      codigo_interno: '',
-      nombre: '',
-      cultivo: 'Maíz',
-      variedad: '',
-      fecha_siembra: '',
-      estado_fenológico: 'Vegetativo',
-      sistema_productivo: 'Convencional',
-      responsable_tecnico: '',
-      observaciones: '',
-      geom: null,
-      coordinates: null,
-      area_ha: 0,
-      perimetro_m: 0,
-      centroide_lat: 3.518,
-      centroide_lng: -76.305
-    });
-
-    return { success: true, item };
   };
 
-  const handleDeleteLote = (loteId, onAuditLogged) => {
+  const handleDeleteLote = async (loteId, onAuditLogged) => {
     if (window.confirm("¿Estás seguro de que deseas eliminar este lote?")) {
-      const loteToDelete = lotes.find(l => l.id === loteId);
-      setLotes(prev => prev.filter(l => l.id !== loteId));
-      setSelectedLote(null);
-      if (loteToDelete && onAuditLogged) {
-        onAuditLogged(loteToDelete.codigo_interno, `Eliminación de lote: ${loteToDelete.nombre}`);
+      try {
+        const loteToDelete = lotes.find(l => l.id === loteId);
+
+        if (loteId && !String(loteId).startsWith('lote-')) {
+          await lotRepository.delete(loteId);
+        }
+
+        setLotes(prev => prev.filter(l => l.id !== loteId));
+        setSelectedLote(null);
+        if (loteToDelete && onAuditLogged) {
+          onAuditLogged(loteToDelete.codigo_interno, `Eliminación de lote: ${loteToDelete.nombre}`);
+        }
+      } catch (err) {
+        console.error('[handleDeleteLote] Error deleting lote from Supabase:', err);
+        alert(`Error al eliminar el lote de la base de datos: ${err.message}`);
       }
     }
   };
+
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
@@ -531,6 +596,8 @@ export const useLots = () => {
 
   return {
     lotes,
+    cultivos,
+    cultivosCargando,
     selectedLote,
     isLoteDrawerOpen,
     isFichaModalOpen,

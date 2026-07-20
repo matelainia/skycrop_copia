@@ -11,6 +11,8 @@ import { weatherRouter } from './modules/weather/infrastructure/adapters/inbound
 import { geeRouter } from './modules/gee/infrastructure/adapters/inbound/ExpressGeeRouter.js';
 import { productRouter } from './modules/inventory/infrastructure/adapters/inbound/ExpressProductRouter.js';
 import { applicationAuditRouter } from './modules/application/infrastructure/adapters/inbound/ExpressApplicationAuditRouter.js';
+import { agronomyRouter } from './modules/agronomy/infrastructure/adapters/inbound/ExpressAgronomyRouter.js';
+import { evaluationRouter } from './modules/evaluation/infrastructure/adapters/inbound/ExpressEvaluationRouter.js';
 
 const app = express();
 
@@ -155,6 +157,8 @@ app.use('/api/v1/weather', weatherRouter);
 app.use('/api/v1/gee', geeRouter);
 app.use('/api/v1/productos', productRouter);
 app.use('/api/v1/auditoria', applicationAuditRouter);
+app.use('/api/v1/agronomia', agronomyRouter);
+app.use('/api/v1/evaluaciones', evaluationRouter);
 
 // Compatibilidad hacia atrás (intersección del flujo legando antes de ir al monolito)
 app.use('/api/auth', authRouter); // GET /api/auth/me -> GET /me
@@ -163,6 +167,8 @@ app.use('/api/weather', weatherRouter); // GET /api/weather -> GET /
 app.use('/api/gee', geeRouter); // POST /api/gee/index -> POST /index
 app.use('/api/productos', productRouter); // GET /api/productos y /api/productos/:id
 app.use('/api/auditoria', applicationAuditRouter); // POST /api/auditoria/*
+app.use('/api/agronomia', agronomyRouter); // GET  /api/agronomia/*
+app.use('/api/evaluaciones', evaluationRouter); // POST/GET /api/evaluaciones/*
 
 // --- DELEGACIÓN AL MONOLITO LEGADO ---
 // Todo lo que no coincida con el nuevo enrutador será resuelto por el Express heredado

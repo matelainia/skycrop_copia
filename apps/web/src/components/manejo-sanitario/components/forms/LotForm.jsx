@@ -1,14 +1,32 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { UploadCloud } from 'lucide-react';
 import { useLotsContext } from '../../context/LotsContext';
+import { agronomyRepository } from '../../repositories/agronomyRepository';
 
 export default function LotForm() {
-  const { newLote, setNewLote, handleFileUpload, handleAddLote, setIsLoteDrawerOpen, logAudit } = useLotsContext();
+  const {
+    newLote, setNewLote, handleFileUpload, handleAddLote,
+    setIsLoteDrawerOpen, logAudit, cultivos, cultivosCargando
+  } = useLotsContext();
 
-  const handleSubmit = (e) => {
+  const [estadosFenologicos, setEstadosFenologicos] = useState([]);
+
+  // Cargar estados fenológicos cuando cambia el cultivo_id
+  useEffect(() => {
+    if (!newLote.cultivo_id) {
+      setEstadosFenologicos([]);
+      return;
+    }
+    agronomyRepository.getEstadosFenologicos(newLote.cultivo_id)
+      .then(data => setEstadosFenologicos(data))
+      .catch(() => setEstadosFenologicos([]));
+  }, [newLote.cultivo_id]);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    handleAddLote(logAudit);
+    await handleAddLote(logAudit);
   };
+
 
   return (
     <form className="drawer-form" onSubmit={handleSubmit}>
@@ -57,15 +75,26 @@ export default function LotForm() {
       <div className="form-group-container">
         <div>
           <label className="form-label">Cultivo</label>
-          <select 
-            className="input-glass select-glass" 
-            style={{ width: '100%' }} 
-            value={newLote.cultivo} 
-            onChange={e => setNewLote(p => ({ ...p, cultivo: e.target.value }))}
+          <select
+            className="input-glass select-glass"
+            style={{ width: '100%' }}
+            value={newLote.cultivo_id || ''}
+            onChange={e => {
+              const selected = cultivos.find(c => c.id === e.target.value);
+              setNewLote(p => ({
+                ...p,
+                cultivo_id: e.target.value,
+                cultivo: selected?.nombre || p.cultivo
+              }));
+            }}
+            required
           >
-            <option value="Maíz">Maíz</option>
-            <option value="Soya">Soya</option>
-            <option value="Girasol">Girasol</option>
+            <option value="" disabled>
+              {cultivosCargando ? 'Cargando cultivos...' : 'Seleccione un cultivo'}
+            </option>
+            {cultivos.map(c => (
+              <option key={c.id} value={c.id}>{c.nombre}</option>
+            ))}
           </select>
         </div>
         <div>
@@ -106,10 +135,29 @@ export default function LotForm() {
         </div>
       </div>
 
+      {/* Estado Fenológico dinámico según cultivo */}
+      {estadosFenologicos.length > 0 && (
+        <div>
+          <label className="form-label">Estado Fenológico Actual</label>
+          <select
+            className="input-glass select-glass"
+            style={{ width: '100%' }}
+            value={newLote['estado_fenológico'] || ''}
+            onChange={e => setNewLote(p => ({ ...p, 'estado_fenológico': e.target.value, estado_fenologico: e.target.value }))}
+          >
+            <option value="">Seleccione una etapa...</option>
+            {estadosFenologicos.map(ef => (
+              <option key={ef.id} value={ef.nombre}>{ef.nombre}</option>
+            ))}
+          </select>
+        </div>
+      )}
+
       <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
         <button type="button" className="btn btn-secondary" style={{ flexGrow: 1 }} onClick={() => setIsLoteDrawerOpen(false)}>Cancelar</button>
         <button type="submit" className="btn btn-primary" style={{ flexGrow: 1, background: 'var(--primary)' }}>Guardar Lote</button>
       </div>
+
     </form>
   );
 }

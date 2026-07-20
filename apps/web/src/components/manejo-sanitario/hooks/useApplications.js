@@ -4,8 +4,10 @@ import { geeRepository } from '../repositories/geeRepository';
 import { createApplication } from '../types/Application';
 import { validateApplication, checkHarvestConflict } from '../validators/application.validator';
 import { normalizarEstado, TRANSICIONES_VALIDAS, ESTADOS_APLICACION } from '../../../constants/aplicaciones';
+import { useCompanyContext } from '../../../context/CompanyContext';
 
 export const useApplications = () => {
+  const { companyId } = useCompanyContext();
   const [aplicaciones, setAplicaciones] = useState([]);
   const [aplicacionesLoading, setAplicacionesLoading] = useState(false);
   const [isAppDrawerOpen, setIsAppDrawerOpen] = useState(false);
@@ -47,7 +49,11 @@ export const useApplications = () => {
     }
   };
 
-  const handleAddAplicacion = (lotes, cosechas, weatherStation, onCostCreated, onLoteObsUpdated, onAuditLogged) => {
+  useEffect(() => {
+    loadApplications();
+  }, [companyId]);
+
+  const handleAddAplicacion = async (lotes, cosechas, weatherStation, onCostCreated, onLoteObsUpdated, onAuditLogged) => {
     const val = validateApplication(newAplicacion);
     if (!val.isValid) return { success: false, errors: val.errors };
 
@@ -64,13 +70,12 @@ export const useApplications = () => {
       if (!proceed) return { success: false, error: 'Cancelled by user due to carencia conflict.' };
     }
 
-    const item = createApplication({
-      id: `app-${Date.now()}`,
+    const dbPayload = {
       lote_id: newAplicacion.lote_id,
       tipo_aplicacion: newAplicacion.tipo_aplicacion,
       tipo_producto: newAplicacion.tipo_producto,
       producto_comercial: newAplicacion.producto_comercial,
-      ingrediente_activo: newAplicacion.ingrediente_activo,
+      ingrediente_activo: newAplicacion.ingrediente_activo || null,
       dosis: newAplicacion.dosis,
       unidad_medida: newAplicacion.unidad_medida,
       volumen_aplicado: parseFloat(newAplicacion.volumen_aplicado) || 0,
@@ -80,43 +85,56 @@ export const useApplications = () => {
       condiciones_climaticas: `Temp: ${weatherStation.temp}°C, Viento: ${weatherStation.wind} km/h`,
       fecha_aplicacion: new Date().toISOString(),
       costo_aplicacion: parseFloat(newAplicacion.costo_aplicacion) || 0,
-      registro_ica: newAplicacion.registro_ica,
+      registro_ica: newAplicacion.registro_ica || null,
       periodo_carencia_dias: carenciaDays,
       periodo_reingreso_horas: Number(newAplicacion.periodo_reingreso_horas),
       clasificacion_toxicologica: newAplicacion.clasificacion_toxicologica,
-      residualidad_nivel: newAplicacion.residualidad_nivel
-    });
+      residualidad_nivel: newAplicacion.residualidad_nivel,
+      estado_programacion: 'programada',
+      updated_by: 'Andrés Castro'
+    };
 
-    setAplicaciones(prev => [item, ...prev]);
+    try {
+      const savedApp = await applicationRepository.insert(dbPayload);
+      const item = createApplication(savedApp);
 
-    // Side effect triggers (Costs)
-    if (onCostCreated) {
-      onCostCreated({
-        id: `cos-${Date.now()}`,
-        lote_id: item.lote_id,
-        categoria: "Aplicaciones",
-        fecha: new Date().toISOString().split('T')[0],
-        descripcion: `Aplicación de ${item.producto_comercial}`,
-        costo: item.costo_aplicacion,
-        responsable: item.operario_responsable
-      });
+      setAplicaciones(prev => [item, ...prev]);
+
+      // Side effect triggers (Costs)
+      if (onCostCreated) {
+        onCostCreated({
+          id: `cos-plan-${item.id}`,
+          lote_id: item.lote_id,
+          categoria: "Aplicaciones",
+          fecha: new Date().toISOString().split('T')[0],
+          description: `Aplicación de ${item.producto_comercial}`,
+          costo: item.costo_aplicacion,
+          responsable: item.operario_responsable
+        });
+      }
+
+      // Side effect triggers (Lote observations)
+      if (onLoteObsUpdated) {
+        onLoteObsUpdated(
+          item.lote_id,
+          `Aplicación realizada: ${item.producto_comercial} (Carencia: ${item.periodo_carencia_dias}d).`
+        );
+      }
+
+      setIsAppDrawerOpen(false);
+      if (onAuditLogged) {
+        onAuditLogged(targetL?.codigo_interno || "N/A", `Registro de aplicación: ${item.producto_comercial}`);
+      }
+
+      return { success: true, item };
+    } catch (err) {
+      console.error('[handleAddAplicacion] Error saving application to Supabase:', err);
+      alert(`Error al guardar la aplicación en la base de datos: ${err.message}`);
+      return { success: false, errors: { database: err.message } };
     }
-
-    // Side effect triggers (Lote observations)
-    if (onLoteObsUpdated) {
-      onLoteObsUpdated(
-        item.lote_id,
-        `Aplicación realizada: ${item.producto_comercial} (Carencia: ${item.periodo_carencia_dias}d).`
-      );
-    }
-
-    setIsAppDrawerOpen(false);
-    if (onAuditLogged) {
-      onAuditLogged(targetL?.codigo_interno || "N/A", `Registro de aplicación: ${item.producto_comercial}`);
-    }
-
-    return { success: true, item };
   };
+
+
 
   const handleSavePlanificador = async (appData, lotes, onCostCreated, onLoteObsUpdated, onAuditLogged, setSubTab) => {
     const localId = appData.id || `app-${Date.now()}`;
@@ -361,6 +379,18 @@ export const useApplications = () => {
     }
   }, []);
 
+  const handleDeleteAplicacion = async (id) => {
+    if (window.confirm("¿Estás seguro de que deseas eliminar esta aplicación?")) {
+      try {
+        await applicationRepository.delete(id);
+        setAplicaciones(prev => prev.filter(p => p.id !== id));
+      } catch (err) {
+        console.error('[handleDeleteAplicacion] Error deleting from Supabase:', err);
+        alert(`Error al eliminar la aplicación de la base de datos: ${err.message}`);
+      }
+    }
+  };
+
   return {
     aplicaciones,
     aplicacionesLoading,
@@ -380,6 +410,8 @@ export const useApplications = () => {
     handleSavePlanificador,
     handleChangeEstadoAplicacion,
     aplicarCambioEstado,
-    handleReintentarSync
+    handleReintentarSync,
+    handleDeleteAplicacion
   };
 };
+

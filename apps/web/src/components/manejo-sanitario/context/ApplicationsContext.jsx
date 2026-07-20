@@ -22,7 +22,8 @@ export const ApplicationsProvider = ({ children }) => {
     handleSavePlanificador,
     handleChangeEstadoAplicacion,
     aplicarCambioEstado,
-    handleReintentarSync
+    handleReintentarSync,
+    handleDeleteAplicacion
   } = applications;
 
   // Harvest proy states
@@ -105,12 +106,13 @@ export const ApplicationsProvider = ({ children }) => {
     }));
   };
 
-  const addAplicacion = () => {
+  const addAplicacion = async () => {
     const { setCostos } = monitoringContext;
     const onCostCreated = (costEntry) => setCostos(prev => [costEntry, ...prev]);
 
-    return handleAddAplicacion(lotes, cosechas, weatherStation, onCostCreated, onLoteObsUpdated, logAudit);
+    return await handleAddAplicacion(lotes, cosechas, weatherStation, onCostCreated, onLoteObsUpdated, logAudit);
   };
+
 
   const savePlanificador = (appData, setSubTab) => {
     const { setCostos } = monitoringContext;
@@ -130,7 +132,7 @@ export const ApplicationsProvider = ({ children }) => {
     return handleReintentarSync(app, lotes, onCostCreated, onLoteObsUpdated, logAudit);
   };
 
-  const addCosecha = () => {
+  const addCosecha = async () => {
     if (!newCosecha.fecha_programada) return { success: false, errors: ['La fecha programada es obligatoria.'] };
 
     const restrict = getLoteCarenciaStatus(newCosecha.lote_id, new Date(newCosecha.fecha_programada));
@@ -139,31 +141,39 @@ export const ApplicationsProvider = ({ children }) => {
       return { success: false, error: 'Blocked by active carencia.' };
     }
 
-    const item = createHarvest({
-      id: `cos-${Date.now()}`,
+    const dbPayload = {
       lote_id: newCosecha.lote_id,
       fecha_programada: newCosecha.fecha_programada,
       produccion_estimada_kg: parseFloat(newCosecha.produccion_estimada_kg) || 0,
       area_programada_ha: parseFloat(newCosecha.area_programada_ha) || 0,
       estado_carencia: "Sin restricciones"
-    });
+    };
 
-    setCosechas(prev => [item, ...prev]);
-    setIsCosechaDrawerOpen(false);
+    try {
+      const savedHarvest = await harvestRepository.insert(dbPayload);
+      const item = createHarvest(savedHarvest);
 
-    const targetL = lotes.find(l => l.id === item.lote_id);
-    logAudit(targetL?.codigo_interno || "N/A", "Cosecha planificada");
+      setCosechas(prev => [item, ...prev]);
+      setIsCosechaDrawerOpen(false);
 
-    return { success: true, item };
+      const targetL = lotes.find(l => l.id === item.lote_id);
+      logAudit(targetL?.codigo_interno || "N/A", "Cosecha planificada");
+
+      return { success: true, item };
+    } catch (err) {
+      console.error('[addCosecha] Error saving harvest to Supabase:', err);
+      alert(`Error al registrar la cosecha en la base de datos: ${err.message}`);
+      return { success: false, error: err.message };
+    }
   };
+
 
   // Coordinated operation stopper
   const finishActiveOperation = async (loteId) => {
     const { elapsedSeconds, activeOp } = finishOperation(loteId);
     if (!activeOp) return;
 
-    const finishedApp = createApplication({
-      id: `app-${Date.now()}`,
+    const dbPayload = {
       lote_id: loteId,
       tipo_aplicacion: activeOp.tipo_operacion === 'Aplicación' ? 'Fitosanitaria' : (activeOp.tipo_operacion || 'Fitosanitaria'),
       tipo_producto: 'Fungicida',
@@ -183,61 +193,41 @@ export const ApplicationsProvider = ({ children }) => {
       periodo_reingreso_horas: 24,
       clasificacion_toxicologica: 'Categoría III',
       residualidad_nivel: 'Medio',
-      estado_programacion: 'ejecutada'
-    });
-
-    setAplicaciones(prev => [finishedApp, ...prev]);
+      estado_programacion: 'ejecutada',
+      updated_by: 'Andrés Castro'
+    };
 
     try {
-      const dbPayload = {
-        lote_id: finishedApp.lote_id,
-        tipo_aplicacion: finishedApp.tipo_aplicacion,
-        tipo_producto: finishedApp.tipo_producto,
-        producto_comercial: finishedApp.producto_comercial,
-        ingrediente_activo: finishedApp.ingrediente_activo,
-        dosis: finishedApp.dosis,
-        unidad_medida: finishedApp.unidad_medida,
-        volumen_aplicado: finishedApp.volumen_aplicado,
-        metodo_aplicacion: finishedApp.metodo_aplicacion,
-        operario_responsable: finishedApp.operario_responsable,
-        maquinaria_utilizada: finishedApp.maquinaria_utilizada,
-        condiciones_climaticas: finishedApp.condiciones_climaticas,
-        fecha_aplicacion: finishedApp.fecha_aplicacion,
-        costo_aplicacion: finishedApp.costo_aplicacion,
-        registro_ica: finishedApp.registro_ica,
-        periodo_carencia_dias: finishedApp.periodo_carencia_dias,
-        periodo_reingreso_horas: finishedApp.periodo_reingreso_horas,
-        clasificacion_toxicologica: finishedApp.clasificacion_toxicologica,
-        residualidad_nivel: finishedApp.residualidad_nivel,
-        estado_programacion: 'ejecutada',
-        updated_by: 'Andrés Castro'
+      const savedApp = await applicationRepository.insert(dbPayload);
+      const finishedApp = createApplication(savedApp);
+
+      setAplicaciones(prev => [finishedApp, ...prev]);
+
+      const { setCostos } = monitoringContext;
+      const costEntry = {
+        id: `cos-plan-${finishedApp.id}`,
+        lote_id: loteId,
+        categoria: 'Aplicaciones',
+        fecha: new Date().toISOString().split('T')[0],
+        descripcion: `Aplicación de ${finishedApp.producto_comercial} (finalizada)`,
+        costo: finishedApp.costo_aplicacion,
+        responsable: finishedApp.operario_responsable
       };
-      await applicationRepository.insert(dbPayload);
+      setCostos(prev => [costEntry, ...prev]);
+
+      onLoteObsUpdated(loteId, `Aplicación realizada: ${finishedApp.producto_comercial} (Carencia: ${finishedApp.periodo_carencia_dias}d).`);
+
+      const formatDuration = (seconds) => {
+        const hrs = Math.floor(seconds / 3600);
+        const mins = Math.floor((seconds % 3600) / 60);
+        const secs = seconds % 60;
+        return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+      };
+      logAudit(selectedLote?.codigo_interno || "N/A", `Finalización de aplicación: ${finishedApp.producto_comercial} (Duración: ${formatDuration(elapsedSeconds)})`);
     } catch (sbErr) {
       console.warn('[Applications Context] Error inserting finished operation:', sbErr.message);
+      alert(`Error al guardar la aplicación ejecutada: ${sbErr.message}`);
     }
-
-    const { setCostos } = monitoringContext;
-    const costEntry = {
-      id: `cos-${Date.now()}`,
-      lote_id: loteId,
-      categoria: 'Aplicaciones',
-      fecha: new Date().toISOString().split('T')[0],
-      descripcion: `Aplicación de ${finishedApp.producto_comercial} (finalizada)`,
-      costo: finishedApp.costo_aplicacion,
-      responsable: finishedApp.operario_responsable
-    };
-    setCostos(prev => [costEntry, ...prev]);
-
-    onLoteObsUpdated(loteId, `Aplicación realizada: ${finishedApp.producto_comercial} (Carencia: ${finishedApp.periodo_carencia_dias}d).`);
-
-    const formatDuration = (seconds) => {
-      const hrs = Math.floor(seconds / 3600);
-      const mins = Math.floor((seconds % 3600) / 60);
-      const secs = seconds % 60;
-      return `${hrs.toString().padStart(2, '0')}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-    };
-    logAudit(selectedLote?.codigo_interno || "N/A", `Finalización de aplicación: ${finishedApp.producto_comercial} (Duración: ${formatDuration(elapsedSeconds)})`);
   };
 
   const aplicarCambioEstadoWrapped = (app, nuevoEstado) => {

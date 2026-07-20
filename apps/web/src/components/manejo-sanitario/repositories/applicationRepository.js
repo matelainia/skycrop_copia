@@ -52,5 +52,20 @@ export const applicationRepository = {
       throw new Error(`Error updating application status: ${error.message}`);
     }
     return data;
+  },
+
+  async delete(appId) {
+    const { data, error } = await supabase
+      .from('aplicaciones')
+      .delete()
+      .eq('id', appId)
+      .select()
+      .single();
+
+    if (error) {
+      throw new Error(`Error deleting application: ${error.message}`);
+    }
+    return data;
   }
 };
+
