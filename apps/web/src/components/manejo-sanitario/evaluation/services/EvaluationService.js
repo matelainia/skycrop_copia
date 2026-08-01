@@ -1,13 +1,11 @@
 import { EvaluationRepository } from '../repositories/EvaluationRepository';
 import { Evaluation } from '../domain/entities/Evaluation';
 import { EvaluationDraft } from '../domain/entities/EvaluationDraft';
-import { EvaluationProtocol } from '../domain/entities/EvaluationProtocol';
 
 export const EvaluationService = {
   /**
    * Guarda un borrador de evaluación.
    * @param {EvaluationDraft} draftInstance
-   * @returns {Promise<Object>}
    */
   async saveDraft(draftInstance) {
     if (!(draftInstance instanceof EvaluationDraft)) {
@@ -17,7 +15,7 @@ export const EvaluationService = {
   },
 
   /**
-   * Obtiene el borrador activo.
+   * Obtiene el borrador activo para un lote/usuario/empresa.
    * @param {string} loteId
    * @param {string} userId
    * @param {string} companyId
@@ -27,11 +25,11 @@ export const EvaluationService = {
     const raw = await EvaluationRepository.getDraft(loteId, userId, companyId);
     if (!raw) return null;
     return new EvaluationDraft({
-      id: raw.id,
+      id:        raw.id,
       companyId: raw.company_id,
-      userId: raw.user_id,
-      loteId: raw.lote_id,
-      stepName: raw.step_name,
+      userId:    raw.user_id,
+      loteId:    raw.lote_id,
+      stepName:  raw.step_name,
       stateData: raw.state_data,
       updatedAt: raw.updated_at
     });
@@ -40,24 +38,34 @@ export const EvaluationService = {
   /**
    * Realiza la geocodificación inversa del lote.
    * @param {string} loteId
-   * @returns {Promise<{ departamento: string, municipio: string, vereda: string, coordenadas: string, centroide: number[] }>}
    */
   async geocodeLote(loteId) {
     return await EvaluationRepository.geocodeLote(loteId);
   },
 
   /**
-   * Guarda de forma transaccional una evaluación finalizada.
+   * Envía la evaluación finalizada al backend.
+   * Usa el payload v2 si el evaluation tiene protocolSnapshot disponible,
+   * de lo contrario usa el payload legacy (compatibilidad).
+   *
    * @param {Evaluation} evaluationInstance
-   * @param {string} userId - ID del usuario actual para la bitácora
-   * @returns {Promise<string>} UUID de la evaluación registrada
+   * @param {string} userId
+   * @returns {Promise<Object>} { evaluation_id, snapshot_id, status } o UUID legacy
    */
   async submitEvaluation(evaluationInstance, userId) {
     if (!(evaluationInstance instanceof Evaluation)) {
       throw new Error('Debe proporcionar una instancia de Evaluation válida');
     }
+
+    // Usar v2 si hay snapshot disponible
+    if (evaluationInstance.protocolSnapshot) {
+      const payload = evaluationInstance.toPayloadV2(userId);
+      return await EvaluationRepository.createEvaluation(payload);
+    }
+
+    // Fallback legacy
     const payload = {
-      ...evaluationInstance.toPayload(),
+      ...evaluationInstance.toPayload(userId),
       user_id: userId
     };
     return await EvaluationRepository.createEvaluation(payload);

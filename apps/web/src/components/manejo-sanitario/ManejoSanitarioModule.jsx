@@ -11,6 +11,7 @@ import HarvestView from './components/views/HarvestView';
 import CostsView from './components/views/CostsView';
 import HistoryView from './components/views/HistoryView';
 import ReportsView from './components/views/ReportsView';
+import ProtocolosConfigView from './components/views/ProtocolosConfigView';
 
 // Form Drawers
 import LotForm from './components/forms/LotForm';
@@ -26,7 +27,7 @@ import { Compass, BookOpen, Activity, Calendar, DollarSign, FileSpreadsheet, Map
 function ManejoSanitarioContent({ subTab, setSubTab }) {
   const activeSubView = subTab && [
     'lotes', 'aplicaciones', 'monitoreos', 'cosecha_plan',
-    'costos_san', 'historial_traz', 'reportes_san'
+    'costos_san', 'historial_traz', 'reportes_san', 'protocolos_eval'
   ].includes(subTab) ? subTab : 'lotes';
 
   const {
@@ -79,6 +80,7 @@ function ManejoSanitarioContent({ subTab, setSubTab }) {
       {activeSubView === 'costos_san' && <CostsView />}
       {activeSubView === 'historial_traz' && <HistoryView />}
       {activeSubView === 'reportes_san' && <ReportsView />}
+      {activeSubView === 'protocolos_eval' && <ProtocolosConfigView />}
 
       {/* Forms Drawers */}
       {isLoteDrawerOpen && <LotForm />}

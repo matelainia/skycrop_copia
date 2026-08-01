@@ -17,14 +17,14 @@ import Step2EvaluationType from './components/Step2EvaluationType';
 import Step3DataEntry from './components/Step3DataEntry';
 import Step4Review from './components/Step4Review';
 
-export default function EvaluationDataEntry({ onBack, onNext }) {
+export default function EvaluationDataEntry({ onBack, onNext, mode = 'create', monitoreo = null }) {
   const { user } = useAuthContext();
   const { logAudit } = useLotsContext();
 
   const userId = user?.id || 'user_clerk_test_a';
   const userName = user ? `${user.nombre} ${user.apellido}` : 'Sebastian Diaz';
 
-  const wizard = useEvaluationWizard(userId, userName, logAudit, onBack);
+  const wizard = useEvaluationWizard(userId, userName, logAudit, onBack, mode, monitoreo);
 
   const {
     step,
@@ -88,48 +88,60 @@ export default function EvaluationDataEntry({ onBack, onNext }) {
       <div className="eval-page-header">
         {/* Título + breadcrumb (izquierda) */}
         <div className="eval-page-header-left">
-          <h1 className="eval-page-title">Nueva Evaluación</h1>
+          <h1 className="eval-page-title">{mode === 'view' ? 'Detalle de la Evaluación' : 'Nueva Evaluación'}</h1>
           <nav className="eval-breadcrumb">
-            <span className="eval-breadcrumb-link" onClick={cancelWizard}>
+            <span className="eval-breadcrumb-link" onClick={onBack}>
               Monitoreos y Evaluaciones
             </span>
             <ChevronRight size={12} className="eval-breadcrumb-sep" />
-            <span className="eval-breadcrumb-link" onClick={cancelWizard}>
-              Nueva Evaluación
+            <span className="eval-breadcrumb-link" onClick={onBack}>
+              {mode === 'view' ? 'Historial de Evaluaciones' : 'Nueva Evaluación'}
             </span>
             <ChevronRight size={12} className="eval-breadcrumb-sep" />
             <span className="eval-breadcrumb-current">
-              {getCurrentStepName()}
+              {mode === 'view' ? 'Detalle' : getCurrentStepName()}
             </span>
           </nav>
         </div>
 
         {/* Acciones (derecha) */}
         <div className="eval-page-header-actions">
-          {saveStatus === 'saving' && (
-            <span className="eval-autosave-indicator">Autoguardando...</span>
+          {mode === 'view' ? (
+            <button
+              type="button"
+              onClick={onBack}
+              className="eval-btn-primary-header"
+            >
+              Volver al Historial
+            </button>
+          ) : (
+            <>
+              {saveStatus === 'saving' && (
+                <span className="eval-autosave-indicator">Autoguardando...</span>
+              )}
+              <button
+                type="button"
+                onClick={cancelWizard}
+                className="eval-btn-cancel"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={nextStep}
+                disabled={loading || (step === 1 && !formData.loteId) || (step === 2 && !formData.objetoEvaluacionId)}
+                className="eval-btn-primary-header"
+              >
+                {getNextButtonText()}
+                <ArrowRight size={14} />
+              </button>
+            </>
           )}
-          <button
-            type="button"
-            onClick={cancelWizard}
-            className="eval-btn-cancel"
-          >
-            Cancelar
-          </button>
-          <button
-            type="button"
-            onClick={nextStep}
-            disabled={loading || (step === 1 && !formData.loteId) || (step === 2 && !formData.objetoEvaluacionId)}
-            className="eval-btn-primary-header"
-          >
-            {getNextButtonText()}
-            <ArrowRight size={14} />
-          </button>
         </div>
       </div>
 
       {/* ── Stepper horizontal ── */}
-      <WizardStepper currentStep={step} />
+      {mode !== 'view' && <WizardStepper currentStep={step} />}
 
       {/* ── Cuerpo: dos columnas ── */}
       <div className="eval-layout">
@@ -145,8 +157,12 @@ export default function EvaluationDataEntry({ onBack, onNext }) {
 
           {/* Título del paso */}
           <div className="eval-step-header">
-            <h2 className="eval-step-heading">{getStepTitle()}</h2>
-            <p className="eval-step-desc">{getStepDescription()}</p>
+            <h2 className="eval-step-heading">
+              {mode === 'view' ? 'Resumen del Reporte' : getStepTitle()}
+            </h2>
+            <p className="eval-step-desc">
+              {mode === 'view' ? 'Esta evaluación ya ha sido consolidada en la base de datos y no puede ser modificada.' : getStepDescription()}
+            </p>
           </div>
 
           {/* Contenido del paso */}
@@ -193,6 +209,7 @@ export default function EvaluationDataEntry({ onBack, onNext }) {
                   selectedObjetoData={selectedObjetoData}
                   derivedMetrics={derivedMetrics}
                   protocolInstance={protocolInstance}
+                  readOnly={mode === 'view'}
                 />
               )}
             </>
@@ -200,24 +217,37 @@ export default function EvaluationDataEntry({ onBack, onNext }) {
 
           {/* Footer de navegación */}
           <div className="eval-footer-actions">
-            <button
-              type="button"
-              onClick={prevStep}
-              disabled={step === 1 || loading}
-              className="eval-btn-back"
-            >
-              <ArrowLeft size={13} />
-              Atrás
-            </button>
-            <button
-              type="button"
-              onClick={nextStep}
-              disabled={loading || (step === 1 && !formData.loteId) || (step === 2 && !formData.objetoEvaluacionId)}
-              className="eval-btn-next"
-            >
-              {getNextButtonText()}
-              <ArrowRight size={13} />
-            </button>
+            {mode === 'view' ? (
+              <button
+                type="button"
+                onClick={onBack}
+                className="eval-btn-back"
+              >
+                <ArrowLeft size={13} />
+                Volver al Historial
+              </button>
+            ) : (
+              <>
+                <button
+                  type="button"
+                  onClick={prevStep}
+                  disabled={step === 1 || loading}
+                  className="eval-btn-back"
+                >
+                  <ArrowLeft size={13} />
+                  Atrás
+                </button>
+                <button
+                  type="button"
+                  onClick={nextStep}
+                  disabled={loading || (step === 1 && !formData.loteId) || (step === 2 && !formData.objetoEvaluacionId)}
+                  className="eval-btn-next"
+                >
+                  {getNextButtonText()}
+                  <ArrowRight size={13} />
+                </button>
+              </>
+            )}
           </div>
         </div>
 
@@ -231,7 +261,7 @@ export default function EvaluationDataEntry({ onBack, onNext }) {
           derivedMetrics={derivedMetrics}
           photos={formData.photos}
           step={step}
-          onNextStep={nextStep}
+          onNextStep={mode === 'view' ? undefined : nextStep}
         />
       </div>
     </div>

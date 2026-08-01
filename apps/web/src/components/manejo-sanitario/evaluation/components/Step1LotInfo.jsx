@@ -129,7 +129,6 @@ export default function Step1LotInfo({
             style={{ width: '100%' }}
             value={formData.predioId}
             onChange={e => setFormData(p => ({ ...p, predioId: e.target.value, loteId: '' }))}
-            disabled={!formData.companyId}
           >
             <option value="">Seleccione predio...</option>
             {predios.map(p => <option key={p.id} value={p.id}>{p.nombre}</option>)}
@@ -144,7 +143,6 @@ export default function Step1LotInfo({
             style={{ width: '100%' }}
             value={formData.loteId}
             onChange={e => setFormData(p => ({ ...p, loteId: e.target.value }))}
-            disabled={!formData.predioId}
           >
             <option value="">Seleccione lote...</option>
             {lotes.map(l => (

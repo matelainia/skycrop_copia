@@ -7,7 +7,8 @@ export default function Step4Review({
   selectedLoteData,
   selectedObjetoData,
   derivedMetrics,
-  protocolInstance
+  protocolInstance,
+  readOnly = false
 }) {
   const variables = protocolInstance?.variables || [];
   
@@ -38,6 +39,7 @@ export default function Step4Review({
               value={formData.responsable}
               onChange={e => setFormData(prev => ({ ...prev, responsable: e.target.value }))}
               required
+              disabled={readOnly}
             />
           </div>
           <div>
@@ -49,6 +51,7 @@ export default function Step4Review({
               value={formData.fecha}
               onChange={e => setFormData(prev => ({ ...prev, fecha: e.target.value }))}
               required
+              disabled={readOnly}
             />
           </div>
         </div>

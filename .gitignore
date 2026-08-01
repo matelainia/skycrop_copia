@@ -60,6 +60,7 @@ supabase/.branches/
 supabase/config.toml
 supabase/migrations/
 supabase/migrations_v1_backup/
+database/migrations
 # ─── Logs ───────────────────────────────────────
 logs/
 *.log

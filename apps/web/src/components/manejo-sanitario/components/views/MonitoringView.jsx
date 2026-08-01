@@ -183,6 +183,8 @@ export default function MonitoringView() {
   const [screen, setScreen] = useState('list');
   const [formulario, setFormulario] = useState(null);
   const [formularioCargando, setFormularioCargando] = useState(false);
+  const [selectedMonitoreo, setSelectedMonitoreo] = useState(null);
+  const [viewMode, setViewMode] = useState(false);
 
   // Filtros de la tabla
   const [filtroLote, setFiltroLote] = useState('todos');
@@ -190,6 +192,8 @@ export default function MonitoringView() {
 
   // Cargar formulario al hacer clic en Nueva Evaluación con lote seleccionado
   const handleNuevaEvaluacion = async () => {
+    setSelectedMonitoreo(null);
+    setViewMode(false);
     if (!selectedLote?.id) {
       setScreen('entry');
       setFormulario(null);
@@ -228,7 +232,7 @@ export default function MonitoringView() {
     ? (monitoreos.reduce((acc, m) => acc + (m.incidencia_pct || 0), 0) / totalEvals).toFixed(1)
     : 0;
 
-  /* ── Pantalla: Nueva Evaluación (Step 3) ── */
+  /* ── Pantalla: Nueva/Detalle Evaluación (Step 3) ── */
   if (screen === 'entry') {
     if (formularioCargando) {
       return (
@@ -244,11 +248,8 @@ export default function MonitoringView() {
     }
     return (
       <EvaluationDataEntry
-        lote={selectedLote || lotes[0]}
-        objetos={formulario?.objetos || []}
-        tipoEvaluacion="Fitosanitario"
-        responsable=""
-        fecha={new Date().toISOString()}
+        mode={viewMode ? 'view' : 'create'}
+        monitoreo={selectedMonitoreo}
         onBack={() => setScreen('list')}
         onNext={(data) => {
           console.log('Evaluación completada:', data);
@@ -427,7 +428,11 @@ export default function MonitoringView() {
                       key={m.id}
                       monitoreo={m}
                       lote={targetL}
-                      onView={(mon) => console.log('Ver monitoreo:', mon.id)}
+                      onView={(mon) => {
+                        setSelectedMonitoreo(mon);
+                        setViewMode(true);
+                        setScreen('entry');
+                      }}
                       onDelete={handleDelete}
                     />
                   );

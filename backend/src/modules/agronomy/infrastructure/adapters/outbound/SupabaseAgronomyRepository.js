@@ -39,7 +39,19 @@ export class SupabaseAgronomyRepository extends AgronomyRepositoryPort {
 
   async getObjetosEvaluacion(cultivoId, estadoFenologicoId) {
     try {
-      // Consulta: objetos que aplican a la etapa fenológica o que aplican a todas (NULL)
+      if (!cultivoId) {
+        const { data, error } = await supabaseAdmin
+          .from('objetos_evaluacion')
+          .select(
+            'id, nombre_comun, nombre_cientifico, categoria, subcategoria, descripcion, foto_url'
+          )
+          .eq('estado', 'activo')
+          .order('nombre_comun', { ascending: true });
+        if (error) throw error;
+        return data || [];
+      }
+
+      // 1. Obtener objetos vinculados en cultivo_objetos
       let query = supabaseAdmin
         .from('cultivo_objetos')
         .select(
@@ -55,22 +67,67 @@ export class SupabaseAgronomyRepository extends AgronomyRepositoryPort {
         .eq('activo', true);
 
       if (estadoFenologicoId) {
-        // Incluir objetos específicos de la etapa O sin etapa definida (aplican siempre)
         query = query.or(
           `estado_fenologico_id.eq.${estadoFenologicoId},estado_fenologico_id.is.null`
         );
-      } else {
-        query = query.is('estado_fenologico_id', null);
       }
 
       const { data, error } = await query.order('relevancia', { ascending: false });
       if (error) throw error;
 
-      // Aplanar: extraer el objeto de evaluación con su relevancia
-      return (data || []).map((row) => ({
-        ...row.objeto_evaluacion,
-        relevancia: row.relevancia
-      }));
+      const items = (data || []).map((row) => row.objeto_evaluacion).filter((obj) => obj && obj.id);
+
+      // 2. Obtener objetos que tengan protocolos activos para este cultivo o globales
+      let protoQuery = supabaseAdmin
+        .from('protocolos_evaluacion')
+        .select(
+          `
+          objeto_evaluacion:objeto_evaluacion_id (
+            id, nombre_comun, nombre_cientifico, categoria,
+            subcategoria, descripcion, foto_url
+          )
+        `
+        )
+        .eq('estado', 'activo')
+        .is('vigencia_hasta', null)
+        .or(`cultivo_id.eq.${cultivoId},cultivo_id.is.null`);
+
+      if (estadoFenologicoId) {
+        protoQuery = protoQuery.or(
+          `estado_fenologico_id.eq.${estadoFenologicoId},estado_fenologico_id.is.null`
+        );
+      }
+
+      const { data: protoData, error: protoErr } = await protoQuery;
+      if (!protoErr && protoData) {
+        protoData.forEach((row) => {
+          if (row.objeto_evaluacion && row.objeto_evaluacion.id) {
+            items.push(row.objeto_evaluacion);
+          }
+        });
+      }
+
+      const uniqueMap = new Map();
+      items.forEach((obj) => {
+        if (!uniqueMap.has(obj.id)) {
+          uniqueMap.set(obj.id, obj);
+        }
+      });
+
+      const result = Array.from(uniqueMap.values());
+
+      if (result.length === 0) {
+        const { data: globalData } = await supabaseAdmin
+          .from('objetos_evaluacion')
+          .select(
+            'id, nombre_comun, nombre_cientifico, categoria, subcategoria, descripcion, foto_url'
+          )
+          .eq('estado', 'activo')
+          .order('nombre_comun', { ascending: true });
+        return globalData || [];
+      }
+
+      return result;
     } catch (err) {
       throw new DatabaseError(
         `Error obteniendo objetos de evaluación para cultivo ${cultivoId}`,
@@ -81,33 +138,61 @@ export class SupabaseAgronomyRepository extends AgronomyRepositoryPort {
 
   async getProtocoloVigente(objetoEvaluacionId, cultivoId, estadoFenologicoId) {
     try {
-      let query = supabaseAdmin
+      if (cultivoId) {
+        // 1. Intentar con cultivo específico
+        let specificQuery = supabaseAdmin
+          .from('protocolos_evaluacion')
+          .select(
+            'id, version, vigencia_desde, variables, frecuencia_dias, tamanio_muestra, metodologia'
+          )
+          .eq('objeto_evaluacion_id', objetoEvaluacionId)
+          .eq('estado', 'activo')
+          .is('vigencia_hasta', null)
+          .eq('cultivo_id', cultivoId);
+
+        if (estadoFenologicoId) {
+          specificQuery = specificQuery.or(
+            `estado_fenologico_id.eq.${estadoFenologicoId},estado_fenologico_id.is.null`
+          );
+        } else {
+          specificQuery = specificQuery.is('estado_fenologico_id', null);
+        }
+
+        const { data: specificData, error: specErr } = await specificQuery
+          .order('vigencia_desde', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (specErr) throw specErr;
+        if (specificData) return specificData;
+      }
+
+      // 2. Si no hay cultivo_id o no se encontró, buscar protocolo global (cultivo_id IS NULL)
+      let globalQuery = supabaseAdmin
         .from('protocolos_evaluacion')
         .select(
           'id, version, vigencia_desde, variables, frecuencia_dias, tamanio_muestra, metodologia'
         )
         .eq('objeto_evaluacion_id', objetoEvaluacionId)
         .eq('estado', 'activo')
-        .is('vigencia_hasta', null); // Solo el protocolo vigente
-
-      if (cultivoId) query = query.eq('cultivo_id', cultivoId);
+        .is('vigencia_hasta', null)
+        .is('cultivo_id', null);
 
       if (estadoFenologicoId) {
-        query = query.or(
+        globalQuery = globalQuery.or(
           `estado_fenologico_id.eq.${estadoFenologicoId},estado_fenologico_id.is.null`
         );
       } else {
-        query = query.is('estado_fenologico_id', null);
+        globalQuery = globalQuery.is('estado_fenologico_id', null);
       }
 
-      // Ordenar por version descendente para obtener la más reciente
-      const { data, error } = await query
+      const { data: globalData, error: globErr } = await globalQuery
         .order('vigencia_desde', { ascending: false })
         .limit(1)
         .maybeSingle();
 
-      if (error) throw error;
-      return data;
+      if (globErr) throw globErr;
+      return globalData;
     } catch (err) {
       throw new DatabaseError(
         `Error obteniendo protocolo vigente para objeto ${objetoEvaluacionId}`,

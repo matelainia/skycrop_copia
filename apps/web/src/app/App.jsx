@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Users, Package, Tractor, HeartPulse, Sprout, Sun, Moon, CloudSun, Calendar, LogOut } from 'lucide-react';
+import { Users, Package, Tractor, HeartPulse, Sprout, Sun, Moon, CloudSun, Calendar, LogOut, Settings } from 'lucide-react';
 import TalentoHumano from '../components/TalentoHumano';
 import InventarioBodegas from '../components/InventarioBodegas/InventarioBodegas';
 import Maquinaria from '../modules/maquinaria';
@@ -186,7 +186,10 @@ export default function App() {
                   if (item.id === 'maquinaria') {
                     setActiveSubTab('flota');
                   } else if (item.id === 'sanitario') {
-                    setActiveSubTab('lotes');
+                    // Solo resetear si no estamos ya en una vista de sanitario
+                    if (!['lotes','aplicaciones','monitoreos','cosecha_plan','costos_san','historial_traz','reportes_san','protocolos_eval'].includes(activeSubTab)) {
+                      setActiveSubTab('lotes');
+                    }
                   }
                 }}
               >
@@ -282,6 +285,32 @@ export default function App() {
                       </button>
                     </li>
                   ))}
+
+                  {/* ─── CONFIGURACIÓN ─────────────────────────────── */}
+                  {['administrador', 'ingeniero', 'tecnico'].includes(role?.nombre?.toLowerCase()) && (
+                    <>
+                      <li style={{ paddingTop: 10, paddingBottom: 2 }}>
+                        <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: '0.08em', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 4 }}>
+                          <Settings size={9} /> CONFIGURACIÓN
+                        </span>
+                      </li>
+                      <li>
+                        <button
+                          onClick={() => setActiveSubTab('protocolos_eval')}
+                          style={{
+                            background: 'transparent', border: 'none',
+                            color: activeSubTab === 'protocolos_eval' ? 'var(--primary)' : 'var(--text-secondary)',
+                            fontSize: '13px', padding: '6px 8px', width: '100%', textAlign: 'left',
+                            cursor: 'pointer', fontWeight: activeSubTab === 'protocolos_eval' ? '600' : '400',
+                            display: 'flex', alignItems: 'center', gap: '6px', transition: 'color 0.2s'
+                          }}
+                        >
+                          <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: activeSubTab === 'protocolos_eval' ? 'var(--primary)' : 'transparent', display: 'inline-block' }} />
+                          Protocolos de Evaluación
+                        </button>
+                      </li>
+                    </>
+                  )}
                 </ul>
               )}
             </li>

@@ -25,8 +25,7 @@ export class AuditService {
         modulo: module,
         antes: before,
         despues: after,
-        ip_address: ip,
-        endpoint: endpoint
+        ip: ip
       };
 
       const { error } = await supabaseAdmin.from('audit_logs').insert([record]);

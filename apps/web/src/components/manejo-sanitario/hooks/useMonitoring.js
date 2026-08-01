@@ -3,12 +3,10 @@ import { createMonitoring } from '../types/Monitoring';
 import { monitoringRepository } from '../repositories/monitoringRepository';
 import { agronomyRepository } from '../repositories/agronomyRepository';
 
+import { ProtocolCalculationEngine } from '../domain/services/ProtocolCalculationEngine';
+
 /**
  * Evalúa si un conjunto de valores supera algún umbral económico.
- * @param {Object} valoresEvaluacion
- * @param {number} incidenciaPct
- * @param {Array}  umbrales
- * @returns {Array} Lista de alertas disparadas
  */
 function evaluarUmbrales(valoresEvaluacion, incidenciaPct, umbrales = []) {
   const alertas = [];
@@ -39,24 +37,10 @@ function evaluarUmbrales(valoresEvaluacion, incidenciaPct, umbrales = []) {
   return alertas;
 }
 
-/**
- * Calcula automáticamente la incidencia porcentual si el protocolo
- * contiene las claves 'frutos_evaluados' / 'hojas_evaluadas' y su
- * contraparte 'frutos_enfermos' / 'hojas_infectadas'.
- */
-function calcularIncidencia(valoresEvaluacion) {
-  const evaluados = valoresEvaluacion.frutos_evaluados
-    ?? valoresEvaluacion.hojas_evaluadas
-    ?? valoresEvaluacion.frutos_muestreados;
-  const enfermos = valoresEvaluacion.frutos_enfermos
-    ?? valoresEvaluacion.hojas_infectadas
-    ?? valoresEvaluacion.frutos_brocados;
-
-  if (evaluados && enfermos !== undefined && parseFloat(evaluados) > 0) {
-    return parseFloat(((parseFloat(enfermos) / parseFloat(evaluados)) * 100).toFixed(2));
-  }
-  return null;
+function calcularIncidencia(valoresEvaluacion, variables = []) {
+  return ProtocolCalculationEngine.calculateIncidence(valoresEvaluacion, variables);
 }
+
 
 const ESTADO_INICIAL = {
   lote_id: '',

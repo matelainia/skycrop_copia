@@ -2,6 +2,11 @@ export const createMonitoring = (data = {}) => {
   return {
     id: data.id || '',
     lote_id: data.lote_id || '',
+    company_id: data.company_id || '',
+    objeto_evaluacion_id: data.objeto_evaluacion_id || '',
+    protocolo_version_id: data.protocolo_version_id || null,
+    valores_evaluacion: data.valores_evaluacion || {},
+    objeto_evaluacion: data.objeto_evaluacion || null,
     tipo_monitoreo: data.tipo_monitoreo || 'Sanitario',
     fecha_monitoreo: data.fecha_monitoreo || new Date().toISOString(),
     responsable: (data.responsable || '').trim(),

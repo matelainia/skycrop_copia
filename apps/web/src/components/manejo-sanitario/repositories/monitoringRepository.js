@@ -54,7 +54,12 @@ export const monitoringRepository = {
         enfermedades_detectadas: payload.enfermedades_detectadas || null,
         observaciones:         payload.observaciones || null
       })
-      .select()
+      .select(`
+        *,
+        objeto_evaluacion:objeto_evaluacion_id (
+          id, nombre_comun, categoria
+        )
+      `)
       .single();
 
     if (error) {
