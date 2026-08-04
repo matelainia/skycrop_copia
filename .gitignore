@@ -38,7 +38,7 @@ out/
 backend/.env
 backend/.env.local
 backend/.env.*
-
+backend/api/
 # ─── Claves de Servicio (Google / GCP / GEE) ───
 # Credenciales de Service Account de Google Earth Engine
 # y cualquier JSON de clave privada generado desde GCP
@@ -52,8 +52,6 @@ gee-credentials*.json
 *.p12
 *.pfx
 *.key
-index.js
-legacy.js
 # ─── Supabase ───────────────────────────────────
 # Las claves ANON y SERVICE ROLE deben vivir solo en .env
 # No versionar archivos de configuración exportados de Supabase CLI
