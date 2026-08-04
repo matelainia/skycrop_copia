@@ -48,63 +48,7 @@ export default function App() {
     localStorage.setItem('skycrop_active_subtab', activeSubTab);
   }, [activeSubTab]);
 
-  const [expiredCerts, setExpiredCerts] = useState(3);
-  const [pendingSafety, setPendingSafety] = useState(12);
 
-  const fetchTrainingAlerts = async () => {
-    try {
-      // 1. Fetch expired certificates count
-      const { data: rData, error: rError } = await supabase
-        .from('registros_formacion')
-        .select('*, cursos_formacion(tipo)')
-        .eq('estado', 'Vencida');
-      
-      if (rError) throw rError;
-      setExpiredCerts(rData?.length || 0);
-
-      // 2. Fetch active workers count
-      const { data: wData, error: wError } = await supabase
-        .from('trabajadores')
-        .select('id')
-        .eq('estado', 'Activa');
-      if (wError) throw wError;
-      const totalWorkers = wData?.length || 0;
-
-      // 3. Fetch completed safety trainings
-      const { data: sData, error: sError } = await supabase
-        .from('registros_formacion')
-        .select('trabajador_id, curso_id')
-        .eq('estado', 'Completada');
-      if (sError) throw sError;
-
-      // Fetch safety courses
-      const { data: cData } = await supabase
-        .from('cursos_formacion')
-        .select('id')
-        .eq('tipo', 'Seguridad y Salud');
-      const safetyCourseIds = (cData || []).map(c => c.id);
-
-      const completedSafetySet = new Set(
-        (sData || [])
-          .filter(r => safetyCourseIds.includes(r.curso_id))
-          .map(r => r.trabajador_id)
-      );
-
-      const pending = Math.max(0, totalWorkers - completedSafetySet.size);
-      setPendingSafety(pending);
-    } catch (err) {
-      // Fallback metrics
-      setExpiredCerts(3);
-      setPendingSafety(12);
-    }
-  };
-
-  useEffect(() => {
-    fetchTrainingAlerts();
-    // Poll every 10s to keep it dynamic and updated
-    const interval = setInterval(fetchTrainingAlerts, 10000);
-    return () => clearInterval(interval);
-  }, []);
   
   const [isDark, setIsDark] = useState(() => {
     const saved = localStorage.getItem('skycrop_theme');
@@ -187,7 +131,7 @@ export default function App() {
                     setActiveSubTab('flota');
                   } else if (item.id === 'sanitario') {
                     // Solo resetear si no estamos ya en una vista de sanitario
-                    if (!['lotes','aplicaciones','monitoreos','cosecha_plan','costos_san','historial_traz','reportes_san','protocolos_eval'].includes(activeSubTab)) {
+                    if (!['lotes','aplicaciones','monitoreos','historial_traz','protocolos_eval','fertilizacion'].includes(activeSubTab)) {
                       setActiveSubTab('lotes');
                     }
                   }
@@ -250,10 +194,8 @@ export default function App() {
                     { id: 'lotes', label: 'Lotes / Sectores' },
                     { id: 'aplicaciones', label: 'Aplicaciones' },
                     { id: 'monitoreos', label: 'Monitoreos y Evaluaciones' },
-                    { id: 'cosecha_plan', label: 'Planificación de Cosecha' },
-                    { id: 'costos_san', label: 'Costos y Rentabilidad' },
-                    { id: 'historial_traz', label: 'Historial y Trazabilidad' },
-                    { id: 'reportes_san', label: 'Reportes' }
+                    { id: 'historial_traz', label: 'Trazabilidad' },
+                    { id: 'fertilizacion', label: 'Fertilización' }
                   ].map(sub => (
                     <li key={sub.id}>
                       <button
@@ -317,34 +259,7 @@ export default function App() {
           ))}
         </ul>
 
-        {/* Panel de Alertas Críticas */}
-        <div className="sidebar-alerts-section">
-          <div className="sidebar-alerts-title">Panel de Alertas Críticas</div>
-          
-          <div className="sidebar-alert-card">
-            <div className="sidebar-alert-card-title">Insumos HR / Alertas</div>
-            <div className="sidebar-alert-list">
-              <div className="sidebar-alert-item" style={{ color: expiredCerts > 0 ? 'var(--accent-red)' : 'var(--text-secondary)' }}>
-                {expiredCerts} Certificaciones Críticas por vencer
-              </div>
-              <div className="sidebar-alert-item" style={{ color: pendingSafety > 0 ? 'var(--accent-gold)' : 'var(--text-secondary)' }}>
-                Capacitación de Seguridad obligatoria pendiente para {pendingSafety} empleados
-              </div>
-            </div>
-          </div>
 
-          <div className="sidebar-alert-card warn">
-            <div className="sidebar-alert-card-title">Alertas del Cultivo</div>
-            <div className="sidebar-alert-list">
-              <div className="sidebar-alert-item">
-                Mantenimiento de Tractor T-01 vencido
-              </div>
-              <div className="sidebar-alert-item">
-                Alerta de Roya detectada en Lote B-12
-              </div>
-            </div>
-          </div>
-        </div>
 
         <div className="sidebar-footer" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <button 

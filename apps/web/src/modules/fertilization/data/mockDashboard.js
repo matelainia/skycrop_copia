@@ -1,0 +1,140 @@
+/**
+ * mockDashboard.js
+ * Single source of mock data for the Fertilización dashboard.
+ * Shape matches the future getDashboard() / rpc_fertilization_dashboard() response.
+ */
+
+export const mockDashboardData = {
+  metrics: [
+    {
+      id: 'active-plans',
+      icon: 'Sprout',
+      value: 6,
+      unit: '',
+      label: 'Planes Activos',
+      note: '+2 vs mes anterior',
+      noteColor: 'positive',
+    },
+    {
+      id: 'recommendations',
+      icon: 'Flask',
+      value: 12,
+      unit: '',
+      label: 'Recomendaciones',
+      note: 'Este mes',
+      noteColor: 'info',
+    },
+    {
+      id: 'nutrients-applied',
+      icon: 'Droplets',
+      value: 1250,
+      unit: 'kg',
+      label: 'Nutrientes Aplicados',
+      note: 'Este mes',
+      noteColor: 'info',
+    },
+    {
+      id: 'compliance',
+      icon: 'TrendingUp',
+      value: 85,
+      unit: '%',
+      label: 'Cumplimiento de Planes',
+      note: 'Promedio general',
+      noteColor: 'warning',
+    },
+  ],
+
+  plans: [
+    {
+      id: 'plan-01',
+      lotId: 'lot-01',
+      lotName: 'Lote 01-Norte',
+      lotArea: '15.2 ha',
+      crop: 'Cacao',
+      variety: 'CCN-51',
+      phenologicalPhase: 'Floración',
+      lastRecommendationDate: '2026-07-24',
+      lastFertilizer: 'NPK 15-15-15',
+      status: 'en_curso',
+    },
+    {
+      id: 'plan-02',
+      lotId: 'lot-02',
+      lotName: 'Lote 02-Central',
+      lotArea: '8.7 ha',
+      crop: 'Cacao',
+      variety: 'CCN-51',
+      phenologicalPhase: 'Fructificación',
+      lastRecommendationDate: '2026-07-22',
+      lastFertilizer: 'Urea + KCl',
+      status: 'en_curso',
+    },
+    {
+      id: 'plan-03',
+      lotId: 'lot-03',
+      lotName: 'Lote 03-Bajo',
+      lotArea: '12.1 ha',
+      crop: 'Plátano',
+      variety: 'Dominico Hartón',
+      phenologicalPhase: 'Crecimiento',
+      lastRecommendationDate: '2026-07-20',
+      lastFertilizer: 'NPK 20-10-20',
+      status: 'pendiente',
+    },
+    {
+      id: 'plan-04',
+      lotId: 'lot-04',
+      lotName: 'Lote 04-Sur',
+      lotArea: '9.5 ha',
+      crop: 'Café',
+      variety: 'Castillo',
+      phenologicalPhase: 'Desarrollo',
+      lastRecommendationDate: '2026-07-18',
+      lastFertilizer: 'DAP + KCl',
+      status: 'en_curso',
+    },
+  ],
+
+  recommendations: [
+    {
+      id: 'rec-01',
+      date: '2026-08-05',
+      lotName: 'Lote 01-Norte',
+      crop: 'Cacao',
+      phenologicalPhase: 'Floración',
+      fertilizer: 'NPK 15-15-15',
+      dose: '150 kg/ha',
+      doseType: 'npk',
+    },
+    {
+      id: 'rec-02',
+      date: '2026-08-07',
+      lotName: 'Lote 03-Bajo',
+      crop: 'Plátano',
+      phenologicalPhase: 'Crecimiento',
+      fertilizer: 'Urea',
+      dose: '120 kg/ha',
+      doseType: 'urea',
+    },
+    {
+      id: 'rec-03',
+      date: '2026-08-10',
+      lotName: 'Lote 02-Central',
+      crop: 'Cacao',
+      phenologicalPhase: 'Fructificación',
+      fertilizer: 'KCl',
+      dose: '100 kg/ha',
+      doseType: 'kcl',
+    },
+  ],
+
+  soilAnalysis: [
+    {
+      id: 'soil-01',
+      lotName: 'Lote 01-Norte',
+      crop: 'Cacao',
+      analysisDate: '2026-07-15',
+      status: 'optimo',
+    },
+  ],
+};

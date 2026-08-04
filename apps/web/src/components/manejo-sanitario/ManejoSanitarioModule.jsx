@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { lazy, Suspense } from 'react';
 import { LotsProvider, useLotsContext } from './context/LotsContext';
 import { ApplicationsProvider, useApplicationsContext } from './context/ApplicationsContext';
 import { MonitoringProvider, useMonitoringContext } from './context/MonitoringContext';
@@ -7,18 +7,18 @@ import { MonitoringProvider, useMonitoringContext } from './context/MonitoringCo
 import DashboardView from './components/views/DashboardView';
 import ApplicationsView from './components/views/ApplicationsView';
 import MonitoringView from './components/views/MonitoringView';
-import HarvestView from './components/views/HarvestView';
-import CostsView from './components/views/CostsView';
 import HistoryView from './components/views/HistoryView';
-import ReportsView from './components/views/ReportsView';
 import ProtocolosConfigView from './components/views/ProtocolosConfigView';
+
+// Fertilización Dashboard — lazy loaded (code-split from main bundle)
+const FertilizacionDashboard = lazy(() =>
+  import('../../modules/fertilization/pages/Dashboard.jsx')
+);
 
 // Form Drawers
 import LotForm from './components/forms/LotForm';
 import ApplicationForm from './components/forms/ApplicationForm';
 import MonitoringForm from './components/forms/MonitoringForm';
-import CosechaForm from './components/forms/CosechaForm';
-import CostoForm from './components/forms/CostoForm';
 import WorkerForm from './components/forms/WorkerForm';
 
 // Lucide
@@ -26,8 +26,7 @@ import { Compass, BookOpen, Activity, Calendar, DollarSign, FileSpreadsheet, Map
 
 function ManejoSanitarioContent({ subTab, setSubTab }) {
   const activeSubView = subTab && [
-    'lotes', 'aplicaciones', 'monitoreos', 'cosecha_plan',
-    'costos_san', 'historial_traz', 'reportes_san', 'protocolos_eval'
+    'lotes', 'aplicaciones', 'monitoreos', 'historial_traz', 'protocolos_eval', 'fertilizacion'
   ].includes(subTab) ? subTab : 'lotes';
 
   const {
@@ -40,8 +39,6 @@ function ManejoSanitarioContent({ subTab, setSubTab }) {
     setModalActiveTab,
     isMonDrawerOpen,
     isAppDrawerOpen,
-    isCosechaDrawerOpen,
-    isCostoDrawerOpen,
     isTrabajadorDrawerOpen,
     handleAttachmentUpload,
     logAudit,
@@ -57,37 +54,43 @@ function ManejoSanitarioContent({ subTab, setSubTab }) {
 
   return (
     <>
-      {/* Submenu Layout Header */}
-      <div className="section-header" style={{ borderBottom: 'none', paddingBottom: '0px' }}>
-        <div className="section-title-box">
-          <h2 style={{ fontSize: '22px', fontWeight: '700' }}>Manejo Sanitario</h2>
-          <p className="section-desc">Gestión integrada de lotes, aplicaciones, monitoreos y evaluaciones</p>
-        </div>
+      {/* Submenu Layout Header — hidden when Fertilización owns its full layout */}
+      {activeSubView !== 'fertilizacion' && (
+        <div className="section-header" style={{ borderBottom: 'none', paddingBottom: '0px' }}>
+          <div className="section-title-box">
+            <h2 style={{ fontSize: '22px', fontWeight: '700' }}>Manejo Sanitario</h2>
+            <p className="section-desc">Gestión integrada de lotes, aplicaciones, monitoreos y evaluaciones</p>
+          </div>
 
-        <div className="section-actions" style={{ display: 'flex', gap: '8px' }}>
-          <button className="btn btn-primary" onClick={() => setIsLoteDrawerOpen(true)} style={{ backgroundColor: 'var(--primary)' }}>
-            <Plus size={16} />
-            <span>Nuevo Lote</span>
-          </button>
+          <div className="section-actions" style={{ display: 'flex', gap: '8px' }}>
+            <button className="btn btn-primary" onClick={() => setIsLoteDrawerOpen(true)} style={{ backgroundColor: 'var(--primary)' }}>
+              <Plus size={16} />
+              <span>Nuevo Lote</span>
+            </button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Render active subview */}
       {activeSubView === 'lotes' && <DashboardView />}
       {activeSubView === 'aplicaciones' && <ApplicationsView setSubTab={setSubTab} />}
       {activeSubView === 'monitoreos' && <MonitoringView />}
-      {activeSubView === 'cosecha_plan' && <HarvestView />}
-      {activeSubView === 'costos_san' && <CostsView />}
       {activeSubView === 'historial_traz' && <HistoryView />}
-      {activeSubView === 'reportes_san' && <ReportsView />}
       {activeSubView === 'protocolos_eval' && <ProtocolosConfigView />}
+      {activeSubView === 'fertilizacion' && (
+        <Suspense fallback={
+          <div style={{ padding: 32, textAlign: 'center', color: '#6B7280', fontFamily: 'Inter, sans-serif' }}>
+            Cargando Fertilización...
+          </div>
+        }>
+          <FertilizacionDashboard />
+        </Suspense>
+      )}
 
       {/* Forms Drawers */}
       {isLoteDrawerOpen && <LotForm />}
       {isAppDrawerOpen && <ApplicationForm />}
       {isMonDrawerOpen && <MonitoringForm />}
-      {isCosechaDrawerOpen && <CosechaForm />}
-      {isCostoDrawerOpen && <CostoForm />}
       {isTrabajadorDrawerOpen && <WorkerForm />}
 
       {/* Technical File Modal (Ficha Completa) */}

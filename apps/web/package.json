@@ -11,17 +11,19 @@
   },
   "dependencies": {
     "@clerk/clerk-react": "^5.61.8",
+    "@skycrop/hooks": "*",
+    "@skycrop/services": "*",
+    "@skycrop/types": "*",
+    "@skycrop/ui": "*",
     "@supabase/supabase-js": "^2.106.1",
+    "@tanstack/react-query": "^5.101.4",
     "dotenv": "^17.4.2",
+    "framer-motion": "^12.43.0",
     "jszip": "^3.10.1",
     "lucide-react": "^1.16.0",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
-    "xlsx": "^0.18.5",
-    "@skycrop/services": "*",
-    "@skycrop/types": "*",
-    "@skycrop/ui": "*",
-    "@skycrop/hooks": "*"
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

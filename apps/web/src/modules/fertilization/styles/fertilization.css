@@ -1,0 +1,1476 @@
+/**
+ * fertilization.css
+ * Scoped design system for the Fertilización module.
+ *
+ * Imported directly in pages/Dashboard.jsx — self-contained, no global @import.
+ *
+ * Color strategy: maps all local tokens to the existing global CSS variables
+ * so the module blends seamlessly with the rest of SkyCrop (warm ivory theme
+ * in light mode, dark charcoal in dark mode).
+ */
+
+/* ─── Local Token Mapping (global vars → local aliases) ────────────────────── */
+.fert-module {
+  /* Map to existing global palette — no hardcoded colors */
+  --fert-primary:       var(--primary);
+  --fert-primary-dark:  var(--primary-hover);
+  --fert-primary-light: var(--primary-light);
+  --fert-primary-border:var(--primary-border);
+  --fert-bg:            var(--bg-app);
+  --fert-card:          var(--bg-card);
+  --fert-card-hover:    var(--bg-card-hover);
+  --fert-border:        var(--border-color);
+  --fert-border-hover:  var(--border-color-hover);
+  --fert-text-main:     var(--text-primary);
+  --fert-text-muted:    var(--text-secondary);
+  --fert-shadow:        var(--card-shadow);
+
+  /* Status colors — these don't have global equivalents, kept local */
+  --fert-pending-text: #EA580C;
+  --fert-pending-bg:   rgba(234, 88, 12, 0.10);
+  --fert-info-text:    #2563EB;
+  --fert-info-bg:      rgba(37, 99, 235, 0.10);
+
+  /* Geometry — per spec §3 */
+  --fert-radius-card:   20px;
+  --fert-radius-btn:    16px;
+  --fert-radius-input:  14px;
+  --fert-radius-avatar: 12px;
+
+  /* Spacing scale: 4 / 8 / 12 / 16 / 20 / 24 / 32 / 40 */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+}
+
+/* ─── Page Layout ─────────────────────────────────────────────────────────── */
+/*
+  NOTE: .page-content in App.jsx already has padding: 32px.
+  .fert-module must NOT add its own padding — only supply the
+  inner flex column layout. The section header above is hidden
+  in JSX when fertilizacion is active, so no offset needed.
+*/
+.fert-module {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-6);
+  min-height: 0;
+}
+
+/* ─── Card ─────────────────────────────────────────────────────────────────── */
+.fert-card {
+  background: var(--fert-card);
+  backdrop-filter: var(--backdrop-blur);
+  -webkit-backdrop-filter: var(--backdrop-blur);
+  border-radius: var(--fert-radius-card);
+  border: 1px solid var(--fert-border);
+  box-shadow: var(--fert-shadow);
+  transition: transform 200ms ease, box-shadow 200ms ease,
+              background-color 200ms ease, border-color 200ms ease;
+}
+
+.fert-card:hover {
+  transform: translateY(-2px);
+  background-color: var(--fert-card-hover);
+  border-color: var(--fert-border-hover);
+}
+
+.fert-card--static:hover {
+  transform: none;
+  background-color: var(--fert-card);
+  border-color: var(--fert-border);
+}
+
+/* ─── Buttons ────────────────────────────────────────────────────────────────── */
+.fert-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--sp-2);
+  padding: 10px var(--sp-4);
+  border-radius: var(--fert-radius-btn);
+  font-size: 14px;
+  font-weight: 500;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: filter 200ms ease, background 200ms ease,
+              border-color 200ms ease, color 200ms ease;
+  white-space: nowrap;
+  line-height: 1;
+}
+
+.fert-btn--primary {
+  background: var(--fert-primary);
+  color: #fff;
+  border-color: var(--fert-primary);
+}
+
+.fert-btn--primary:hover {
+  filter: brightness(1.08);
+}
+
+.fert-btn--outline {
+  background: transparent;
+  color: var(--fert-primary);
+  border-color: var(--fert-border);
+}
+
+.fert-btn--outline:hover {
+  background: var(--fert-primary-light);
+  border-color: var(--fert-primary);
+}
+
+.fert-btn--ghost {
+  background: transparent;
+  color: var(--fert-text-muted);
+  border-color: transparent;
+}
+
+.fert-btn--ghost:hover {
+  background: var(--fert-primary-light);
+  color: var(--fert-primary-dark);
+}
+
+.fert-btn--icon {
+  padding: var(--sp-2);
+  width: 32px;
+  height: 32px;
+  border-radius: var(--sp-2);
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.fert-btn:focus-visible {
+  outline: 2px solid var(--fert-primary);
+  outline-offset: 2px;
+}
+
+/* ─── Badges ─────────────────────────────────────────────────────────────────── */
+.fert-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+
+.fert-badge--success {
+  background: var(--fert-primary-light);
+  color: var(--fert-primary-dark);
+  border: 1px solid var(--fert-primary-border);
+}
+
+.fert-badge--pending {
+  background: var(--fert-pending-bg);
+  color: var(--fert-pending-text);
+}
+
+.fert-badge--info {
+  background: var(--fert-info-bg);
+  color: var(--fert-info-text);
+}
+
+.fert-badge--npk  { background: rgba(37, 99, 235, 0.10); color: #1D4ED8; }
+.fert-badge--urea { background: rgba(109, 40, 217, 0.10); color: #6D28D9; }
+.fert-badge--kcl  { background: rgba(161, 98,  7, 0.10);  color: #A16207; }
+.fert-badge--dap  { background: rgba(157, 23, 77, 0.10);  color: #9D174D; }
+
+/* ─── Avatar (initials placeholder) ──────────────────────────────────────────── */
+.fert-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--fert-radius-avatar);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  font-family: var(--font-sans);
+  flex-shrink: 0;
+  letter-spacing: 0.02em;
+}
+
+/* Per-lot color variants */
+.fert-avatar--lot-01 { background: linear-gradient(135deg, #16A34A, #15803D); }
+.fert-avatar--lot-02 { background: linear-gradient(135deg, #0369A1, #075985); }
+.fert-avatar--lot-03 { background: linear-gradient(135deg, #7C3AED, #6D28D9); }
+.fert-avatar--lot-04 { background: linear-gradient(135deg, #C2410C, #9A3412); }
+
+/* ─── Dropdown / Select ───────────────────────────────────────────────────────── */
+.fert-dropdown {
+  padding: 8px var(--sp-3);
+  border-radius: var(--fert-radius-input);
+  border: 1px solid var(--fert-border);
+  background: var(--fert-card);
+  color: var(--fert-text-main);
+  font-size: 13px;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  padding-right: 30px;
+  min-width: 150px;
+  transition: border-color 200ms ease;
+}
+
+.fert-dropdown:focus {
+  outline: 2px solid var(--fert-primary);
+  outline-offset: 2px;
+  border-color: var(--fert-primary);
+}
+
+/* ─── Tabs ───────────────────────────────────────────────────────────────────── */
+.fert-tabs {
+  display: flex;
+  border-bottom: 1px solid var(--fert-border);
+  gap: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.fert-tabs::-webkit-scrollbar { display: none; }
+
+.fert-tab-btn {
+  position: relative;
+  padding: var(--sp-3) var(--sp-4);
+  background: transparent;
+  border: none;
+  font-size: 13px;
+  font-weight: 500;
+  font-family: var(--font-sans);
+  color: var(--fert-text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: color 200ms ease;
+}
+
+.fert-tab-btn:hover { color: var(--fert-text-main); }
+
+.fert-tab-btn--active {
+  color: var(--fert-primary);
+  font-weight: 600;
+}
+
+.fert-tab-indicator {
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--fert-primary);
+  border-radius: 2px 2px 0 0;
+}
+
+/* ─── Dashboard Header ─────────────────────────────────────────────────────── */
+.fert-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-4);
+}
+
+.fert-header__left {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+}
+
+.fert-header__icon-tile {
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  background: var(--fert-primary-light);
+  border: 1px solid var(--fert-primary-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fert-primary);
+  flex-shrink: 0;
+}
+
+.fert-header__title {
+  font-size: 32px;
+  font-weight: 600;
+  color: var(--fert-text-main);
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  font-family: var(--font-display);
+}
+
+.fert-header__subtitle {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--fert-text-muted);
+  margin-top: 3px;
+  font-family: var(--font-sans);
+}
+
+/* ─── KPI Grid ────────────────────────────────────────────────────────────── */
+.fert-kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--sp-4);
+}
+
+/* ─── Metric Card ─────────────────────────────────────────────────────────── */
+.fert-metric-card {
+  height: 110px;
+  padding: var(--sp-5);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+}
+
+.fert-metric-card__icon-tile {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.fert-metric-card__icon-tile--green  { background: var(--fert-primary-light); color: var(--fert-primary); }
+.fert-metric-card__icon-tile--blue   { background: rgba(37, 99, 235, 0.10);   color: #1D4ED8; }
+.fert-metric-card__icon-tile--cyan   { background: rgba(14, 116, 144, 0.10);  color: #0E7490; }
+.fert-metric-card__icon-tile--orange { background: rgba(194, 65, 12, 0.10);   color: #C2410C; }
+
+.fert-metric-card__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.fert-metric-card__value {
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--fert-text-main);
+  font-family: var(--font-display);
+  line-height: 1;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.fert-metric-card__unit {
+  font-size: 15px;
+  font-weight: 500;
+  color: var(--fert-text-muted);
+}
+
+.fert-metric-card__label {
+  font-size: 12px;
+  color: var(--fert-text-muted);
+  margin-top: 4px;
+  font-family: var(--font-sans);
+}
+
+.fert-metric-card__note {
+  font-size: 11px;
+  margin-top: 5px;
+  font-weight: 500;
+  font-family: var(--font-sans);
+}
+
+.fert-metric-card__note--positive { color: var(--fert-primary-dark); }
+.fert-metric-card__note--info     { color: #1D4ED8; }
+.fert-metric-card__note--warning  { color: #C2410C; }
+
+/* ─── 70/30 Main Grid ─────────────────────────────────────────────────────── */
+.fert-main-grid {
+  display: grid;
+  grid-template-columns: 7fr 3fr;
+  gap: var(--sp-5);
+  align-items: start;
+}
+
+.fert-left-col  { display: flex; flex-direction: column; gap: var(--sp-5); }
+.fert-right-col { display: flex; flex-direction: column; gap: var(--sp-4); }
+
+/* ─── Panel Headers ─────────────────────────────────────────────────────────── */
+.fert-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-4) var(--sp-5);
+  border-bottom: 1px solid var(--fert-border);
+}
+
+.fert-panel-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--fert-text-main);
+  font-family: var(--font-sans);
+}
+
+/* ─── Plans Table ─────────────────────────────────────────────────────────── */
+.fert-table-wrapper {
+  overflow-x: auto;
+}
+
+.fert-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-sans);
+  min-width: 680px;
+}
+
+.fert-table thead th {
+  padding: var(--sp-3) var(--sp-4);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--fert-text-muted);
+  text-align: left;
+  border-bottom: 1px solid var(--fert-border);
+  white-space: nowrap;
+  background: transparent;
+}
+
+.fert-table tbody tr {
+  border-bottom: 1px solid var(--fert-border);
+  transition: background 150ms ease;
+}
+
+.fert-table tbody tr:last-child { border-bottom: none; }
+
+.fert-table tbody tr:hover { background: var(--fert-card-hover); }
+
+.fert-table tbody td {
+  padding: var(--sp-3) var(--sp-4);
+  font-size: 13px;
+  color: var(--fert-text-main);
+  vertical-align: middle;
+}
+
+.fert-table-lot-cell {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.fert-table-lot-info__name {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--fert-text-main);
+  white-space: nowrap;
+}
+
+.fert-table-lot-info__meta {
+  font-size: 11px;
+  color: var(--fert-text-muted);
+}
+
+.fert-table-crop__name    { font-size: 13px; color: var(--fert-text-main); }
+.fert-table-crop__variety { font-size: 11px; color: var(--fert-text-muted); }
+.fert-table-rec__date     { font-size: 13px; color: var(--fert-text-main); }
+.fert-table-rec__fertilizer { font-size: 11px; color: var(--fert-text-muted); }
+
+.fert-table-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.fert-table-footer {
+  padding: var(--sp-3) var(--sp-4);
+  text-align: center;
+  border-top: 1px solid var(--fert-border);
+}
+
+.fert-table-footer-btn {
+  background: none;
+  border: none;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--fert-primary);
+  cursor: pointer;
+  font-family: var(--font-sans);
+  transition: color 200ms ease, background 200ms ease;
+  padding: 6px 14px;
+  border-radius: 8px;
+}
+
+.fert-table-footer-btn:hover {
+  background: var(--fert-primary-light);
+}
+
+/* ─── Recommendation Panel ────────────────────────────────────────────────── */
+.fert-rec-list {
+  display: flex;
+  flex-direction: column;
+  padding: var(--sp-4) var(--sp-5);
+  gap: var(--sp-4);
+}
+
+.fert-rec-item {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+  padding-bottom: var(--sp-4);
+  border-bottom: 1px solid var(--fert-border);
+}
+
+.fert-rec-item:last-child {
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+.fert-rec-date {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: var(--fert-primary-light);
+  border: 1px solid var(--fert-primary-border);
+  border-radius: 10px;
+  padding: 6px 10px;
+  min-width: 46px;
+  flex-shrink: 0;
+}
+
+.fert-rec-date__day {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--fert-primary);
+  line-height: 1;
+  font-family: var(--font-display);
+}
+
+.fert-rec-date__month {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--fert-primary);
+  margin-top: 1px;
+}
+
+.fert-rec-body { flex: 1; min-width: 0; }
+
+.fert-rec-body__lot {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fert-text-main);
+  font-family: var(--font-sans);
+}
+
+.fert-rec-body__meta {
+  font-size: 11px;
+  color: var(--fert-text-muted);
+  margin-bottom: 6px;
+}
+
+.fert-rec-body__dose {
+  font-size: 11px;
+  color: var(--fert-text-muted);
+  margin-top: 4px;
+  font-weight: 500;
+}
+
+/* ─── Soil Analysis Panel ─────────────────────────────────────────────────── */
+.fert-soil-list {
+  padding: var(--sp-4) var(--sp-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.fert-soil-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+
+.fert-soil-item__info    { flex: 1; min-width: 0; }
+
+.fert-soil-item__lot {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fert-text-main);
+  font-family: var(--font-sans);
+}
+
+.fert-soil-item__meta {
+  font-size: 11px;
+  color: var(--fert-text-muted);
+}
+
+.fert-soil-item__right {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+/* ─── Agronomic Tip Banner ─────────────────────────────────────────────────── */
+.fert-tip {
+  background: var(--fert-primary-light);
+  border: 1px solid var(--fert-primary-border);
+  border-radius: var(--fert-radius-card);
+  padding: var(--sp-4) var(--sp-5);
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-4);
+}
+
+.fert-tip__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--fert-primary-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fert-primary);
+  flex-shrink: 0;
+}
+
+.fert-tip__body { flex: 1; }
+
+.fert-tip__title {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--fert-primary-dark);
+  font-family: var(--font-sans);
+  margin-bottom: 3px;
+}
+
+.fert-tip__text {
+  font-size: 13px;
+  color: var(--text-secondary);
+  font-family: var(--font-sans);
+  line-height: 1.55;
+}
+
+.fert-tip__close {
+  background: none;
+  border: none;
+  color: var(--fert-primary);
+  cursor: pointer;
+  padding: var(--sp-1);
+  border-radius: var(--sp-1);
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  opacity: 0.7;
+  transition: opacity 200ms ease, background 200ms ease;
+}
+
+.fert-tip__close:hover {
+  opacity: 1;
+  background: var(--fert-primary-border);
+}
+
+/* ─── AI Insights Card ─────────────────────────────────────────────────────── */
+.fert-ai-card {
+  padding: var(--sp-4) var(--sp-5);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  border: 1px dashed var(--fert-primary-border) !important;
+  background: var(--fert-primary-light) !important;
+  animation: fert-ai-pulse 3s ease-in-out infinite;
+}
+
+@keyframes fert-ai-pulse {
+  0%, 100% { border-color: var(--fert-primary-border); }
+  50%       { border-color: var(--fert-primary); }
+}
+
+.fert-ai-card__icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  background: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  flex-shrink: 0;
+}
+
+.fert-ai-card__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fert-primary-dark);
+  font-family: var(--font-sans);
+}
+
+.fert-ai-card__subtitle {
+  font-size: 12px;
+  color: var(--fert-text-muted);
+  margin-top: 2px;
+  font-family: var(--font-sans);
+}
+
+.fert-ai-card__badge {
+  margin-top: 6px;
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  background: var(--fert-primary-border);
+  color: var(--fert-primary-dark);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* ─── Loading Skeleton ─────────────────────────────────────────────────────── */
+@keyframes fert-skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.45; }
+}
+
+.fert-skeleton {
+  background: var(--border-color);
+  border-radius: 8px;
+  animation: fert-skeleton-pulse 1.6s ease-in-out infinite;
+}
+
+.fert-skeleton--text  { height: 13px; }
+.fert-skeleton--title { height: 36px; width: 200px; border-radius: 10px; }
+.fert-skeleton--card  { border-radius: var(--fert-radius-card); }
+.fert-skeleton--row   { height: 56px; border-radius: 10px; }
+
+/* ─── Error State ─────────────────────────────────────────────────────────── */
+.fert-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 32px;
+  gap: var(--sp-4);
+  text-align: center;
+}
+
+.fert-error__icon {
+  width: 52px;
+  height: 52px;
+  background: rgba(220, 38, 38, 0.10);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #DC2626;
+}
+
+.fert-error__title {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--fert-text-main);
+  font-family: var(--font-display);
+}
+
+.fert-error__msg {
+  font-size: 13px;
+  color: var(--fert-text-muted);
+  font-family: var(--font-sans);
+  max-width: 340px;
+  line-height: 1.5;
+}
+
+/* ─── Empty State ─────────────────────────────────────────────────────────── */
+.fert-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 32px;
+  gap: var(--sp-3);
+  text-align: center;
+}
+
+.fert-empty__icon {
+  width: 48px;
+  height: 48px;
+  background: var(--fert-primary-light);
+  border: 1px solid var(--fert-primary-border);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fert-primary);
+}
+
+.fert-empty__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--fert-text-main);
+  font-family: var(--font-sans);
+}
+
+.fert-empty__subtitle {
+  font-size: 13px;
+  color: var(--fert-text-muted);
+  font-family: var(--font-sans);
+  line-height: 1.5;
+}
+
+/* ─── Responsive Breakpoints ─────────────────────────────────────────────── */
+@media (max-width: 1280px) {
+  .fert-kpi-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 1024px) {
+  .fert-main-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .fert-right-col {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .fert-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--sp-3);
+  }
+
+  .fert-right-col {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 640px) {
+  .fert-module {
+    gap: var(--sp-4);
+  }
+
+  .fert-kpi-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .fert-header__title {
+    font-size: 24px;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   PLANES DE FERTILIZACIÓN — SUBMÓDULO
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ─── Página principal ───────────────────────────────────────────────────── */
+.plans-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+  padding-top: var(--sp-4);
+}
+
+/* ─── Barra de Filtros ───────────────────────────────────────────────────── */
+.plans-filters {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+
+.plans-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.plans-filter-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--fert-text-muted);
+  font-family: var(--font-sans);
+  white-space: nowrap;
+}
+
+.plans-filter-select {
+  min-width: 130px;
+}
+
+/* Buscador */
+.plans-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 240px;
+  max-width: 340px;
+}
+
+.plans-search__icon {
+  position: absolute;
+  left: 12px;
+  color: var(--fert-text-muted);
+  pointer-events: none;
+  flex-shrink: 0;
+}
+
+.plans-search__input {
+  width: 100%;
+  padding: 9px 36px 9px 36px;
+  border-radius: var(--fert-radius-input);
+  border: 1px solid var(--fert-border);
+  background: var(--fert-card);
+  color: var(--fert-text-main);
+  font-size: 13px;
+  font-family: var(--font-sans);
+  transition: border-color 200ms ease;
+  /* Reset native search appearance */
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.plans-search__input::-webkit-search-cancel-button { display: none; }
+
+.plans-search__input::placeholder { color: var(--fert-text-muted); }
+
+.plans-search__input:focus {
+  outline: 2px solid var(--fert-primary);
+  outline-offset: 2px;
+  border-color: var(--fert-primary);
+}
+
+.plans-search__clear {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  color: var(--fert-text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 2px;
+  border-radius: 4px;
+  transition: color 200ms ease;
+}
+
+.plans-search__clear:hover { color: var(--fert-text-main); }
+
+/* Date range */
+.plans-filter-group--date .plans-date-range {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.plans-date-input {
+  padding: 8px 10px;
+  border-radius: var(--fert-radius-input);
+  border: 1px solid var(--fert-border);
+  background: var(--fert-card);
+  color: var(--fert-text-main);
+  font-size: 12px;
+  font-family: var(--font-sans);
+  cursor: pointer;
+  transition: border-color 200ms ease;
+  width: 130px;
+}
+
+.plans-date-input:focus {
+  outline: 2px solid var(--fert-primary);
+  outline-offset: 2px;
+  border-color: var(--fert-primary);
+}
+
+.plans-date-sep {
+  color: var(--fert-text-muted);
+  font-size: 12px;
+  flex-shrink: 0;
+}
+
+.plans-filter-btn { align-self: flex-end; }
+.plans-filter-reset { align-self: flex-end; }
+
+/* ─── Plans Table Card ───────────────────────────────────────────────────── */
+.plans-table-card {
+  overflow: hidden;
+}
+
+/* ─── Plans DataTable ────────────────────────────────────────────────────── */
+.plans-table-container {
+  width: 100%;
+}
+
+.plans-table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.plans-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-sans);
+  min-width: 900px;
+}
+
+/* Cabeceras */
+.plans-table__head { }
+
+.plans-table__th {
+  padding: var(--sp-3) var(--sp-4);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--fert-text-muted);
+  text-align: left;
+  border-bottom: 1px solid var(--fert-border);
+  white-space: nowrap;
+  background: transparent;
+}
+
+/* Filas */
+.plans-table__row {
+  border-bottom: 1px solid var(--fert-border);
+  transition: background 150ms ease;
+}
+
+.plans-table__row:last-child { border-bottom: none; }
+.plans-table__row:hover { background: var(--fert-card-hover); }
+
+.plans-table__td {
+  padding: var(--sp-3) var(--sp-4);
+  font-size: 13px;
+  color: var(--fert-text-main);
+  vertical-align: middle;
+}
+
+.plans-table__td--actions {
+  white-space: nowrap;
+  text-align: right;
+}
+
+/* ─── Celda: Plan ────────────────────────────────────────────────────────── */
+.plan-cell {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--sp-3);
+}
+
+.plan-cell__icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--fert-primary-light);
+  border: 1px solid var(--fert-primary-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fert-primary);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.plan-cell__info { flex: 1; min-width: 0; }
+
+.plan-cell__name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fert-text-main);
+  line-height: 1.3;
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+  flex-wrap: wrap;
+}
+
+.plan-cell__code {
+  font-size: 11px;
+  color: var(--fert-text-muted);
+  margin-top: 2px;
+  font-family: 'JetBrains Mono', 'Courier New', monospace;
+  letter-spacing: 0.03em;
+}
+
+.plan-cell__version-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: var(--fert-info-bg);
+  color: var(--fert-info-text);
+  font-family: var(--font-sans);
+  white-space: nowrap;
+}
+
+/* ─── Celda: Lote ────────────────────────────────────────────────────────── */
+.lot-cell__name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--fert-text-main);
+}
+
+.lot-cell__sector {
+  font-size: 11px;
+  color: var(--fert-text-muted);
+  margin-top: 2px;
+}
+
+/* ─── Celda: Cultivo ─────────────────────────────────────────────────────── */
+.crop-cell__name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--fert-text-main);
+}
+
+.crop-cell__scientific {
+  font-size: 11px;
+  color: var(--fert-text-muted);
+  font-style: italic;
+  margin-top: 2px;
+}
+
+/* ─── Celda: Fecha ───────────────────────────────────────────────────────── */
+.date-cell__date {
+  font-size: 13px;
+  color: var(--fert-text-main);
+}
+
+.date-cell__user {
+  font-size: 11px;
+  color: var(--fert-text-muted);
+  margin-top: 2px;
+}
+
+/* ─── Celda: Acciones ────────────────────────────────────────────────────── */
+.row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+/* ─── Skeleton row ───────────────────────────────────────────────────────── */
+.plans-skeleton-row { border-bottom: 1px solid var(--fert-border); }
+.plans-skeleton-cell { display: flex; align-items: center; gap: var(--sp-3); }
+
+/* ─── Error cell ─────────────────────────────────────────────────────────── */
+.plans-table__error-cell { padding: var(--sp-8); text-align: center; }
+.plans-table__error-msg  {
+  font-size: 14px;
+  color: #DC2626;
+  font-family: var(--font-sans);
+}
+
+/* ─── Empty State (Plans) ────────────────────────────────────────────────── */
+.plans-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 56px 32px;
+  gap: var(--sp-4);
+  text-align: center;
+}
+
+.plans-empty__icon-tile {
+  width: 56px;
+  height: 56px;
+  background: var(--fert-primary-light);
+  border: 1px solid var(--fert-primary-border);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fert-primary);
+}
+
+.plans-empty__title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--fert-text-main);
+  font-family: var(--font-sans);
+}
+
+.plans-empty__subtitle {
+  font-size: 13px;
+  color: var(--fert-text-muted);
+  font-family: var(--font-sans);
+  line-height: 1.55;
+  max-width: 380px;
+  margin-top: -8px;
+}
+
+/* ─── StatusBadge — Motor Reutilizable ───────────────────────────────────── */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  line-height: 1.4;
+  font-family: var(--font-sans);
+}
+
+/* Plan status */
+.status-badge--draft     { background: rgba(107, 114, 128, 0.12); color: #4B5563; }
+.status-badge--running   { background: rgba(37,  99,  235, 0.12); color: #1D4ED8; }
+.status-badge--completed { background: var(--fert-primary-light);  color: var(--fert-primary-dark); border: 1px solid var(--fert-primary-border); }
+.status-badge--archived  { background: rgba(107, 114, 128, 0.10); color: #6B7280; }
+.status-badge--unknown   { background: rgba(0,0,0,0.05); color: #9CA3AF; }
+
+/* Validity status */
+.status-badge--valid-active    { background: rgba(5, 150, 105, 0.12); color: #065F46; }
+.status-badge--valid-scheduled { background: rgba(37, 99, 235, 0.12); color: #1D4ED8; }
+.status-badge--valid-expired   { background: rgba(220, 38, 38, 0.12); color: #B91C1C; }
+.status-badge--valid-suspended { background: rgba(245, 158, 11, 0.12); color: #92400E; }
+
+/* Execution status */
+.status-badge--exec-pending    { background: rgba(245, 158, 11, 0.12); color: #92400E; }
+.status-badge--exec-inprogress { background: rgba(37,  99, 235, 0.12); color: #1D4ED8; }
+.status-badge--exec-done       { background: var(--fert-primary-light);  color: var(--fert-primary-dark); }
+.status-badge--exec-failed     { background: rgba(220, 38, 38, 0.12); color: #B91C1C; }
+
+/* ─── PhenologyBadge ─────────────────────────────────────────────────────── */
+.phenology-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  line-height: 1.4;
+  font-family: var(--font-sans);
+}
+
+/* Cada etapa con su color */
+.phenology-badge--floracion      { background: rgba(219,  39, 119, 0.12); color: #9D174D; }
+.phenology-badge--vegetativo     { background: rgba(  5, 150, 105, 0.12); color: #065F46; }
+.phenology-badge--fructificacion { background: rgba(234,  88,  12, 0.12); color: #9A3412; }
+.phenology-badge--llenado        { background: rgba(124,  58, 237, 0.12); color: #5B21B6; }
+.phenology-badge--renovacion     { background: rgba(161,  98,   7, 0.12); color: #78350F; }
+.phenology-badge--produccion     { background: rgba( 16, 185, 129, 0.12); color: #065F46; }
+.phenology-badge--maduracion     { background: rgba(245, 158,  11, 0.12); color: #92400E; }
+.phenology-badge--emision        { background: rgba( 14, 116, 144, 0.12); color: #0E7490; }
+.phenology-badge--default        { background: rgba(107, 114, 128, 0.10); color: #6B7280; }
+
+/* ─── ActionsDropdown ────────────────────────────────────────────────────── */
+.actions-dropdown {
+  position: relative;
+  display: inline-flex;
+}
+
+.actions-dropdown__menu {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 4px);
+  z-index: 50;
+  background: var(--fert-card);
+  border: 1px solid var(--fert-border);
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  padding: var(--sp-2) 0;
+  min-width: 210px;
+  animation: dropdown-in 150ms ease;
+}
+
+@keyframes dropdown-in {
+  from { opacity: 0; transform: translateY(-6px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+
+.actions-dropdown__item {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  width: 100%;
+  padding: 9px var(--sp-4);
+  background: none;
+  border: none;
+  font-size: 13px;
+  font-family: var(--font-sans);
+  color: var(--fert-text-main);
+  cursor: pointer;
+  text-align: left;
+  transition: background 150ms ease, color 150ms ease;
+  white-space: nowrap;
+}
+
+.actions-dropdown__item:hover {
+  background: var(--fert-card-hover);
+  color: var(--fert-text-main);
+}
+
+.actions-dropdown__item--danger {
+  color: #DC2626;
+}
+
+.actions-dropdown__item--danger:hover {
+  background: rgba(220, 38, 38, 0.08);
+  color: #B91C1C;
+}
+
+.actions-dropdown__separator {
+  height: 1px;
+  background: var(--fert-border);
+  margin: var(--sp-1) 0;
+}
+
+/* ─── Pagination ─────────────────────────────────────────────────────────── */
+.plans-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-4) var(--sp-5);
+  border-top: 1px solid var(--fert-border);
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+}
+
+.plans-pagination__counter {
+  font-size: 13px;
+  color: var(--fert-text-muted);
+  font-family: var(--font-sans);
+}
+
+.plans-pagination__controls {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+
+.plans-pagination__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: none;
+  border: 1px solid var(--fert-border);
+  font-size: 13px;
+  font-family: var(--font-sans);
+  color: var(--fert-text-muted);
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease, border-color 150ms ease;
+  white-space: nowrap;
+}
+
+.plans-pagination__btn:hover:not(:disabled) {
+  background: var(--fert-card-hover);
+  color: var(--fert-text-main);
+  border-color: var(--fert-border-hover);
+}
+
+.plans-pagination__btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.plans-pagination__page {
+  min-width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: none;
+  border: 1px solid transparent;
+  font-size: 13px;
+  font-family: var(--font-sans);
+  color: var(--fert-text-muted);
+  cursor: pointer;
+  transition: background 150ms ease, color 150ms ease, border-color 150ms ease;
+}
+
+.plans-pagination__page:hover {
+  background: var(--fert-card-hover);
+  color: var(--fert-text-main);
+}
+
+.plans-pagination__page--active {
+  background: var(--fert-primary-light);
+  border-color: var(--fert-primary-border);
+  color: var(--fert-primary);
+  font-weight: 700;
+}
+
+.plans-pagination__ellipsis {
+  font-size: 13px;
+  color: var(--fert-text-muted);
+  padding: 0 4px;
+  line-height: 32px;
+}
+
+/* ─── Responsive: Plans ──────────────────────────────────────────────────── */
+@media (max-width: 1024px) {
+  /* En tablet, ocultar columnas menos críticas */
+  .plans-table__th[data-col="phenologicalStage"],
+  .plans-table__td:nth-child(4) { display: none; }
+}
+
+@media (max-width: 768px) {
+  .plans-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .plans-search { max-width: 100%; }
+  .plans-filter-btn,
+  .plans-filter-reset { align-self: flex-start; }
+}
+
+@media (max-width: 640px) {
+  /* Convertir filas en tarjetas */
+  .plans-table,
+  .plans-table thead,
+  .plans-table tbody,
+  .plans-table__th,
+  .plans-table__td,
+  .plans-table__row { display: block; }
+
+  .plans-table thead { display: none; }
+
+  .plans-table__row {
+    border: 1px solid var(--fert-border);
+    border-radius: 14px;
+    margin: var(--sp-3) var(--sp-4);
+    padding: var(--sp-4);
+    background: var(--fert-card);
+  }
+
+  .plans-table__row:hover { background: var(--fert-card-hover); }
+
+  .plans-table__td {
+    padding: 6px 0;
+    border: none;
+  }
+
+  .plans-table__td--actions {
+    text-align: left;
+    padding-top: var(--sp-3);
+    border-top: 1px solid var(--fert-border);
+    margin-top: var(--sp-2);
+  }
+
+  .plans-table-wrapper { overflow-x: visible; }
+  .plans-table { min-width: unset; }
+
+  .plans-pagination {
+    flex-direction: column;
+    align-items: center;
+    gap: var(--sp-3);
+  }
+}
