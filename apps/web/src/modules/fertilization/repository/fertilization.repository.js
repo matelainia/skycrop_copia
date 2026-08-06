@@ -1,93 +1,72 @@
-/**
- * fertilization.repository.js
- * Capa de acceso a datos del módulo Fertilización.
- *
- * Responsabilidad: Todo el acceso a datos — consultas, filtros, búsqueda,
- * paginación y ordenamiento. Esta capa NO contiene lógica de negocio.
- *
- * Estrategia de swap (mock → Supabase):
- *   Hoy: opera sobre arrays en memoria con simulación async.
- *   Futuro: reemplazar el bloque "mock implementation" por llamadas
- *   a `supabase.from('fertilization_plans')` con los mismos filtros.
- *   Zero cambios requeridos en service, hook o componentes.
- *
- * Filtros soportados server-side (hoy simulados, mañana en Supabase):
- *   - search: busca en name, code, lotName, cropName
- *   - status: estado de trabajo del plan
- *   - validityStatus: estado de vigencia agronómica
- *   - cropId: filtro por cultivo
- *   - farmId: filtro por predio
- *   - lotId: filtro por lote
- *   - dateFrom / dateTo: rango de fecha de creación
- *   - page / pageSize: paginación
- */
-
 import { mockPlansData } from '../data/mockPlans.js';
+import { supabase } from '../../../lib/supabaseClient.js';
 
-// Simula latencia de red para que el UX de skeleton/loading se muestre
-const SIMULATED_DELAY_MS = 600;
+const SIMULATED_DELAY_MS = 300;
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-
-/**
- * @typedef {Object} PlansQueryParams
- * @property {string}  [search]
- * @property {string}  [status]
- * @property {string}  [validityStatus]
- * @property {string}  [cropId]
- * @property {string}  [farmId]
- * @property {string}  [lotId]
- * @property {string}  [dateFrom]
- * @property {string}  [dateTo]
- * @property {number}  [page=1]
- * @property {number}  [pageSize=5]
- * @property {string}  [sortBy='createdAt']
- * @property {'asc'|'desc'} [sortDir='desc']
- */
-
-/**
- * @typedef {Object} PlansQueryResult
- * @property {import('../types/fertilization.types.js').FertilizationPlan[]} data
- * @property {number} total
- * @property {number} page
- * @property {number} pageSize
- * @property {number} totalPages
- */
 
 export const fertilizationRepository = {
   /**
-   * Consulta planes con filtros, búsqueda y paginación.
-   * @param {PlansQueryParams} params
-   * @returns {Promise<PlansQueryResult>}
+   * Consulta planes reales en Supabase fertilization_plans o mock si la tabla está vacía
    */
   async getPlans(params = {}) {
-    await delay(SIMULATED_DELAY_MS);
-
     const {
       search = '',
       status = '',
       validityStatus = '',
-      cropId = '',
-      farmId = '',
-      lotId = '',
-      dateFrom = '',
-      dateTo = '',
       page = 1,
       pageSize = 5,
-      sortBy = 'createdAt',
-      sortDir = 'desc',
     } = params;
 
-    /* ── Mock Implementation ────────────────────────────────────────────────
-       Supabase swap: reemplazar este bloque por:
-         let query = supabase.from('fertilization_plans').select('*', { count: 'exact' })
-         if (search) query = query.or(`name.ilike.%${search}%,code.ilike.%${search}%,...`)
-         if (status) query = query.eq('status', status)
-         ... etc
-    ─────────────────────────────────────────────────────────────────────── */
+    if (supabase) {
+      try {
+        let query = supabase
+          .from('fertilization_plans')
+          .select('*', { count: 'exact' });
 
+        if (status) query = query.eq('status', status);
+        if (validityStatus) query = query.eq('validity_status', validityStatus);
+        if (search.trim()) {
+          query = query.or(`name.ilike.%${search}%,code.ilike.%${search}%,lot_name.ilike.%${search}%`);
+        }
+
+        const start = (page - 1) * pageSize;
+        query = query.range(start, start + pageSize - 1).order('created_at', { ascending: false });
+
+        const { data: dbData, count, error } = await query;
+
+        if (!error && dbData && dbData.length > 0) {
+          const total = count || dbData.length;
+          const totalPages = Math.max(1, Math.ceil(total / pageSize));
+          const mappedData = dbData.map(p => ({
+            id: p.id,
+            code: p.code,
+            name: p.name,
+            version: p.version || 'v1.0',
+            lotId: p.lote_id || 'lote-12',
+            lotName: p.lot_name || 'Lote 12 - El Paraíso',
+            lotArea: `${p.area_ha || 4.5} ha`,
+            cropName: p.crop_name || 'Cacao',
+            cropScientific: p.crop_scientific || 'Theobroma cacao',
+            phenologicalStage: p.phenological_stage || 'Llenado',
+            status: p.status || 'draft',
+            validityStatus: p.validity_status || 'scheduled',
+            budgetTotal: parseFloat(p.budget_total) || 0,
+            budgetExecuted: parseFloat(p.budget_executed) || 0,
+            createdAt: p.created_at,
+            updatedAt: p.updated_at,
+          }));
+
+          return { data: mappedData, total, page, pageSize, totalPages };
+        }
+      } catch (err) {
+        console.warn('[Repository] Supabase query falló, usando datos locales:', err);
+      }
+    }
+
+    // Fallback Mock data
+    await delay(SIMULATED_DELAY_MS);
     let result = [...mockPlansData];
 
-    // ── Búsqueda full-text (name, code, lotName, cropName, farmName)
     if (search.trim()) {
       const q = search.trim().toLowerCase();
       result = result.filter(
@@ -95,31 +74,13 @@ export const fertilizationRepository = {
           p.name.toLowerCase().includes(q) ||
           p.code.toLowerCase().includes(q) ||
           p.lotName.toLowerCase().includes(q) ||
-          p.cropName.toLowerCase().includes(q) ||
-          p.farmName.toLowerCase().includes(q),
+          p.cropName.toLowerCase().includes(q),
       );
     }
 
-    // ── Filtros exactos
-    if (status)         result = result.filter((p) => p.status === status);
+    if (status) result = result.filter((p) => p.status === status);
     if (validityStatus) result = result.filter((p) => p.validityStatus === validityStatus);
-    if (cropId)         result = result.filter((p) => p.cropId === cropId);
-    if (farmId)         result = result.filter((p) => p.farmId === farmId);
-    if (lotId)          result = result.filter((p) => p.lotId === lotId);
 
-    // ── Rango de fechas
-    if (dateFrom) result = result.filter((p) => p.createdAt >= dateFrom);
-    if (dateTo)   result = result.filter((p) => p.createdAt <= dateTo + 'T23:59:59Z');
-
-    // ── Ordenamiento
-    result.sort((a, b) => {
-      const va = a[sortBy] ?? '';
-      const vb = b[sortBy] ?? '';
-      const cmp = va < vb ? -1 : va > vb ? 1 : 0;
-      return sortDir === 'desc' ? -cmp : cmp;
-    });
-
-    // ── Paginación
     const total = result.length;
     const totalPages = Math.max(1, Math.ceil(total / pageSize));
     const safePage = Math.min(Math.max(1, page), totalPages);
@@ -129,23 +90,71 @@ export const fertilizationRepository = {
     return { data, total, page: safePage, pageSize, totalPages };
   },
 
-  /**
-   * Obtiene un plan por ID.
-   * @param {string} id
-   * @returns {Promise<import('../types/fertilization.types.js').FertilizationPlan|null>}
-   */
   async getPlanById(id) {
-    await delay(300);
+    if (supabase && !id.startsWith('plan-')) {
+      try {
+        const { data, error } = await supabase
+          .from('fertilization_plans')
+          .select('*')
+          .eq('id', id)
+          .single();
+
+        if (!error && data) {
+          return {
+            id: data.id,
+            code: data.code,
+            name: data.name,
+            version: data.version,
+            lotName: data.lot_name,
+            cropName: data.crop_name,
+            status: data.status,
+            budgetTotal: parseFloat(data.budget_total) || 0,
+            createdAt: data.created_at,
+          };
+        }
+      } catch (e) {
+        console.warn('Error fetching plan by ID from Supabase:', e);
+      }
+    }
+    await delay(200);
     return mockPlansData.find((p) => p.id === id) ?? null;
   },
 
-  /**
-   * Crea un nuevo plan. Retorna el plan creado con ID generado.
-   * @param {Partial<import('../types/fertilization.types.js').FertilizationPlan>} data
-   * @returns {Promise<import('../types/fertilization.types.js').FertilizationPlan>}
-   */
   async createPlan(data) {
-    await delay(400);
+    if (supabase) {
+      try {
+        const { data: created, error } = await supabase
+          .from('fertilization_plans')
+          .insert({
+            name: data.name,
+            lot_name: data.lotName,
+            area_ha: data.area,
+            crop_name: data.cropName,
+            phenological_stage: data.stage,
+            soil_type: data.soilType,
+            budget_total: data.totalBudget || 0,
+            status: 'draft',
+          })
+          .select()
+          .single();
+
+        if (!error && created) {
+          return {
+            id: created.id,
+            code: created.code,
+            name: created.name,
+            version: created.version || 'v1.0',
+            lotName: created.lot_name,
+            cropName: created.crop_name,
+            status: created.status,
+            createdAt: created.created_at,
+          };
+        }
+      } catch (e) {
+        console.warn('Supabase create plan error:', e);
+      }
+    }
+
     const now = new Date().toISOString();
     const newPlan = {
       ...data,
@@ -155,45 +164,35 @@ export const fertilizationRepository = {
       createdAt: now,
       updatedAt: now,
     };
-    // Supabase: supabase.from('fertilization_plans').insert(newPlan).select().single()
     mockPlansData.unshift(newPlan);
     return newPlan;
   },
 
-  /**
-   * Actualiza un plan existente. En Supabase, no sobrescribirá —
-   * el service se encargará de crear una nueva versión.
-   * @param {string} id
-   * @param {Partial<import('../types/fertilization.types.js').FertilizationPlan>} data
-   * @returns {Promise<import('../types/fertilization.types.js').FertilizationPlan>}
-   */
   async updatePlan(id, data) {
-    await delay(400);
+    if (supabase && !id.startsWith('plan-')) {
+      await supabase.from('fertilization_plans').update(data).eq('id', id);
+    }
     const idx = mockPlansData.findIndex((p) => p.id === id);
-    if (idx === -1) throw new Error(`Plan ${id} no encontrado`);
-    mockPlansData[idx] = { ...mockPlansData[idx], ...data, updatedAt: new Date().toISOString() };
-    return mockPlansData[idx];
+    if (idx !== -1) {
+      mockPlansData[idx] = { ...mockPlansData[idx], ...data, updatedAt: new Date().toISOString() };
+      return mockPlansData[idx];
+    }
+    return data;
   },
 
-  /**
-   * Archiva (soft-delete) un plan.
-   * @param {string} id
-   * @returns {Promise<void>}
-   */
   async archivePlan(id) {
-    await delay(300);
-    await this.updatePlan(id, { status: 'archived', validityStatus: 'suspended' });
+    if (supabase && !id.startsWith('plan-')) {
+      await supabase.from('fertilization_plans').update({ status: 'archived' }).eq('id', id);
+    }
+    const idx = mockPlansData.findIndex((p) => p.id === id);
+    if (idx !== -1) mockPlansData[idx].status = 'archived';
   },
 
-  /**
-   * Elimina un plan permanentemente (usar con precaución en prod).
-   * @param {string} id
-   * @returns {Promise<void>}
-   */
   async deletePlan(id) {
-    await delay(300);
+    if (supabase && !id.startsWith('plan-')) {
+      await supabase.from('fertilization_plans').delete().eq('id', id);
+    }
     const idx = mockPlansData.findIndex((p) => p.id === id);
     if (idx !== -1) mockPlansData.splice(idx, 1);
-    // Supabase: supabase.from('fertilization_plans').delete().eq('id', id)
   },
 };

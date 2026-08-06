@@ -1,4 +1,4 @@
-import React from 'react';
+import { memo } from 'react';
 import { Leaf, Plus } from 'lucide-react';
 
 /**
@@ -11,11 +11,12 @@ import { Leaf, Plus } from 'lucide-react';
  * @param {function} onNewRecommendation - Callback for "Nueva Recomendación" CTA
  * @param {function} onNewPlan          - Callback for "+ Nuevo Plan de Fertilización" CTA
  */
-const DashboardHeader = React.memo(function DashboardHeader({
+const DashboardHeader = memo(function DashboardHeader({
   activeTab = 'resumen',
   onNewRecommendation,
   onNewPlan,
 }) {
+
   // CTA dinámico según el tab activo
   const isPlanesTab = activeTab === 'planes';
   const ctaLabel    = isPlanesTab ? '+ Nuevo Plan de Fertilización' : 'Nueva Recomendación';

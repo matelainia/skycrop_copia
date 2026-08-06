@@ -13,6 +13,8 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { plansService } from '../services/fertilization.service.js';
+import { exportFertilizationPlanPDF } from '../../../utils/pdfExporter.js';
+
 
 const DEFAULT_FILTERS = {
   search:        '',
@@ -91,9 +93,37 @@ export function usePlans() {
 
   // ── Efecto: re-fetch cuando cambian filtros o página ─────────────────────────
   useEffect(() => {
-    fetchPlans(filters, page);
-    return () => { abortRef.current = true; }; // cleanup
-  }, [fetchPlans, filters, page]);
+    let isCancelled = false;
+    const load = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const result = await plansService.getPlans({
+          filters,
+          page,
+          pageSize: DEFAULT_PAGE_SIZE,
+          sortBy: 'createdAt',
+          sortDir: 'desc',
+        });
+        if (!isCancelled) {
+          setPlans(result.data);
+          setTotal(result.total);
+          setTotalPages(result.totalPages);
+        }
+      } catch (err) {
+        if (!isCancelled) {
+          setError(err?.message ?? 'Error al cargar los planes de fertilización');
+        }
+      } finally {
+        if (!isCancelled) setLoading(false);
+      }
+    };
+    load();
+    return () => {
+      isCancelled = true;
+    };
+  }, [filters, page]);
+
 
   // ── Acciones de filtros ──────────────────────────────────────────────────────
   /** Aplica nuevos filtros y resetea a página 1 */
@@ -179,8 +209,9 @@ export function usePlans() {
   }, []);
 
   const handleExportPdf = useCallback((plan) => {
-    console.info('[Fertilización] Exportar PDF:', plan.id);
+    exportFertilizationPlanPDF(plan);
   }, []);
+
 
   const handleExportExcel = useCallback((plan) => {
     console.info('[Fertilización] Exportar Excel:', plan.id);

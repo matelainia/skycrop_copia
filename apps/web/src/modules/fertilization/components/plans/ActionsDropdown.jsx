@@ -10,7 +10,7 @@
  *                            onGenerateRecs, onExportPdf, onExportExcel,
  *                            onViewHistory, onArchive, onDelete }
  */
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, memo } from 'react';
 import {
   Eye,
   Pencil,
@@ -23,7 +23,6 @@ import {
   Archive,
   Trash2,
   MoreVertical,
-  Sprout,
 } from 'lucide-react';
 
 const MENU_ITEMS = [
@@ -42,7 +41,8 @@ const MENU_ITEMS = [
   { key: 'delete',        label: 'Eliminar',               icon: Trash2,          handler: 'onDelete',        variant: 'dropdown-item--danger' },
 ];
 
-const ActionsDropdown = React.memo(function ActionsDropdown({ plan, handlers = {} }) {
+const ActionsDropdown = memo(function ActionsDropdown({ plan, handlers = {} }) {
+
   const [open, setOpen] = useState(false);
   const menuRef = useRef(null);
 

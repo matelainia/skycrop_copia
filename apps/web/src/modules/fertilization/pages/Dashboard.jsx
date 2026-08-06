@@ -9,7 +9,7 @@
  *   Future widgets (Balance Nutricional, Costos, etc.) = new entry in this array.
  */
 
-import React, { useState, useCallback, lazy, Suspense } from 'react';
+import { useState, useCallback } from 'react';
 import '../styles/fertilization.css';
 
 import { useFertilizationDashboard } from '../hooks/useFertilizationDashboard.js';
@@ -21,6 +21,9 @@ import DashboardGrid from '../components/DashboardGrid.jsx';
 import LoadingDashboard from '../components/states/LoadingDashboard.jsx';
 import ErrorDashboard from '../components/states/ErrorDashboard.jsx';
 import FertilizationPlansPage from './FertilizationPlansPage.jsx';
+import PlanDetailPage from './PlanDetailPage.jsx';
+import { FertilizationWizardModal } from '../components/wizard/FertilizationWizardModal.jsx';
+
 
 // ─── Widget Registry ──────────────────────────────────────────────────────────
 // To add a new widget: add an entry here. No other file needs to change.
@@ -46,12 +49,15 @@ export default function Dashboard() {
   // ── Local state ─────────────────────────────────────────────────────────────
   const [activeTab, setActiveTab] = useState('resumen');
   const [tipVisible, setTipVisible] = useState(true);
+  /** ID del plan activo en la vista de detalle. null = mostrar listado. */
+  const [activePlanId, setActivePlanId] = useState(null);
+  /** Estado del modal del Asistente Wizard */
+  const [isWizardOpen, setIsWizardOpen] = useState(false);
 
   // ── Event handlers (memoized — no unnecessary re-renders on child props) ────
   const handlers = {
     onNewRecommendation: useCallback(() => {
-      // TODO: open "Nueva Recomendación" drawer/modal
-      console.info('[Fertilización] Nueva Recomendación');
+      setIsWizardOpen(true);
     }, []),
     onViewAll: useCallback(() => {
       setActiveTab('planes');
@@ -60,13 +66,15 @@ export default function Dashboard() {
       setActiveTab('planes');
     }, []),
     onViewPlan: useCallback((plan) => {
-      console.info('[Fertilización] Ver plan:', plan.id);
+      setActivePlanId(plan.id);
+      setActiveTab('planes');
     }, []),
     onEditPlan: useCallback((plan) => {
       console.info('[Fertilización] Editar plan:', plan.id);
     }, []),
+
     onCreatePlan: useCallback(() => {
-      console.info('[Fertilización] Crear nuevo plan');
+      setIsWizardOpen(true);
     }, []),
     onViewCalendar: useCallback(() => {
       setActiveTab('recomendaciones');
@@ -87,6 +95,20 @@ export default function Dashboard() {
         activeTab={activeTab}
         onNewRecommendation={handlers.onNewRecommendation}
         onNewPlan={handlers.onCreatePlan}
+      />
+
+      {/* Wizard Modal */}
+      <FertilizationWizardModal
+        open={isWizardOpen}
+        onClose={() => setIsWizardOpen(false)}
+        onCreated={(newPlan) => {
+          setIsWizardOpen(false);
+          refetch();
+          if (newPlan?.id) {
+            setActivePlanId(newPlan.id);
+            setActiveTab('planes');
+          }
+        }}
       />
 
       {/* Tabs — always rendered */}
@@ -120,7 +142,17 @@ export default function Dashboard() {
             )}
           </>
         ) : activeTab === 'planes' ? (
-          <FertilizationPlansPage />
+          /* Si hay un plan activo, mostrar detalle; si no, el listado */
+          activePlanId ? (
+            <PlanDetailPage
+              planId={activePlanId}
+              onBack={() => setActivePlanId(null)}
+            />
+          ) : (
+            <FertilizationPlansPage
+              onViewPlan={(plan) => setActivePlanId(plan.id)}
+            />
+          )
         ) : (
           /* Placeholder for remaining non-implemented tabs */
           <div
@@ -148,3 +180,4 @@ export default function Dashboard() {
     </div>
   );
 }
+

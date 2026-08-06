@@ -1,0 +1,153 @@
+/**
+ * fertilization-animations.css
+ * Animaciones CSS accesibles para el módulo de Fertilización.
+ * Importado en PlanDetailPage.jsx — no modifica estilos globales.
+ *
+ * Sigue el prefijo sc- (SkyCrop) para evitar colisiones.
+ * Todos los bloques respetan prefers-reduced-motion.
+ */
+
+/* ─── Keyframes ──────────────────────────────────────────────────────────────── */
+@keyframes sc-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes sc-fade-up {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0);  }
+}
+
+@keyframes sc-slide-in-right {
+  from { opacity: 0; transform: translateX(16px); }
+  to   { opacity: 1; transform: translateX(0);   }
+}
+
+@keyframes sc-slide-in-left {
+  from { opacity: 0; transform: translateX(-16px); }
+  to   { opacity: 1; transform: translateX(0);    }
+}
+
+@keyframes sc-shimmer {
+  from { background-position: -200% 0; }
+  to   { background-position:  200% 0; }
+}
+
+@keyframes sc-pulse-dot {
+  0%, 100% { opacity: 1;   transform: scale(1);    }
+  50%       { opacity: 0.5; transform: scale(0.85); }
+}
+
+@keyframes sc-progress-fill {
+  from { width: 0%; }
+}
+
+/* ─── Utility classes ─────────────────────────────────────────────────────────── */
+.sc-animate-fade-in {
+  animation: sc-fade-in 180ms ease-out both;
+}
+
+.sc-animate-fade-up {
+  animation: sc-fade-up 220ms ease-out both;
+}
+
+.sc-animate-slide-in-right {
+  animation: sc-slide-in-right 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.sc-animate-slide-in-left {
+  animation: sc-slide-in-left 240ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ─── Stagger (hasta 10 hijos) ───────────────────────────────────────────────── */
+.sc-stagger > * {
+  animation: sc-fade-up 220ms ease-out both;
+}
+
+.sc-stagger > *:nth-child(1)  { animation-delay:   0ms; }
+.sc-stagger > *:nth-child(2)  { animation-delay:  40ms; }
+.sc-stagger > *:nth-child(3)  { animation-delay:  80ms; }
+.sc-stagger > *:nth-child(4)  { animation-delay: 120ms; }
+.sc-stagger > *:nth-child(5)  { animation-delay: 160ms; }
+.sc-stagger > *:nth-child(6)  { animation-delay: 200ms; }
+.sc-stagger > *:nth-child(7)  { animation-delay: 240ms; }
+.sc-stagger > *:nth-child(8)  { animation-delay: 280ms; }
+.sc-stagger > *:nth-child(9)  { animation-delay: 320ms; }
+.sc-stagger > *:nth-child(10) { animation-delay: 360ms; }
+
+/* ─── Skeleton ────────────────────────────────────────────────────────────────── */
+.sc-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--sk-base,  rgba(120, 110, 100, 0.08)) 25%,
+    var(--sk-shine, rgba(120, 110, 100, 0.16)) 50%,
+    var(--sk-base,  rgba(120, 110, 100, 0.08)) 75%
+  );
+  background-size: 200% 100%;
+  animation: sc-shimmer 1.4s linear infinite;
+  border-radius: 8px;
+}
+
+/* Dark mode skeleton */
+.dark-theme .sc-skeleton {
+  --sk-base:  rgba(255, 255, 255, 0.06);
+  --sk-shine: rgba(255, 255, 255, 0.12);
+}
+
+/* ─── Progress bar ───────────────────────────────────────────────────────────── */
+.sc-progress-bar {
+  transition: width 600ms cubic-bezier(0.4, 0, 0.2, 1);
+  animation: sc-progress-fill 800ms cubic-bezier(0.4, 0, 0.2, 1) both;
+}
+
+/* ─── Alert pulse dot (sin parpadeo agresivo) ────────────────────────────────── */
+.sc-alert-dot {
+  animation: sc-pulse-dot 2.4s ease-in-out infinite;
+}
+
+/* ─── Drawer overlay ─────────────────────────────────────────────────────────── */
+.sc-drawer-overlay {
+  animation: sc-fade-in 200ms ease-out both;
+}
+
+.sc-drawer-panel {
+  animation: sc-slide-in-right 260ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* ─── Toast notification ─────────────────────────────────────────────────────── */
+.sc-toast {
+  animation: sc-fade-up 220ms ease-out both;
+}
+
+/* ─── Card hover lift ────────────────────────────────────────────────────────── */
+.sc-card-hover {
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+.sc-card-hover:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.08);
+}
+
+/* ─── prefers-reduced-motion: elimina todas las animaciones ──────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .sc-animate-fade-in,
+  .sc-animate-fade-up,
+  .sc-animate-slide-in-right,
+  .sc-animate-slide-in-left,
+  .sc-stagger > *,
+  .sc-skeleton,
+  .sc-alert-dot,
+  .sc-drawer-overlay,
+  .sc-drawer-panel,
+  .sc-toast {
+    animation: none !important;
+  }
+
+  .sc-progress-bar {
+    transition: none !important;
+  }
+
+  .sc-card-hover:hover {
+    transform: none !important;
+  }
+}

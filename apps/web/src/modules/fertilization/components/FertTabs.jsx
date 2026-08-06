@@ -1,5 +1,6 @@
-import React from 'react';
+import { memo } from 'react';
 import { motion } from 'framer-motion';
+
 import {
   LayoutDashboard,
   Sprout,
@@ -29,14 +30,14 @@ const TABS = [
  * @param {function} onTabChange - called with the new tab id
  */
 function FertTabs({ activeTab = 'resumen', onTabChange }) {
-  const handleKeyDown = (e, tabId, index) => {
-    let newIndex = index;
-    if (e.key === 'ArrowRight') newIndex = Math.min(index + 1, TABS.length - 1);
-    else if (e.key === 'ArrowLeft') newIndex = Math.max(index - 1, 0);
-    else return;
-
+  const handleKeyDown = (e, _tabId, index) => {
+    if (e.key !== 'ArrowRight' && e.key !== 'ArrowLeft') return;
     e.preventDefault();
+    const newIndex = e.key === 'ArrowRight'
+      ? Math.min(index + 1, TABS.length - 1)
+      : Math.max(index - 1, 0);
     onTabChange?.(TABS[newIndex].id);
+
     // Move focus to the newly active tab button
     const buttons = e.currentTarget.closest('[role="tablist"]').querySelectorAll('[role="tab"]');
     buttons[newIndex]?.focus();
@@ -82,4 +83,5 @@ function FertTabs({ activeTab = 'resumen', onTabChange }) {
   );
 }
 
-export default React.memo(FertTabs);
+export default memo(FertTabs);
+

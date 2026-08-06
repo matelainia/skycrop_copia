@@ -8,14 +8,15 @@
  * @param {string} stage - Label de la etapa (ej. "Floración", "Cherelle")
  * @param {string} [className]
  */
-import React from 'react';
+import { memo } from 'react';
 
 // Mapa de etapa → variante CSS.
+
 // Cultivos distintos pueden tener etapas distintas; el fallback cubre las nuevas.
 const STAGE_VARIANT_MAP = {
   // Floración (todos los cultivos)
   'floración':           'phenology-badge--floracion',
-  'floración':           'phenology-badge--floracion',
+
   // Desarrollo Vegetativo / Vegetativo
   'desarrollo vegetativo': 'phenology-badge--vegetativo',
   // Fructificación / Cuajado / Cherelle / Llenado
@@ -41,7 +42,9 @@ function getVariant(stage) {
   return STAGE_VARIANT_MAP[stage.toLowerCase()] ?? 'phenology-badge--default';
 }
 
-const PhenologyBadge = React.memo(function PhenologyBadge({ stage, className = '' }) {
+const PhenologyBadge = memo(function PhenologyBadge({ stage, className = '' }) {
+
+
   if (!stage) return null;
   const variant = getVariant(stage);
   return (

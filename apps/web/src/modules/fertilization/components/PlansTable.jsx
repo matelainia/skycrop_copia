@@ -1,18 +1,7 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo, memo } from 'react';
 import { Eye, Pencil } from 'lucide-react';
 import EmptyPlans from './states/EmptyPlans.jsx';
 
-/**
- * Returns the badge variant class for a fertilizer string.
- */
-function getFertilizerBadge(fertilizer = '') {
-  const f = fertilizer.toLowerCase();
-  if (f.includes('npk')) return 'npk';
-  if (f.includes('urea')) return 'urea';
-  if (f.includes('kcl')) return 'kcl';
-  if (f.includes('dap')) return 'dap';
-  return 'info';
-}
 
 /**
  * LotAvatar — initials placeholder using the deriveLotInitials field from planModel.
@@ -33,7 +22,8 @@ function LotAvatar({ plan }) {
 /**
  * PlanRow — memoized table row for a single plan.
  */
-const PlanRow = React.memo(function PlanRow({ plan, onView, onEdit }) {
+const PlanRow = memo(function PlanRow({ plan, onView, onEdit }) {
+
   return (
     <tr>
       {/* Lote / Sector */}
@@ -200,4 +190,5 @@ function PlansTable({
   );
 }
 
-export default React.memo(PlansTable);
+export default memo(PlansTable);
+

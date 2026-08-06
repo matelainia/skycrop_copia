@@ -13,6 +13,7 @@ import { productRouter } from './modules/inventory/infrastructure/adapters/inbou
 import { applicationAuditRouter } from './modules/application/infrastructure/adapters/inbound/ExpressApplicationAuditRouter.js';
 import { agronomyRouter } from './modules/agronomy/infrastructure/adapters/inbound/ExpressAgronomyRouter.js';
 import { evaluationRouter } from './modules/evaluation/infrastructure/adapters/inbound/ExpressEvaluationRouter.js';
+import { fertilizationRouter } from './modules/fertilization/infrastructure/adapters/inbound/ExpressFertilizationRouter.js';
 
 const app = express();
 
@@ -159,6 +160,7 @@ app.use('/api/v1/productos', productRouter);
 app.use('/api/v1/auditoria', applicationAuditRouter);
 app.use('/api/v1/agronomia', agronomyRouter);
 app.use('/api/v1/evaluaciones', evaluationRouter);
+app.use('/api/v1/fertilizacion', fertilizationRouter);
 
 // Compatibilidad hacia atrás (intersección del flujo legando antes de ir al monolito)
 app.use('/api/auth', authRouter); // GET /api/auth/me -> GET /me
@@ -169,6 +171,7 @@ app.use('/api/productos', productRouter); // GET /api/productos y /api/productos
 app.use('/api/auditoria', applicationAuditRouter); // POST /api/auditoria/*
 app.use('/api/agronomia', agronomyRouter); // GET  /api/agronomia/*
 app.use('/api/evaluaciones', evaluationRouter); // POST/GET /api/evaluaciones/*
+app.use('/api/fertilizacion', fertilizationRouter); // GET/POST/PATCH /api/fertilizacion/*
 
 // --- DELEGACIÓN AL MONOLITO LEGADO ---
 // Todo lo que no coincida con el nuevo enrutador será resuelto por el Express heredado

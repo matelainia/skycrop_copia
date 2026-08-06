@@ -9,13 +9,13 @@
  *
  * Consume usePlans() exclusivamente — no contiene lógica de datos.
  */
-import React from 'react';
 import { usePlans } from '../hooks/usePlans.js';
 import PlanFilters from '../components/plans/PlanFilters.jsx';
 import PlansDataTable from '../components/plans/PlansDataTable.jsx';
 import Pagination from '../components/plans/Pagination.jsx';
 
-export default function FertilizationPlansPage() {
+export default function FertilizationPlansPage({ onViewPlan }) {
+
   const {
     plans,
     total,
@@ -28,7 +28,6 @@ export default function FertilizationPlansPage() {
     setFilters,
     setPage,
     resetFilters,
-    refetch,
     // Handlers para las acciones
     handleCreate,
     handleView,
@@ -46,7 +45,9 @@ export default function FertilizationPlansPage() {
   // Mapa de handlers que consume PlansDataTable → PlanRow → ActionsDropdown
   const handlers = {
     onCreatePlan:    handleCreate,
-    onView:          handleView,
+    // Si el padre nos pasa onViewPlan (Dashboard con detalle), úsalo.
+    // Sino, usa el handleView interno (que hace console.info como fallback).
+    onView:          onViewPlan ? (plan) => onViewPlan(plan) : handleView,
     onEdit:          handleEdit,
     onDuplicate:     handleDuplicate,
     onDelete:        handleDelete,
