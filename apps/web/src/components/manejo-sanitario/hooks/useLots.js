@@ -216,11 +216,6 @@ export const useLots = () => {
   const [modalActiveTab, setModalActiveTab] = useState('trazabilidad');
   const [lotesLoading, setLotesLoading] = useState(true);
 
-  // Cargar lotes al montar o al cambiar de inquilino
-  useEffect(() => {
-    loadLotes();
-  }, [companyId]);
-
   const [newLote, setNewLote] = useState({
     codigo_interno: '',
     nombre: '',
@@ -283,39 +278,62 @@ export const useLots = () => {
     try {
       const dbLotes = await lotRepository.getAll();
       if (dbLotes && dbLotes.length > 0) {
-        setLotes(dbLotes.map(l => {
-          const localLote = INITIAL_LOTES_MOCK.find(il => il.codigo_interno === l.codigo_interno || il.nombre === l.nombre);
+        setLotes(
+          dbLotes.map((l) => {
+            const localLote = INITIAL_LOTES_MOCK.find(
+              (il) => il.codigo_interno === l.codigo_interno || il.nombre === l.nombre
+            );
 
-          let coordinates = l.coordinates;
-          if (!coordinates || coordinates.length === 0) {
-            if (l.geom) {
-              if (l.geom.type === 'Polygon' && Array.isArray(l.geom.coordinates) && l.geom.coordinates[0]) {
-                coordinates = l.geom.coordinates[0].map(c => [c[1], c[0]]); // Invert [lng, lat] to [lat, lng]
-              } else if (l.geom.type === 'MultiPolygon' && Array.isArray(l.geom.coordinates) && l.geom.coordinates[0] && l.geom.coordinates[0][0]) {
-                coordinates = l.geom.coordinates[0][0].map(c => [c[1], c[0]]);
+            let coordinates = l.coordinates;
+            if (!coordinates || coordinates.length === 0) {
+              if (l.geom) {
+                if (
+                  l.geom.type === 'Polygon' &&
+                  Array.isArray(l.geom.coordinates) &&
+                  l.geom.coordinates[0]
+                ) {
+                  coordinates = l.geom.coordinates[0].map((c) => [c[1], c[0]]); // Invert [lng, lat] to [lat, lng]
+                } else if (
+                  l.geom.type === 'MultiPolygon' &&
+                  Array.isArray(l.geom.coordinates) &&
+                  l.geom.coordinates[0] &&
+                  l.geom.coordinates[0][0]
+                ) {
+                  coordinates = l.geom.coordinates[0][0].map((c) => [c[1], c[0]]);
+                }
               }
             }
-          }
 
-          return createLot({
-            ...localLote,
-            ...l,
-            estado_fenológico: l.estado_fenologico || l.estado_fenológico || localLote?.estado_fenologico,
-            coordinates: coordinates || localLote?.coordinates || [],
-            trabajadores: l.trabajadores || localLote?.trabajadores || [],
-            adjuntos: l.adjuntos || localLote?.adjuntos || []
-          });
-        }));
+            return createLot({
+              ...localLote,
+              ...l,
+              estado_fenológico:
+                l.estado_fenologico || l.estado_fenológico || localLote?.estado_fenologico,
+              coordinates: coordinates || localLote?.coordinates || [],
+              trabajadores: l.trabajadores || localLote?.trabajadores || [],
+              adjuntos: l.adjuntos || localLote?.adjuntos || []
+            });
+          })
+        );
       } else {
-        console.log('[Lotes Hook] No lotes returned from DB. Setting empty list.');
-        setLotes([]);
+        console.log('[Lotes Hook] No lotes returned from DB. Using initial mock lotes.');
+        setLotes(INITIAL_LOTES_MOCK.map((il) => createLot(il)));
       }
     } catch (err) {
-      console.warn('[Lotes Hook] Error loading lotes from Supabase:', err.message);
+      console.warn(
+        '[Lotes Hook] Error loading lotes from Supabase. Falling back to initial mock lotes:',
+        err.message
+      );
+      setLotes(INITIAL_LOTES_MOCK.map((il) => createLot(il)));
     } finally {
       setLotesLoading(false);
     }
   };
+
+  // Cargar lotes al montar o al cambiar de inquilino
+  useEffect(() => {
+    loadLotes();
+  }, [companyId]);
 
   const handleAddLote = async (onAuditLogged) => {
     const val = validateLot(newLote);

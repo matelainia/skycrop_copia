@@ -161,7 +161,7 @@ export class FormulaStrategy extends CalculationStrategy {
     const args = Object.values(valores);
 
     // Usar Function() con parámetros explícitos (no eval global)
-    // eslint-disable-next-line no-new-func
+
     const fn = new Function(...params, `"use strict"; return (${sanitized});`);
     const resultado = fn(...args);
 

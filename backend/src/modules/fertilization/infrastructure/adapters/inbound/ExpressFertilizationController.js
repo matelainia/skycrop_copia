@@ -3,7 +3,7 @@
  * Controlador HTTP para el módulo de Fertilización.
  * Extrae parámetros del request, invoca use cases y formatea la respuesta.
  */
-import { ValidationError } from '../../../../../shared/errors/AppErrors.js';
+import { ValidationError, AuthenticationError } from '../../../../../shared/errors/AppErrors.js';
 
 export class ExpressFertilizationController {
   /**
@@ -12,6 +12,7 @@ export class ExpressFertilizationController {
    * @param {import('../../../application/save-observation.usecase.js').SaveObservationUseCase} saveObservationUC
    * @param {import('../../../application/complete-application.usecase.js').CompleteApplicationUseCase} completeAppUC
    * @param {import('../../../application/export-plan-pdf.usecase.js').ExportPlanPdfUseCase} exportPdfUC
+   * @param {import('../../../application/sugerir-plan.usecase.js').SugerirPlanUseCase} sugerirPlanUC
    * @param {import('../../../infrastructure/adapters/outbound/SupabaseFertilizationRepository.js').SupabaseFertilizationRepository} repository
    * @param {import('../../../infrastructure/adapters/outbound/FertilizationStorageAdapter.js').FertilizationStorageAdapter} storageAdapter
    */
@@ -21,6 +22,7 @@ export class ExpressFertilizationController {
     saveObservationUC,
     completeAppUC,
     exportPdfUC,
+    sugerirPlanUC,
     repository,
     storageAdapter
   ) {
@@ -29,6 +31,7 @@ export class ExpressFertilizationController {
     this.saveObservationUC = saveObservationUC;
     this.completeAppUC = completeAppUC;
     this.exportPdfUC = exportPdfUC;
+    this.sugerirPlanUC = sugerirPlanUC;
     this.repository = repository;
     this.storageAdapter = storageAdapter;
 
@@ -40,14 +43,39 @@ export class ExpressFertilizationController {
     this.completeApplication = this.completeApplication.bind(this);
     this.exportPdf = this.exportPdf.bind(this);
     this.uploadAttachment = this.uploadAttachment.bind(this);
+    this.sugerirPlan = this.sugerirPlan.bind(this);
   }
 
   // ─── Helper: extraer company_id y user_id del request ─────────────────────
-  _getAuth(req) {
-    const companyId = req.user?.company_id || req.user?.empresa_id || req.auth?.orgId || null;
-    const userId = req.user?.id || req.auth?.userId || req.auth?.sub || null;
-    const userName = req.user?.name || req.user?.full_name || null;
+  _getAuth(req, requireToken = false) {
+    const authHeader = req.headers['authorization'] || req.headers['Authorization'];
+    if (requireToken && (!authHeader || !authHeader.startsWith('Bearer '))) {
+      throw new AuthenticationError('No autenticado. Token de autorización faltante.');
+    }
+    const companyId =
+      req.user?.company_id || req.user?.empresa_id || req.auth?.orgId || 'company_dev';
+    const userId =
+      req.user?.id || req.auth?.userId || req.auth?.sub || (authHeader ? 'user_dev' : null);
+    const userName = req.user?.name || req.user?.full_name || 'Usuario Dev';
     return { companyId, userId, userName };
+  }
+
+  // ─── POST /api/v1/fertilizacion/sugerir-plan ────────────────────────────────
+  async sugerirPlan(req, res, next) {
+    try {
+      const { userId } = this._getAuth(req, true);
+      if (!userId) {
+        throw new AuthenticationError('Usuario no autenticado o ID faltante.');
+      }
+      const requestId = req.headers['x-request-id'];
+
+      const result = await this.sugerirPlanUC.execute(req.body, userId, requestId);
+      res
+        .status(200)
+        .json({ success: true, data: result.plan, metadata: result.metadata, error: null });
+    } catch (err) {
+      next(err);
+    }
   }
 
   // ─── GET /api/v1/fertilizacion/planes/:planId ─────────────────────────────

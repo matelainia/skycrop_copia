@@ -1,4 +1,6 @@
-import { Plus, Sparkles, Trash2, Calendar } from 'lucide-react';
+import { useState } from 'react';
+import { Plus, Sparkles, Trash2, Calendar, Loader2 } from 'lucide-react';
+import { useAuth } from '@clerk/clerk-react';
 import { PRODUCTS_CATALOG, NUTRIENT_BADGE_MAP } from '../../constants/products.js';
 import { formatCOP } from '../../../../utils/format.js';
 
@@ -18,6 +20,15 @@ const SUGGESTED_PLANS = {
 };
 
 export default function Step3ApplicationsPlan({ data, setData, errors, masterData }) {
+  const { getToken } = useAuth();
+  const [generandoPlan, setGenerandoPlan] = useState(false);
+  const [toast, setToast] = useState(null);
+
+  const showToast = (message, type = 'error') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3500);
+  };
+
   const dbProductos = masterData?.productos || [];
   const productsList = dbProductos.length > 0
     ? dbProductos.map(p => ({
@@ -40,18 +51,77 @@ export default function Step3ApplicationsPlan({ data, setData, errors, masterDat
     }));
   };
 
-  const suggestPlan = () => {
-    const stage = data.crop.stage || 'Llenado';
-    const template = SUGGESTED_PLANS[stage] || SUGGESTED_PLANS.Llenado;
-    const now = Date.now();
-    const apps = template.map(t => ({
-      productId: t.productId,
-      dose: t.dose,
-      date: new Date(now + t.daysOffset * 86400000).toISOString().slice(0, 10),
-      method: t.method,
-      cost: t.cost,
-    }));
-    setData(d => ({ ...d, applications: apps }));
+  const suggestPlan = async () => {
+    setGenerandoPlan(true);
+    setToast(null);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 12000);
+
+    try {
+      const token = await getToken();
+      
+      const payload = {
+        cultivo: data.crop.cropName || 'Cacao',
+        areaHa: Number(data.general.area) || 1,
+        region: data.general.sector || 'Tolima',
+        etapa: data.crop.stage || 'Llenado',
+        fechaInicio: data.general.startDate,
+        presupuestoMax: undefined
+      };
+
+      const baseUrl = import.meta.env.VITE_BACKEND_URL || import.meta.env.VITE_API_URL || 'http://localhost:3000';
+      const res = await fetch(`${baseUrl}/api/v1/fertilizacion/sugerir-plan`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+          'X-Request-Id': crypto.randomUUID()
+        },
+        body: JSON.stringify(payload),
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+
+      const json = await res.json().catch(() => null);
+      if (!res.ok) {
+        let errorMsg = 'Error al generar el plan';
+        if (json) {
+          if (typeof json.error === 'string') {
+            errorMsg = json.error;
+          } else if (json.error && typeof json.error.message === 'string') {
+            errorMsg = json.error.message;
+          } else if (typeof json.message === 'string') {
+            errorMsg = json.message;
+          }
+        }
+        throw new Error(errorMsg);
+      }
+
+      if (json && json.data && json.data.aplicaciones) {
+        const apps = json.data.aplicaciones.map(a => ({
+          productId: a.productoId,
+          dose: a.dosis,
+          date: a.fecha,
+          method: a.metodo || 'suelo',
+          cost: a.costo,
+        }));
+        setData(d => ({ ...d, applications: apps }));
+        showToast('Plan base generado por IA exitosamente.', 'success');
+      }
+    } catch (err) {
+      if (err.name === 'AbortError') {
+        showToast('La IA tardó demasiado en responder (timeout).', 'error');
+      } else {
+        const msg = typeof err === 'object' && err?.message && err.message !== '[object Object]' 
+          ? err.message 
+          : typeof err === 'string' 
+          ? err 
+          : 'Hubo un error contactando a la IA.';
+        showToast(msg, 'error');
+      }
+    } finally {
+      setGenerandoPlan(false);
+    }
   };
 
   const updateApp = (idx, field, value) => {
@@ -81,10 +151,11 @@ export default function Step3ApplicationsPlan({ data, setData, errors, masterDat
       <div className="apps-toolbar">
         <span className="toolbar-title">Cronograma de aplicaciones *</span>
         <div className="toolbar-actions">
-          <button onClick={suggestPlan} className="btn btn-soft">
-            <Sparkles size={14} /> Sugerir plan base
+          <button onClick={suggestPlan} disabled={generandoPlan} className="btn btn-soft">
+            {generandoPlan ? <Loader2 size={14} className="spin" /> : <Sparkles size={14} />} 
+            {generandoPlan ? ' Generando plan...' : ' Sugerir plan base'}
           </button>
-          <button onClick={addApplication} className="btn btn-ghost">
+          <button onClick={addApplication} disabled={generandoPlan} className="btn btn-ghost">
             <Plus size={14} /> Agregar aplicación
           </button>
         </div>
@@ -199,6 +270,14 @@ export default function Step3ApplicationsPlan({ data, setData, errors, masterDat
           <strong className="text-green">{formatCOP(totalBudget)}</strong>
         </span>
       </div>
+
+      {toast && (
+        <div className="pd-toast-container" role="status" aria-live="polite" style={{ position: 'fixed', bottom: 20, right: 20, zIndex: 9999 }}>
+          <div className={`pd-toast sc-toast pd-toast--${toast.type}`} style={{ padding: '12px 20px', borderRadius: '8px', background: toast.type === 'success' ? '#10b981' : '#ef4444', color: '#fff', boxShadow: '0 4px 6px rgba(0,0,0,0.1)' }}>
+            {toast.message}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

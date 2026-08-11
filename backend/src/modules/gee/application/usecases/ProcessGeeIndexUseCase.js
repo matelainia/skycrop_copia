@@ -38,7 +38,7 @@ export class ProcessGeeIndexUseCase {
 
     // 2. Modo Simulado / Mock si el servicio GEE no está listo
     if (!this.geeService.isInitialized()) {
-      console.log(`[ProcessGeeIndexUseCase] GEE no está inicializado. Ejecutando simulación.`);
+      console.log('[ProcessGeeIndexUseCase] GEE no está inicializado. Ejecutando simulación.');
       return this.generateMockResult(hash, loteId, indexType, sumCoords);
     }
 
@@ -152,7 +152,7 @@ export class ProcessGeeIndexUseCase {
       };
     } catch (geeErr) {
       console.error(
-        `⚠️ [ProcessGeeIndexUseCase] Falló el procesamiento real de GEE. Activando contingencia de simulación:`,
+        '⚠️ [ProcessGeeIndexUseCase] Falló el procesamiento real de GEE. Activando contingencia de simulación:',
         geeErr.message
       );
 
@@ -264,7 +264,7 @@ export class ProcessGeeIndexUseCase {
       });
     }
 
-    let distribution = {};
+    let distribution;
     if (indexType === 'HUMEDAD') {
       distribution = {
         baja: Math.round((criticoPixels / totalPixels) * 100) || 15,

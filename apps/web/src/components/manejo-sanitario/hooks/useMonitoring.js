@@ -89,16 +89,6 @@ export const useMonitoring = () => {
     localStorage.setItem('skycrop_monitoreos_cc', JSON.stringify(monitoreos));
   }, [monitoreos]);
 
-  // ── Al cambiar el lote en el formulario: cargar el formulario dinámico
-  useEffect(() => {
-    if (!newMonitoreo.lote_id) {
-      setFormularioMonitoreo(null);
-      setObjetoSeleccionadoInternal(null);
-      return;
-    }
-    cargarFormulario(newMonitoreo.lote_id);
-  }, [newMonitoreo.lote_id]);
-
   // ── Al cambiar el objeto seleccionado: resetear valores y alertas
   useEffect(() => {
     setNewMonitoreo(prev => ({
@@ -134,6 +124,16 @@ export const useMonitoring = () => {
       setFormularioCargando(false);
     }
   }, []);
+
+  // ── Al cambiar el lote en el formulario: cargar el formulario dinámico
+  useEffect(() => {
+    if (!newMonitoreo.lote_id) {
+      setFormularioMonitoreo(null);
+      setObjetoSeleccionadoInternal(null);
+      return;
+    }
+    cargarFormulario(newMonitoreo.lote_id);
+  }, [newMonitoreo.lote_id, cargarFormulario]);
 
   /**
    * Seleccionar un objeto de evaluación del formulario.

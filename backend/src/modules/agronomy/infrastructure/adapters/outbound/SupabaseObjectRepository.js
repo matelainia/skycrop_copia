@@ -173,7 +173,7 @@ export class SupabaseObjectRepository {
 
       return result;
     } catch (err) {
-      throw new DatabaseError(`Error obteniendo objetos de evaluación`, err);
+      throw new DatabaseError('Error obteniendo objetos de evaluación', err);
     }
   }
 

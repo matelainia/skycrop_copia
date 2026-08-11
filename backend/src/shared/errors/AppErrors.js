@@ -48,3 +48,24 @@ export class ExternalApiError extends AppError {
     this.rawError = rawError;
   }
 }
+
+export class RateLimitError extends AppError {
+  constructor(message = 'Rate limit excedido (Max 5 por hora).') {
+    super(message, 429, 'RATE_LIMIT_EXCEEDED');
+  }
+}
+
+export class UnprocessableEntityError extends AppError {
+  constructor(message, details = null) {
+    super(message, 422, 'UNPROCESSABLE_ENTITY_ERROR');
+    this.details = details;
+  }
+}
+
+export class ServiceUnavailableError extends AppError {
+  constructor(
+    message = 'Todos los proveedores de IA no se encuentran disponibles en este momento.'
+  ) {
+    super(message, 503, 'SERVICE_UNAVAILABLE');
+  }
+}

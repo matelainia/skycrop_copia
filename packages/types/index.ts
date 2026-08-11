@@ -43,3 +43,5 @@ export interface UserProfileResponse {
   supabaseToken: string;
 }
 
+export * from './src/plan-schema';
+

@@ -6,12 +6,18 @@
   "type": "module",
   "scripts": {
     "start": "node api/index.js",
-    "dev": "node dev-server.js"
+    "dev": "node dev-server.js",
+    "lint": "eslint ."
   },
   "dependencies": {
+    "@ai-sdk/google": "^4.0.35",
+    "@ai-sdk/openai": "^4.0.31",
     "@clerk/backend": "^3.11.4",
     "@google/earthengine": "^1.7.28",
     "@supabase/supabase-js": "^2.43.4",
+    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/redis": "^1.38.2",
+    "ai": "^7.0.54",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",

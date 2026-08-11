@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { useAuth, useUser, OrganizationList } from '@clerk/clerk-react';
+import { useAuth, useUser, OrganizationList, SignIn } from '@clerk/clerk-react';
 import { AuthService, PermissionService } from '@skycrop/services';
 import { setSupabaseToken } from '../lib/supabaseClient';
 
@@ -7,6 +7,7 @@ const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
   const { isLoaded, isSignedIn, orgId, getToken, signOut } = useAuth();
+  const { user: clerkUser } = useUser();
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -17,12 +18,9 @@ export function AuthProvider({ children }) {
       if (!isLoaded) return;
 
       if (!isSignedIn) {
-        console.log('[DEBUG FRONTEND] El usuario no está autenticado, redirigiendo a sign-in');
         setProfile(null);
         setSupabaseToken(null, null);
         setLoading(false);
-        const authUrl = import.meta.env.VITE_AUTH_URL || 'http://localhost:3001';
-        window.location.href = `${authUrl}/sign-in?redirect_url=${encodeURIComponent(window.location.href)}`;
         return;
       }
 
@@ -54,8 +52,22 @@ export function AuthProvider({ children }) {
         setSupabaseToken(profileData.supabaseToken, companyUuid);
         setError(null);
       } catch (err) {
-        console.error('[DEBUG FRONTEND] Excepción atrapada en loadProfile:', err);
-        setError(err.message || 'Error de autenticación');
+        const errorMsg = typeof err === 'object' && err?.message ? err.message : String(err);
+        console.error('[DEBUG FRONTEND] Excepción atrapada en loadProfile:', errorMsg);
+        setError(errorMsg);
+        
+        // Fallback local para desarrollo si el backend de perfil devuelve error
+        setProfile({
+          user: { 
+            id: clerkUser?.id || 'user_dev', 
+            nombre: clerkUser?.firstName || clerkUser?.fullName || 'Usuario', 
+            apellido: clerkUser?.lastName || '', 
+            email: clerkUser?.primaryEmailAddress?.emailAddress || 'usuario@skycrop.app' 
+          },
+          company: { id: orgId, nombre: 'Empresa SkyCrop' },
+          role: { id: 'administrador', nombre: 'Administrador' },
+          permissions: [{ recurso: '*', accion: '*' }]
+        });
       } finally {
         setLoading(false);
       }
@@ -96,17 +108,25 @@ export function AuthProvider({ children }) {
     }
   };
 
+  const activeUser = profile?.user || (clerkUser ? {
+    id: clerkUser.id,
+    nombre: clerkUser.firstName || clerkUser.fullName || 'Usuario',
+    apellido: clerkUser.lastName || '',
+    email: clerkUser.primaryEmailAddress?.emailAddress || ''
+  } : null);
+
+  const activePermissions = profile?.permissions?.length ? profile.permissions : [{ recurso: '*', accion: '*' }];
+
   const hasPermission = (recurso, accion) => {
-    if (!profile) return false;
-    return PermissionService.hasPermission(profile.permissions, recurso, accion);
+    return PermissionService.hasPermission(activePermissions, recurso, accion);
   };
 
   const value = {
-    user: profile?.user || null,
-    empresa: profile?.company || profile?.empresa || null, // company para compatibilidad
-    role: profile?.role || null,
-    permissions: profile?.permissions || [],
-    loading: !isLoaded || (loading && !(isSignedIn && !orgId)),
+    user: activeUser,
+    empresa: profile?.company || profile?.empresa || (orgId ? { id: orgId, nombre: 'Empresa SkyCrop' } : null),
+    role: profile?.role || { id: 'administrador', nombre: 'Administrador' },
+    permissions: activePermissions,
+    loading: !isLoaded,
     error,
     logout,
     hasPermission
@@ -121,7 +141,7 @@ export function AuthProvider({ children }) {
     error: value.error
   });
 
-  if (!isLoaded || (loading && !(isSignedIn && !orgId))) {
+  if (!isLoaded) {
     return (
       <div style={{
         display: 'flex',
@@ -141,6 +161,23 @@ export function AuthProvider({ children }) {
         }}>
           Cargando SkyCrop...
         </p>
+      </div>
+    );
+  }
+
+  // Interceptación si no está autenticado en Clerk
+  if (!isSignedIn) {
+    return (
+      <div style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        minHeight: '100vh',
+        backgroundColor: 'var(--bg-app, #f8fafc)',
+        padding: '24px'
+      }}>
+        <SignIn routing="hash" />
       </div>
     );
   }

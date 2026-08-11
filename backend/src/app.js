@@ -19,6 +19,7 @@ const app = express();
 
 // Configurar CORS global
 const allowedOrigins = [
+  process.env.FRONTEND_URL || 'http://localhost:5173',
   'http://localhost:5173',
   'http://localhost:3000',
   'http://localhost:3001',
@@ -46,6 +47,8 @@ app.use(
     allowedHeaders: [
       'Content-Type',
       'Authorization',
+      'X-Request-Id',
+      'x-request-id',
       'apikey',
       'X-Client-Info',
       'x-client-info',

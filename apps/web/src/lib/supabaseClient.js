@@ -91,17 +91,7 @@ export const supabase = new Proxy({}, {
  */
 export function setSupabaseToken(token, orgId = null) {
   activeOrgId = orgId;
-  if (token) {
-    activeClient = createClient(supabaseUrl, supabaseAnonKey, {
-      global: {
-        headers: {
-          Authorization: `Bearer ${token}`
-        }
-      }
-    });
-    console.log(`[SUPABASE CLIENT] Conexión directa RLS activada con nuevo JWT para el tenant: ${orgId}`);
-  } else {
-    activeClient = null;
-    console.log('[SUPABASE CLIENT] Conexión directa RLS desactivada. Usando Proxy Backend.');
-  }
+  // Usar el backend proxy por defecto para evitar que tokens JWT no aceptados por PostgREST directo lancen "No suitable key or wrong key type"
+  activeClient = null;
+  console.log(`[SUPABASE CLIENT] Tenant activo configurado: ${orgId}. Usando canal Proxy Backend.`);
 }

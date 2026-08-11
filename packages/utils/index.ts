@@ -40,8 +40,14 @@ export async function apiFetch<T>(
     let errorMsg = `Error ${response.status}: ${response.statusText}`;
     try {
       const errBody = await response.json();
-      if (errBody && errBody.error) {
-        errorMsg = errBody.error;
+      if (errBody) {
+        if (typeof errBody.error === 'string') {
+          errorMsg = errBody.error;
+        } else if (errBody.error && typeof errBody.error.message === 'string') {
+          errorMsg = errBody.error.message;
+        } else if (typeof errBody.message === 'string') {
+          errorMsg = errBody.message;
+        }
       }
     } catch (_) {}
     throw new Error(errorMsg);

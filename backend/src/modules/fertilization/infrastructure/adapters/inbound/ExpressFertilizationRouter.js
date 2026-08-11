@@ -16,6 +16,7 @@ import { SavePlanUseCase } from '../../../application/save-plan.usecase.js';
 import { SaveObservationUseCase } from '../../../application/save-observation.usecase.js';
 import { CompleteApplicationUseCase } from '../../../application/complete-application.usecase.js';
 import { ExportPlanPdfUseCase } from '../../../application/export-plan-pdf.usecase.js';
+import { SugerirPlanUseCase } from '../../../application/sugerir-plan.usecase.js';
 
 // Controlador (inbound)
 import { ExpressFertilizationController } from './ExpressFertilizationController.js';
@@ -32,6 +33,7 @@ const savePlanUC = new SavePlanUseCase(repository);
 const saveObsUC = new SaveObservationUseCase(repository);
 const completeAppUC = new CompleteApplicationUseCase(repository);
 const exportPdfUC = new ExportPlanPdfUseCase(repository, pdfAdapter);
+const sugerirPlanUC = new SugerirPlanUseCase();
 
 const controller = new ExpressFertilizationController(
   getPlanDetailUC,
@@ -39,11 +41,15 @@ const controller = new ExpressFertilizationController(
   saveObsUC,
   completeAppUC,
   exportPdfUC,
+  sugerirPlanUC,
   repository,
   storageAdapter
 );
 
 // ─── Definición de rutas ──────────────────────────────────────────────────────
+
+// POST /sugerir-plan             → Generar plan base con IA
+router.post('/sugerir-plan', controller.sugerirPlan);
 
 // GET  /planes/:planId          → Detalle completo del plan
 router.get('/planes/:planId', controller.getPlanDetail);

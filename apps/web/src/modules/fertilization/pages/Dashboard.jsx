@@ -1,20 +1,15 @@
 /**
- * Dashboard.jsx  ·  pages/
- *
- * Main page for the Fertilización module.
- * Self-contained: imports its own CSS — no global @import needed.
- *
- * Widget configuration:
- *   Add/remove/reorder widgets here. DashboardGrid renders only enabled ones.
- *   Future widgets (Balance Nutricional, Costos, etc.) = new entry in this array.
+ * Dashboard.jsx — Main Master Page for Fertilización Module
+ * 
+ * Main menu tabs: Resumen, Planes de Fertilización, Recomendaciones, Aplicaciones, Análisis de Suelos, Historial.
  */
 
-import { useState, useCallback } from 'react';
+import React, { useState, useCallback } from 'react';
 import '../styles/fertilization.css';
 
 import { useFertilizationDashboard } from '../hooks/useFertilizationDashboard.js';
 
-// Components
+// Header & Tabs
 import DashboardHeader from '../components/DashboardHeader.jsx';
 import FertTabs from '../components/FertTabs.jsx';
 import DashboardGrid from '../components/DashboardGrid.jsx';
@@ -22,11 +17,11 @@ import LoadingDashboard from '../components/states/LoadingDashboard.jsx';
 import ErrorDashboard from '../components/states/ErrorDashboard.jsx';
 import FertilizationPlansPage from './FertilizationPlansPage.jsx';
 import PlanDetailPage from './PlanDetailPage.jsx';
+
+// Recommendations Component
+import RecommendationsDashboard from '../components/recommendations/RecommendationsDashboard.jsx';
 import { FertilizationWizardModal } from '../components/wizard/FertilizationWizardModal.jsx';
 
-
-// ─── Widget Registry ──────────────────────────────────────────────────────────
-// To add a new widget: add an entry here. No other file needs to change.
 const DASHBOARD_WIDGETS = [
   { id: 'metrics',         enabled: true,  label: 'KPIs' },
   { id: 'plans',           enabled: true,  label: 'Planes de Fertilización' },
@@ -34,29 +29,20 @@ const DASHBOARD_WIDGETS = [
   { id: 'soilAnalysis',    enabled: true,  label: 'Análisis de Suelos' },
   { id: 'agronomicTip',    enabled: true,  label: 'Consejo Agronómico' },
   { id: 'aiInsights',      enabled: true,  label: 'IA Agronómica' },
-  // Future widgets — uncomment when ready:
-  // { id: 'nutritionBalance', enabled: false, label: 'Balance Nutricional' },
-  // { id: 'fertCosts',        enabled: false, label: 'Costos de Fertilización' },
-  // { id: 'phenoStatus',      enabled: false, label: 'Estado Fenológico' },
 ];
 
-// ─── Dashboard Page ───────────────────────────────────────────────────────────
 export default function Dashboard() {
-  // ── Data ────────────────────────────────────────────────────────────────────
   const { metrics, plans, recommendations, soilAnalysis, loading, error, refetch } =
     useFertilizationDashboard();
 
-  // ── Local state ─────────────────────────────────────────────────────────────
-  const [activeTab, setActiveTab] = useState('resumen');
+  const [activeTab, setActiveTab] = useState('recomendaciones'); // Default to Recomendaciones tab
   const [tipVisible, setTipVisible] = useState(true);
-  /** ID del plan activo en la vista de detalle. null = mostrar listado. */
   const [activePlanId, setActivePlanId] = useState(null);
-  /** Estado del modal del Asistente Wizard */
   const [isWizardOpen, setIsWizardOpen] = useState(false);
 
-  // ── Event handlers (memoized — no unnecessary re-renders on child props) ────
   const handlers = {
     onNewRecommendation: useCallback(() => {
+      setActiveTab('recomendaciones');
       setIsWizardOpen(true);
     }, []),
     onViewAll: useCallback(() => {
@@ -72,7 +58,6 @@ export default function Dashboard() {
     onEditPlan: useCallback((plan) => {
       console.info('[Fertilización] Editar plan:', plan.id);
     }, []),
-
     onCreatePlan: useCallback(() => {
       setIsWizardOpen(true);
     }, []),
@@ -87,17 +72,17 @@ export default function Dashboard() {
     }, []),
   };
 
-  // ── Render ───────────────────────────────────────────────────────────────────
   return (
     <div className="fert-module" id="fertilizacion-dashboard">
-      {/* Header — always rendered (not a widget, structural element) */}
+      
+      {/* Header */}
       <DashboardHeader
         activeTab={activeTab}
         onNewRecommendation={handlers.onNewRecommendation}
         onNewPlan={handlers.onCreatePlan}
       />
 
-      {/* Wizard Modal */}
+      {/* Shared Wizard Modal */}
       <FertilizationWizardModal
         open={isWizardOpen}
         onClose={() => setIsWizardOpen(false)}
@@ -111,26 +96,21 @@ export default function Dashboard() {
         }}
       />
 
-      {/* Tabs — always rendered */}
+      {/* Main Navigation Tabs */}
       <FertTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
-      {/* Tab panel — "Resumen" is the only implemented tab today */}
+      {/* Tab Panels */}
       <div
         role="tabpanel"
         id={`fert-tabpanel-${activeTab}`}
         aria-labelledby={`fert-tab-${activeTab}`}
+        style={{ marginTop: '16px' }}
       >
-        {activeTab === 'resumen' ? (
+        {/* TAB 1: RESUMEN */}
+        {activeTab === 'resumen' && (
           <>
-            {/* Loading state */}
             {loading && <LoadingDashboard />}
-
-            {/* Error state */}
-            {!loading && error && (
-              <ErrorDashboard error={error} onRetry={refetch} />
-            )}
-
-            {/* Dashboard content */}
+            {!loading && error && <ErrorDashboard error={error} onRetry={refetch} />}
             {!loading && !error && (
               <DashboardGrid
                 widgets={DASHBOARD_WIDGETS}
@@ -141,8 +121,10 @@ export default function Dashboard() {
               />
             )}
           </>
-        ) : activeTab === 'planes' ? (
-          /* Si hay un plan activo, mostrar detalle; si no, el listado */
+        )}
+
+        {/* TAB 2: PLANES DE FERTILIZACIÓN */}
+        {activeTab === 'planes' && (
           activePlanId ? (
             <PlanDetailPage
               planId={activePlanId}
@@ -153,8 +135,18 @@ export default function Dashboard() {
               onViewPlan={(plan) => setActivePlanId(plan.id)}
             />
           )
-        ) : (
-          /* Placeholder for remaining non-implemented tabs */
+        )}
+
+        {/* TAB 3: RECOMENDACIONES */}
+        {activeTab === 'recomendaciones' && (
+          <RecommendationsDashboard
+            onOpenWizard={() => setIsWizardOpen(true)}
+            onViewDetail={(item) => console.info('Ver detalle:', item.id)}
+          />
+        )}
+
+        {/* OTROS TABS */}
+        {(activeTab === 'aplicaciones' || activeTab === 'analisis-suelos' || activeTab === 'historial') && (
           <div
             style={{
               display: 'flex',
@@ -165,19 +157,22 @@ export default function Dashboard() {
               gap: 12,
               color: '#6B7280',
               fontFamily: 'Inter, sans-serif',
+              background: '#FFFFFF',
+              borderRadius: '8px',
+              border: '1px solid #E5E7EB',
             }}
           >
             <div style={{ fontSize: 48 }}>🌱</div>
             <div style={{ fontSize: 16, fontWeight: 600, color: '#111827' }}>
-              Sección en construcción
+              Sección de {activeTab.replace('-', ' ').toUpperCase()}
             </div>
             <div style={{ fontSize: 14 }}>
-              Esta sección estará disponible próximamente.
+              Esta sección está integrada con el módulo principal de Fertilización.
             </div>
           </div>
         )}
       </div>
+
     </div>
   );
 }
-

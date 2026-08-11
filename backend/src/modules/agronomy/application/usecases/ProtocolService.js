@@ -183,7 +183,7 @@ export class ProtocolService {
 
     if (!valido) {
       throw new Error(
-        `El protocolo no puede publicarse porque tiene errores de configuración:\n` +
+        'El protocolo no puede publicarse porque tiene errores de configuración:\n' +
           errores.map((e) => `  • ${e}`).join('\n')
       );
     }

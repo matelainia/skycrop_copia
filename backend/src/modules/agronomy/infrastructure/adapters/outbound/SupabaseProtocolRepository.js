@@ -235,7 +235,7 @@ export class SupabaseProtocolRepository {
       }
       return tryQuery(null);
     } catch (err) {
-      throw new DatabaseError(`Error obteniendo protocolo vigente`, err);
+      throw new DatabaseError('Error obteniendo protocolo vigente', err);
     }
   }
 

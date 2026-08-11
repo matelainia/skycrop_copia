@@ -32,7 +32,7 @@ export const productRepository = {
       body: JSON.stringify({
         aplicacion_id: appId,
         usuario_id: user,
-        ingredientes,
+        ingredients,
         advertencia_confirmada: true,
         declaracion_profesional: true,
         geolocalizacion
