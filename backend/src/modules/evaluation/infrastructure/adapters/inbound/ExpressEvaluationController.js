@@ -1,3 +1,5 @@
+import { resolveTenant } from '../../../../../shared/middleware/authenticate.js';
+
 export class ExpressEvaluationController {
   constructor(createEvaluationUseCase, draftEvaluationUseCase, geocodeLoteUseCase) {
     this.createEvaluationUseCase = createEvaluationUseCase;
@@ -6,11 +8,26 @@ export class ExpressEvaluationController {
   }
 
   /**
+   * Resuelve la identidad priorizando el token verificado; los valores de
+   * query/body solo se aceptan como fallback en desarrollo.
+   */
+  _identity(req) {
+    return resolveTenant(req, {
+      fallbackCompanyId: req.query?.companyId ?? req.body?.companyId ?? null,
+      fallbackUserId: req.query?.userId ?? req.body?.userId ?? null
+    });
+  }
+
+  /**
    * POST /api/v1/evaluaciones
    */
   createEvaluation = async (req, res, next) => {
     try {
-      const payload = req.body;
+      const payload = {
+        ...req.body,
+        ...(req.tenant?.userId ? { user_id: req.tenant.userId } : {}),
+        ...(req.tenant?.companyId ? { company_id: req.tenant.companyId } : {})
+      };
       const result = await this.createEvaluationUseCase.execute(payload);
       if (!result.success) {
         return res.status(400).json(result);
@@ -26,7 +43,11 @@ export class ExpressEvaluationController {
    */
   saveDraft = async (req, res, next) => {
     try {
-      const payload = req.body;
+      const payload = {
+        ...req.body,
+        ...(req.tenant?.userId ? { user_id: req.tenant.userId } : {}),
+        ...(req.tenant?.companyId ? { company_id: req.tenant.companyId } : {})
+      };
       const result = await this.draftEvaluationUseCase.saveDraft(payload);
       if (!result.success) {
         return res.status(400).json(result);
@@ -43,7 +64,9 @@ export class ExpressEvaluationController {
   getDraft = async (req, res, next) => {
     try {
       const { loteId } = req.params;
-      const { userId, companyId } = req.query;
+      const identity = this._identity(req);
+      const userId = identity.userId || req.query.userId;
+      const companyId = identity.companyId || req.query.companyId;
 
       if (!loteId || !userId || !companyId) {
         return res

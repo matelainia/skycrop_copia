@@ -33,5 +33,18 @@ if (!parsed.success) {
   process.exit(1);
 }
 
+// Advertencia de seguridad: detectar claves que NO son service_role reales.
+// Una clave publishable/anon en esta variable hace que "supabaseAdmin" opere con
+// RLS restringido, rompiendo silenciosamente operaciones administrativas.
+const serviceKey = parsed.data.SUPABASE_SERVICE_ROLE_KEY || '';
+if (!serviceKey.startsWith('eyJ') && !serviceKey.startsWith('sb_secret_')) {
+  console.warn(
+    '⚠️  [CONFIG] SUPABASE_SERVICE_ROLE_KEY no parece una clave service_role válida\n' +
+      '   (se esperaba un JWT "eyJ…" o una clave "sb_secret_…").\n' +
+      '   El backend operará SIN privilegios administrativos. Obtén la clave real en:\n' +
+      '   Supabase Dashboard → Project Settings → API'
+  );
+}
+
 export const env = parsed.data;
 export default env;

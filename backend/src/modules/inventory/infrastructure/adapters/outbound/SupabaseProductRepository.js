@@ -23,9 +23,15 @@ export class SupabaseProductRepository extends ProductRepositoryPort {
         .order('nombre_producto', { ascending: true });
 
       if (query.trim().length > 0) {
-        qBuilder = qBuilder.or(
-          `nombre_producto.ilike.%${query}%,ingrediente_activo.ilike.%${query}%`
-        );
+        // Sanitización: se eliminan caracteres con significado en la gramática de
+        // filtros PostgREST (comas, paréntesis, comillas, operadores) para evitar
+        // inyección de condiciones en la cláusula .or().
+        const safeQuery = query.replace(/[(),*"\\]/g, '').trim();
+        if (safeQuery.length > 0) {
+          qBuilder = qBuilder.or(
+            `nombre_producto.ilike.%${safeQuery}%,ingrediente_activo.ilike.%${safeQuery}%`
+          );
+        }
       }
 
       const { data, error } = await qBuilder;

@@ -23,6 +23,8 @@ const TENANT_TABLES = [
   'registros_formacion', 'cuadrillas', 'almacenamientos', 'audit_logs'
 ];
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 /**
  * Proxy dinámico para interceptar todas las llamadas al objeto 'supabase'.
  * De esta manera, el resto de componentes pueden seguir importando y usando 'supabase' directamente
@@ -36,8 +38,9 @@ export const supabase = new Proxy({}, {
     if (prop === 'from') {
       return (tableName) => {
         const builder = client.from(tableName);
+        const isValidUuid = typeof activeOrgId === 'string' && UUID_REGEX.test(activeOrgId);
         
-        if (TENANT_TABLES.includes(tableName) && activeOrgId) {
+        if (TENANT_TABLES.includes(tableName) && isValidUuid) {
           // Retornar un proxy sobre el builder para inyectar automáticamente el filtro del tenant
           return new Proxy(builder, {
             get(builderTarget, builderProp) {
@@ -87,11 +90,32 @@ export const supabase = new Proxy({}, {
 });
 
 /**
- * Establece el token JWT firmado de Supabase para habilitar RLS directo
+ * Establece el token JWT firmado de Supabase para habilitar RLS.
+ *
+ * El token (emitido por /api/v1/auth/me) se usa como clave del cliente contra el
+ * proxy del backend: así cada petición REST/RPC/Storage viaja con un JWT verificado
+ * y Supabase aplica las políticas RLS del tenant correcto.
+ * También se persiste en sessionStorage para las capas fetch manuales
+ * (ej. plan-detail.api.js).
  */
 export function setSupabaseToken(token, orgId = null) {
   activeOrgId = orgId;
-  // Usar el backend proxy por defecto para evitar que tokens JWT no aceptados por PostgREST directo lancen "No suitable key or wrong key type"
-  activeClient = null;
-  console.log(`[SUPABASE CLIENT] Tenant activo configurado: ${orgId}. Usando canal Proxy Backend.`);
+  if (token) {
+    try {
+      sessionStorage.setItem('sb_access_token', token);
+      localStorage.setItem('sb_access_token', token);
+    } catch (_e) {
+      /* almacenamiento no disponible: se continúa solo con el cliente */
+    }
+    activeClient = createClient(backendUrl, token);
+  } else {
+    try {
+      sessionStorage.removeItem('sb_access_token');
+      localStorage.removeItem('sb_access_token');
+    } catch (_e) {
+      /* noop */
+    }
+    // Sin token: canal por defecto (dummy-key) hacia el proxy del backend
+    activeClient = null;
+  }
 }

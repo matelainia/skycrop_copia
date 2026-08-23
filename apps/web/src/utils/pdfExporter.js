@@ -1,11 +1,30 @@
 import { formatCOP } from './format.js';
 
+/**
+ * Escapa entidades HTML para prevenir XSS al renderizar datos del plan
+ * (nombres de productos, responsables, etc. provienen de base de datos).
+ */
+function escapeHtml(value) {
+  if (value === null || value === undefined) return '';
+  return String(value).replace(/[&<>"']/g, (c) => ({
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  })[c]);
+}
 
 /**
  * Exportador de PDF Client-side para Ficha de Plan de Fertilización SkyCrop
  * Genera un documento con branding visual de SkyCrop, tablas e información nutricional.
  */
 export async function exportFertilizationPlanPDF(plan) {
+  // Sanitización XSS: se escapan todos los datos dinámicos antes de interpolar
+  const safe = JSON.parse(JSON.stringify(plan), (key, value) =>
+    typeof value === 'string' ? escapeHtml(value) : value
+  );
+
   // Crear una ventana o elemento de impresión formateado con HTML/CSS de la marca SkyCrop
   const printWindow = window.open('', '_blank');
   if (!printWindow) {
@@ -13,7 +32,7 @@ export async function exportFertilizationPlanPDF(plan) {
     return;
   }
 
-  const itemsHtml = (plan.applications || [])
+  const itemsHtml = (safe.applications || [])
     .map(
       (item, index) => `
     <tr>
@@ -33,7 +52,7 @@ export async function exportFertilizationPlanPDF(plan) {
     <html lang="es">
     <head>
       <meta charset="UTF-8">
-      <title>${plan.code || 'Plan'} - Ficha Técnica SkyCrop</title>
+      <title>${safe.code || 'Plan'} - Ficha Técnica SkyCrop</title>
       <style>
         body { font-family: 'Helvetica', 'Arial', sans-serif; color: #2b2b2b; margin: 0; padding: 20px; background: #fff; }
         .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #16a34a; padding-bottom: 15px; margin-bottom: 20px; }
@@ -53,18 +72,18 @@ export async function exportFertilizationPlanPDF(plan) {
     <body>
       <div class="header">
         <div class="brand">🌿 SkyCrop · Manejo de Nutrición</div>
-        <div class="code-badge">${plan.code || 'PF-2024-001'}</div>
+        <div class="code-badge">${safe.code || 'PF-2024-001'}</div>
       </div>
 
-      <h2>${plan.name || 'Plan de Fertilización'}</h2>
+      <h2>${safe.name || 'Plan de Fertilización'}</h2>
 
       <div class="grid">
-        <div class="grid-item"><label>CULTIVO</label><span>${plan.crop_name || plan.cropName || 'Cacao'}</span></div>
-        <div class="grid-item"><label>ETAPA</label><span>${plan.phenological_stage || plan.stage || 'Llenado'}</span></div>
-        <div class="grid-item"><label>LOTE / ÁREA</label><span>${plan.lot_name || plan.lotName || 'Lote 12'} (${plan.area_ha || plan.area || 4.5} ha)</span></div>
-        <div class="grid-item"><label>RESPONSABLE</label><span>${plan.responsible_name || plan.responsibleName || 'Sebastián Díaz'}</span></div>
-        <div class="grid-item"><label>SUELO</label><span>${plan.soil_type || plan.soilType || 'Franco-arcilloso'}</span></div>
-        <div class="grid-item"><label>FECHAS</label><span>${plan.start_date || plan.startDate} - ${plan.end_date || plan.endDate}</span></div>
+        <div class="grid-item"><label>CULTIVO</label><span>${safe.crop_name || safe.cropName || 'Cacao'}</span></div>
+        <div class="grid-item"><label>ETAPA</label><span>${safe.phenological_stage || safe.stage || 'Llenado'}</span></div>
+        <div class="grid-item"><label>LOTE / ÁREA</label><span>${safe.lot_name || safe.lotName || 'Lote 12'} (${safe.area_ha || safe.area || 4.5} ha)</span></div>
+        <div class="grid-item"><label>RESPONSABLE</label><span>${safe.responsible_name || safe.responsibleName || 'Sebastián Díaz'}</span></div>
+        <div class="grid-item"><label>SUELO</label><span>${safe.soil_type || safe.soilType || 'Franco-arcilloso'}</span></div>
+        <div class="grid-item"><label>FECHAS</label><span>${safe.start_date || safe.startDate} - ${safe.end_date || safe.endDate}</span></div>
       </div>
 
       <h3>Cronograma de Aplicaciones</h3>
@@ -85,7 +104,7 @@ export async function exportFertilizationPlanPDF(plan) {
       </table>
 
       <div class="total-box">
-        Presupuesto Total Estimado: ${formatCOP(plan.budget_total || plan.totalBudget || 0)}
+        Presupuesto Total Estimado: ${formatCOP(safe.budget_total || safe.totalBudget || 0)}
       </div>
 
       <div class="footer">
