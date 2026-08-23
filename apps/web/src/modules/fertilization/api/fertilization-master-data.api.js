@@ -1,23 +1,14 @@
 import { supabase } from '../../../lib/supabaseClient.js';
 
-const DEFAULT_LOTES = [
-  { id: 'lote-12', nombre: 'Lote 12 - El Paraíso', area_ha: 4.5, tipo_suelo: 'Franco-arcilloso', ph_base: 6.4 },
-  { id: 'lote-05', nombre: 'Lote 05 - La Esperanza', area_ha: 3.2, tipo_suelo: 'Franco-arenoso', ph_base: 6.1 },
-  { id: 'lote-08', nombre: 'Lote 08 - San José', area_ha: 5.0, tipo_suelo: 'Arcilloso', ph_base: 5.8 },
-];
-
-const DEFAULT_RESPONSABLES = [
-  { id: 'seb-diaz', name: 'Sebastián Díaz', role: 'Administrador' },
-  { id: 'juan-perez', name: 'Juan Pérez', role: 'Agrónomo' },
-  { id: 'maria-gomez', name: 'María Gómez', role: 'Supervisora' },
-];
+// Política de datos SkyCrop: sin lotes/responsables ⇒ listas vacías.
+// El usuario crea sus datos reales desde la UI; nunca se inventan.
 
 export const fertilizationMasterDataApi = {
   /**
    * Carga los lotes de la empresa desde Supabase
    */
   async getLotes(companyId) {
-    if (!supabase) return DEFAULT_LOTES;
+    if (!supabase) return [];
     try {
       let query = supabase
         .from('lotes')
@@ -39,23 +30,22 @@ export const fertilizationMasterDataApi = {
 
       const { data, error } = await query;
       if (error || !data || data.length === 0) {
-        console.info('[MasterDataAPI] Usando lotes por defecto (Supabase sin lotes o error):', error?.message);
-        return DEFAULT_LOTES;
+        return [];
       }
 
       return data.map(l => ({
         id: l.id,
         nombre: `${l.nombre} ${l.codigo_interno ? `(${l.codigo_interno})` : ''}`.trim(),
-        area_ha: l.area_ha || 4.5,
-        tipo_suelo: 'Franco-arcilloso',
-        ph_base: 6.4,
-        cultivo: l.cultivo || 'Cacao',
-        estado_fenologico: l.estado_fenologico || 'Llenado',
-        predio_nombre: l.predios?.nombre || 'Sector Norte',
+        area_ha: l.area_ha ?? null,
+        tipo_suelo: l.tipo_suelo || null,
+        ph_base: l.ph_base ?? null,
+        cultivo: l.cultivo || null,
+        estado_fenologico: l.estado_fenologico || null,
+        predio_nombre: l.predios?.nombre || null,
       }));
     } catch (err) {
       console.warn('[MasterDataAPI] Excepción cargando lotes:', err);
-      return DEFAULT_LOTES;
+      return [];
     }
   },
 
@@ -63,7 +53,7 @@ export const fertilizationMasterDataApi = {
    * Carga el personal responsable de la empresa desde Supabase
    */
   async getResponsables(companyId) {
-    if (!supabase) return DEFAULT_RESPONSABLES;
+    if (!supabase) return [];
     try {
       let queryTrab = supabase
         .from('trabajadores')
@@ -98,10 +88,10 @@ export const fertilizationMasterDataApi = {
         }));
       }
 
-      return DEFAULT_RESPONSABLES;
+      return [];
     } catch (err) {
       console.warn('[MasterDataAPI] Excepción cargando responsables:', err);
-      return DEFAULT_RESPONSABLES;
+      return [];
     }
   },
 
@@ -157,7 +147,7 @@ export const fertilizationMasterDataApi = {
         const details = item.title || item.content || 'Análisis de suelo';
         return {
           id: item.id,
-          label: `${fecha} ${lab ? `– ${lab} ` : ''}(${details})`.trim(),
+          label: `${fecha} ${lab ? `· ${lab} ` : ''}(${details})`.trim(),
           title: item.title,
           date: item.observed_at,
           raw: item,
@@ -169,4 +159,3 @@ export const fertilizationMasterDataApi = {
     }
   },
 };
-

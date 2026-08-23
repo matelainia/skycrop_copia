@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+﻿import React, { useState, useEffect } from 'react';
 import { Users, Package, Tractor, HeartPulse, Sprout, Sun, Moon, CloudSun, Calendar, LogOut, Settings } from 'lucide-react';
 import TalentoHumano from '../components/TalentoHumano';
 import InventarioBodegas from '../components/InventarioBodegas/InventarioBodegas';
@@ -37,7 +37,7 @@ export default function App() {
     return localStorage.getItem('skycrop_active_subtab') || 'flota';
   });
 
-  // Si la pestaña activa no está permitida por el rol, cambiar a la primera permitida
+  // Si la pestaÃ±a activa no estÃ¡ permitida por el rol, cambiar a la primera permitida
   useEffect(() => {
     if (menuItems.length > 0 && !menuItems.some(item => item.id === activeTab)) {
       setActiveTab(menuItems[0].id);
@@ -100,12 +100,12 @@ export default function App() {
 
   const getTabTitle = () => {
     switch (activeTab) {
-      case 'talento': return 'Gestión de Talento Humano';
+      case 'talento': return 'GestiÃ³n de Talento Humano';
       case 'inventario': return 'Control de Inventario y Bodegas';
       case 'maquinaria': return 'Flota de Maquinaria';
       case 'sanitario': return 'Manejo Sanitario';
       case 'cosecha': return 'Rendimiento Cosecha y Postcosecha';
-      case 'clima': return 'Centro de Inteligencia Climática';
+      case 'clima': return 'Centro de Inteligencia ClimÃ¡tica';
       default: return 'Panel Principal';
     }
   };
@@ -195,7 +195,7 @@ export default function App() {
                     { id: 'aplicaciones', label: 'Aplicaciones' },
                     { id: 'monitoreos', label: 'Monitoreos y Evaluaciones' },
                     { id: 'historial_traz', label: 'Trazabilidad' },
-                    { id: 'fertilizacion', label: 'Fertilización' }
+                    { id: 'fertilizacion', label: 'FertilizaciÃ³n' }
                   ].map(sub => (
                     <li key={sub.id}>
                       <button
@@ -228,12 +228,12 @@ export default function App() {
                     </li>
                   ))}
 
-                  {/* ─── CONFIGURACIÓN ─────────────────────────────── */}
+                  {/* â”€â”€â”€ CONFIGURACIÃ“N â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
                   {['administrador', 'ingeniero', 'tecnico'].includes(role?.nombre?.toLowerCase()) && (
                     <>
                       <li style={{ paddingTop: 10, paddingBottom: 2 }}>
                         <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: '0.08em', color: 'var(--text-muted)', textTransform: 'uppercase', display: 'flex', alignItems: 'center', gap: 4 }}>
-                          <Settings size={9} /> CONFIGURACIÓN
+                          <Settings size={9} /> CONFIGURACIÃ“N
                         </span>
                       </li>
                       <li>
@@ -248,7 +248,7 @@ export default function App() {
                           }}
                         >
                           <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: activeSubTab === 'protocolos_eval' ? 'var(--primary)' : 'transparent', display: 'inline-block' }} />
-                          Protocolos de Evaluación
+                          Protocolos de EvaluaciÃ³n
                         </button>
                       </li>
                     </>
@@ -285,7 +285,7 @@ export default function App() {
             style={{ color: 'var(--accent-red)' }}
           >
             <LogOut size={16} />
-            <span>Cerrar Sesión</span>
+            <span>Cerrar SesiÃ³n</span>
           </button>
         </div>
       </aside>
@@ -299,11 +299,6 @@ export default function App() {
           </div>
 
           <div className="header-actions">
-            {/* Weather Mock Widget */}
-            <div className="weather-widget">
-              <CloudSun size={16} style={{ color: 'var(--accent-gold)' }} />
-              <span>27°C | Valle del Cauca, CO</span>
-            </div>
 
             {/* Time / Date widget */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '13px', color: 'var(--text-secondary)' }}>

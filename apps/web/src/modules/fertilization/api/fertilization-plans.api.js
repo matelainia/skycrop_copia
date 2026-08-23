@@ -2,27 +2,18 @@ import { supabase } from '../../../lib/supabaseClient.js';
 
 
 /**
- * Servicio API para Planes de Fertilización con Supabase Backend
+ * Servicio API para Planes de FertilizaciÃ³n con Supabase Backend
  */
 export const fertilizationPlansApi = {
   /**
-   * Crea un nuevo plan de fertilización y sus ítems de aplicaciones en Supabase
+   * Crea un nuevo plan de fertilizaciÃ³n y sus Ã­tems de aplicaciones en Supabase
    */
   async createPlan(planPayload) {
     if (!supabase) {
-      console.warn('[FertilizationAPI] Client Supabase no configurado, operando en modo simulado.');
-      return {
-        id: `mock-plan-${Date.now()}`,
-        code: `PF-${new Date().getFullYear()}-00${Math.floor(Math.random() * 90 + 10)}`,
-        ...planPayload.general,
-        ...planPayload.crop,
-        budget_total: planPayload.totalBudget,
-        status: 'draft',
-        created_at: new Date().toISOString(),
-      };
+      throw new Error('Supabase no está configurado. No es posible crear el plan.');
     }
 
-    // 1. Inserción de cabecera de plan
+    // 1. InserciÃ³n de cabecera de plan
     const { data: plan, error: planError } = await supabase
       .from('fertilization_plans')
       .insert({
@@ -32,13 +23,13 @@ export const fertilizationPlansApi = {
         area_ha: parseFloat(planPayload.general.area) || 0,
         start_date: planPayload.general.startDate || null,
         end_date: planPayload.general.endDate || null,
-        responsible_name: planPayload.general.responsibleName || 'Sebastián Díaz',
+        responsible_name: planPayload.general.responsibleName || null,
 
-        crop_name: planPayload.crop.cropName || 'Cacao',
-        crop_scientific: planPayload.crop.cropScientific || 'Theobroma cacao',
-        phenological_stage: planPayload.crop.stage || 'Llenado',
-        density: planPayload.crop.density ? `${planPayload.crop.density} árboles/ha` : null,
-        soil_type: planPayload.crop.soilType || 'Franco-arcilloso',
+        crop_name: planPayload.crop.cropName || null,
+        crop_scientific: planPayload.crop.cropScientific || null,
+        phenological_stage: planPayload.crop.stage || null,
+        density: planPayload.crop.density ? `${planPayload.crop.density} Ã¡rboles/ha` : null,
+        soil_type: planPayload.crop.soilType || null,
         budget_total: planPayload.totalBudget || 0,
 
         notes: planPayload.confirmation?.observations || '',
@@ -52,7 +43,7 @@ export const fertilizationPlansApi = {
       throw planError;
     }
 
-    // 2. Inserción de items / aplicaciones si existen
+    // 2. InserciÃ³n de items / aplicaciones si existen
     if (planPayload.applications && planPayload.applications.length > 0) {
       const items = planPayload.applications.map(app => ({
         plan_id: plan.id,
@@ -71,7 +62,7 @@ export const fertilizationPlansApi = {
         .insert(items);
 
       if (itemsError) {
-        console.error('[FertilizationAPI] Error creando ítems de plan:', itemsError);
+        console.error('[FertilizationAPI] Error creando Ã­tems de plan:', itemsError);
       }
     }
 
@@ -93,7 +84,7 @@ export const fertilizationPlansApi = {
   },
 
   /**
-   * Obtiene el detalle completo de un plan vía RPC o query relacional
+   * Obtiene el detalle completo de un plan vÃ­a RPC o query relacional
    */
   async getPlanDetail(planId) {
     if (!supabase) return null;
@@ -115,7 +106,7 @@ export const fertilizationPlansApi = {
   },
 
   /**
-   * Actualiza el estado de una aplicación (Ej: Operario marca como realizada)
+   * Actualiza el estado de una aplicaciÃ³n (Ej: Operario marca como realizada)
    */
   async updateApplicationStatus(applicationId, newStatus) {
     if (!supabase) return true;

@@ -3,10 +3,9 @@
  * Capa de acceso a datos para la pantalla de detalle del plan.
  *
  * Llama al backend Express (no a Supabase directamente).
- * Intercambiable entre implementación real e implementación mock.
+ * Política de datos SkyCrop: sin ramas mock — el detalle proviene
+ * siempre del backend/Supabase; sin datos ⇒ error o estado vacío.
  */
-
-import { mockPlanDetail } from '../data/mockPlanDetail.js';
 
 // ─── Configuración ─────────────────────────────────────────────────────────────
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:3000';
@@ -24,9 +23,6 @@ function getAuthHeaders() {
   };
 }
 
-// ─── Mock flag: true = usar mock, false = usar backend real ──────────────────
-const USE_MOCK = true; // Cambiar a false cuando el backend esté disponible en dev
-
 // ─── API functions ─────────────────────────────────────────────────────────────
 
 /**
@@ -35,11 +31,6 @@ const USE_MOCK = true; // Cambiar a false cuando el backend esté disponible en 
  * @returns {Promise<Object>} Detalle normalizado
  */
 export async function getFertilizationPlan(planId) {
-  if (USE_MOCK) {
-    await new Promise(r => setTimeout(r, 600));
-    return { ...mockPlanDetail, plan: { ...mockPlanDetail.plan, id: planId } };
-  }
-
   const res = await fetch(`${API_BASE}/api/v1/fertilizacion/planes/${planId}`, {
     headers: getAuthHeaders(),
   });
@@ -57,11 +48,6 @@ export async function getFertilizationPlan(planId) {
  * @param {Object} data
  */
 export async function updateFertilizationPlan(planId, data) {
-  if (USE_MOCK) {
-    await new Promise(r => setTimeout(r, 400));
-    return { plan_id: planId, status: 'OK' };
-  }
-
   const res = await fetch(`${API_BASE}/api/v1/fertilizacion/planes/${planId}`, {
     method: 'PATCH',
     headers: getAuthHeaders(),
@@ -80,11 +66,6 @@ export async function updateFertilizationPlan(planId, data) {
  * @param {Object} payload - Datos de la observación
  */
 export async function saveObservation(planId, payload) {
-  if (USE_MOCK) {
-    await new Promise(r => setTimeout(r, 500));
-    return { observation_id: crypto.randomUUID(), status: 'OK' };
-  }
-
   const res = await fetch(`${API_BASE}/api/v1/fertilizacion/planes/${planId}/observaciones`, {
     method: 'POST',
     headers: getAuthHeaders(),
@@ -103,11 +84,6 @@ export async function saveObservation(planId, payload) {
  * @param {string} content
  */
 export async function addComment(observationId, content) {
-  if (USE_MOCK) {
-    await new Promise(r => setTimeout(r, 300));
-    return { id: crypto.randomUUID(), content, created_at: new Date().toISOString() };
-  }
-
   const res = await fetch(`${API_BASE}/api/v1/fertilizacion/observaciones/${observationId}/comentarios`, {
     method: 'POST',
     headers: getAuthHeaders(),
@@ -126,11 +102,6 @@ export async function addComment(observationId, content) {
  * @param {Object} completionData
  */
 export async function completeApplication(applicationId, completionData) {
-  if (USE_MOCK) {
-    await new Promise(r => setTimeout(r, 400));
-    return { application_id: applicationId, status: 'completed' };
-  }
-
   const res = await fetch(`${API_BASE}/api/v1/fertilizacion/aplicaciones/${applicationId}/completar`, {
     method: 'POST',
     headers: getAuthHeaders(),
@@ -145,16 +116,10 @@ export async function completeApplication(applicationId, completionData) {
 
 /**
  * Solicita la exportación del plan a PDF/HTML.
- * Abre el documento en una nueva pestaña del navegador.
+ * Descarga el documento generado por el backend.
  * @param {string} planId
  */
 export async function exportPlanPdf(planId) {
-  if (USE_MOCK) {
-    await new Promise(r => setTimeout(r, 800));
-    window.print();
-    return;
-  }
-
   const token = sessionStorage.getItem('sb_access_token') || localStorage.getItem('sb_access_token') || '';
   const url = `${API_BASE}/api/v1/fertilizacion/planes/${planId}/exportar.pdf`;
 

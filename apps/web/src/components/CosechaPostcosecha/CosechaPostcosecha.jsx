@@ -1,14 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Leaf, Sprout, BarChart3, Thermometer, Droplet, Plus, Trash2, X, Archive, ShieldAlert } from 'lucide-react';
+import { Leaf, Sprout, BarChart3, Thermometer, Droplet, Plus, Trash2, X, Archive, ShieldAlert, Loader2 } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
 
 const INITIAL_HARVESTS = [];
-
-const INITIAL_STORAGES = [
-  { id: 'silo-1', name: 'Silo de Granos 1', temp: 18.2, humidity: 45, maxCapacity: 200, currentLoad: 0, unit: 'toneladas' },
-  { id: 'silo-2', name: 'Silo de Granos 2', temp: 19.5, humidity: 42, maxCapacity: 200, currentLoad: 0, unit: 'toneladas' },
-  { id: 'cold-room', name: 'Cámara Frigorífica 1', temp: 4.5, humidity: 82, maxCapacity: 50, currentLoad: 0, unit: 'toneladas' }
-];
+const INITIAL_STORAGES = [];
 
 const CHART_DATA = [
   { month: 'Ene', value: 0 },
@@ -21,6 +16,8 @@ const CHART_DATA = [
 export default function CosechaPostcosecha() {
   const [harvests, setHarvests] = useState(INITIAL_HARVESTS);
   const [storages, setStorages] = useState(INITIAL_STORAGES);
+  const [loadingStorages, setLoadingStorages] = useState(true);
+  const [storagesError, setStoragesError] = useState(null);
 
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
@@ -30,10 +27,12 @@ export default function CosechaPostcosecha() {
     crop: 'Maíz Híbrido',
     weight: '',
     grade: 'Grado A',
-    storageId: 'silo-1'
+    storageId: ''
   });
 
   const fetchHarvestsAndStorages = async () => {
+    setLoadingStorages(true);
+    setStoragesError(null);
     try {
       // 1. Fetch storages
       const { data: storeData, error: storeError } = await supabase.from('almacenamientos').select('*');
@@ -75,6 +74,9 @@ export default function CosechaPostcosecha() {
 
     } catch (err) {
       console.error("Error al cargar cosechas/silos:", err.message);
+      setStoragesError('No se pudieron cargar los almacenamientos: ' + err.message);
+    } finally {
+      setLoadingStorages(false);
     }
   };
 
@@ -295,7 +297,23 @@ export default function CosechaPostcosecha() {
         <div className="glass-card">
           <h3 style={{ fontSize: '18px', fontWeight: '700', marginBottom: '16px' }}>Monitores de Almacenamiento (Postcosecha)</h3>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            {storages.map(s => {
+            {loadingStorages ? (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 20px', color: 'var(--text-muted)', gap: '10px' }}>
+                <Loader2 size={26} style={{ animation: 'spin 1s linear infinite', color: 'var(--primary)' }} />
+                <span style={{ fontSize: '12.5px' }}>Cargando monitores de almacenamiento...</span>
+              </div>
+            ) : storagesError ? (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 20px', color: 'var(--accent-red)', textAlign: 'center', gap: '8px' }}>
+                <ShieldAlert size={26} />
+                <span style={{ fontSize: '12.5px' }}>{storagesError}</span>
+              </div>
+            ) : storages.length === 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '40px 20px', color: 'var(--text-muted)', textAlign: 'center', gap: '8px' }}>
+                <Archive size={26} style={{ opacity: 0.4 }} />
+                <span style={{ fontSize: '12.5px' }}>No hay silos ni cámaras registradas.</span>
+              </div>
+            ) : (
+              storages.map(s => {
               const capacityPct = Math.round((s.currentLoad / s.maxCapacity) * 100);
               const isTempAlert = s.id === 'cold-room' ? s.temp > 6.0 : s.temp > 22.0;
 
@@ -329,7 +347,8 @@ export default function CosechaPostcosecha() {
                   </div>
                 </div>
               );
-            })}
+              })
+            )}
           </div>
         </div>
 
@@ -471,6 +490,7 @@ export default function CosechaPostcosecha() {
                   value={newHarvest.storageId}
                   onChange={e => setNewHarvest(prev => ({ ...prev, storageId: e.target.value }))}
                 >
+                  {storages.length === 0 && <option value="">Sin almacenamientos registrados</option>}
                   {storages.map(s => (
                     <option key={s.id} value={s.id}>{s.name} (Capacidad libre: {(s.maxCapacity - s.currentLoad).toFixed(1)} T)</option>
                   ))}

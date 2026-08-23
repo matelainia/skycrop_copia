@@ -1,8 +1,10 @@
 
+import { useMemo } from 'react';
 import { costCalculator } from '../costs/costCalculator';
 
 export const CostosPage = ({
-  machineryHook
+  machineryHook,
+  operationHook
 }) => {
   const {
     machinery,
@@ -10,10 +12,30 @@ export const CostosPage = ({
     setSelectedMachine,
     handleUpdateRates
   } = machineryHook;
+  const jornadas = operationHook?.jornadas || [];
 
   const totalHourlyCost = selectedMachine
     ? costCalculator.calculateHourlyRate(selectedMachine)
     : 0;
+
+  const lotCosts = useMemo(() => {
+    if (!Array.isArray(jornadas) || jornadas.length === 0) return [];
+    const byLot = new Map();
+    jornadas.forEach(j => {
+      if (!j || !j.lot) return;
+      const hours = Math.max(0, (Number(j.endHorometro) || 0) - (Number(j.startHorometro) || 0));
+      if (hours <= 0) return;
+      const machine = machinery.find(m => m.id === j.maquinariaId);
+      const rate = machine ? costCalculator.calculateHourlyRate(machine) : 0;
+      const prev = byLot.get(j.lot) || { lot: j.lot, cost: 0, hours: 0 };
+      byLot.set(j.lot, { lot: j.lot, hours: prev.hours + hours, cost: prev.cost + hours * rate });
+    });
+    return Array.from(byLot.values())
+      .map(r => ({ ...r, cost: Math.round(r.cost), hours: Math.round(r.hours * 10) / 10 }))
+      .sort((a, b) => b.cost - a.cost);
+  }, [jornadas, machinery]);
+
+  const maxLotCost = lotCosts.reduce((m, r) => Math.max(m, r.cost), 0);
 
   return (
     <div className="glass-card">
@@ -113,24 +135,25 @@ export const CostosPage = ({
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
           <div className="glass-card" style={{ padding: '20px' }}>
             <h4 style={{ fontSize: '14px', fontWeight: '700', marginBottom: '12px' }}>Costo Total por Lote (Historial de Labores)</h4>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-              {[
-                { lot: 'Lote B-12', cost: 1240000, hours: 24.5 },
-                { lot: 'Lote M-05', cost: 890000, hours: 18.0 },
-                { lot: 'Lote C-08', cost: 580000, hours: 12.2 },
-                { lot: 'Lote S-02', cost: 420000, hours: 10.0 }
-              ].map((stat, idx) => (
-                <div key={idx} style={{ fontSize: '13px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
-                    <span>{stat.lot} ({stat.hours} hs)</span>
-                    <strong>${stat.cost.toLocaleString()} COP</strong>
+            {lotCosts.length === 0 ? (
+              <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '13px' }}>
+                Sin registros de labores para calcular costos por lote.
+              </div>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {lotCosts.map(stat => (
+                  <div key={stat.lot} style={{ fontSize: '13px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '3px' }}>
+                      <span>{stat.lot} ({stat.hours} hs)</span>
+                      <strong>${stat.cost.toLocaleString()} COP</strong>
+                    </div>
+                    <div className="progress-bar-container" style={{ height: '5px', margin: 0 }}>
+                      <div className="progress-bar-fill" style={{ width: `${maxLotCost > 0 ? (stat.cost / maxLotCost) * 100 : 0}%`, background: 'linear-gradient(90deg, var(--primary), var(--accent-cyan))' }}></div>
+                    </div>
                   </div>
-                  <div className="progress-bar-container" style={{ height: '5px', margin: 0 }}>
-                    <div className="progress-bar-fill" style={{ width: `${(stat.cost / 1240000) * 100}%`, background: 'linear-gradient(90deg, var(--primary), var(--accent-cyan))' }}></div>
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="glass-card" style={{ padding: '20px' }}>
@@ -138,11 +161,13 @@ export const CostosPage = ({
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px', textAlign: 'center' }}>
               <div style={{ background: 'var(--bg-app)', padding: '12px', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
                 <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>PREPARACIÓN SUELO</span>
-                <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--primary)', marginTop: '4px' }}>$85,000 / Ha</h3>
+                <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-muted)', marginTop: '4px' }}>—</h3>
+                <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Sin datos suficientes</span>
               </div>
               <div style={{ background: 'var(--bg-app)', padding: '12px', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
                 <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>COSECHA MAÍZ</span>
-                <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--primary)', marginTop: '4px' }}>$112,000 / Ha</h3>
+                <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--text-muted)', marginTop: '4px' }}>—</h3>
+                <span style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Sin datos suficientes</span>
               </div>
             </div>
           </div>

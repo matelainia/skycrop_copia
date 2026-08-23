@@ -11,10 +11,11 @@ export function useNominas() {
     setError(null);
     try {
       const data = await nominasService.getNominas();
-      setNominas(data);
+      setNominas(Array.isArray(data) ? data : []);
     } catch (err) {
-      console.warn("Tabla 'nominas' no existe en Supabase o falló. Usando vacías.");
+      console.warn("Error cargando nóminas desde Supabase:", err.message);
       setNominas([]);
+      setError(err);
     } finally {
       setLoading(false);
     }
@@ -31,27 +32,9 @@ export function useNominas() {
       setNominas(prev => [withWorker, ...prev]);
       return withWorker;
     } catch (err) {
-      console.warn("Fallo en Supabase, agregando nómina localmente:", err.message);
-      
-      const valorHoraExtra = 15000;
-      const totNeto = Number(nominaForm.salarioNeto) + (Number(nominaForm.horasExtras) * valorHoraExtra) - Number(nominaForm.retenciones);
-
-      const localNom = {
-        id: `n-${Date.now()}`,
-        trabajador_id: nominaForm.trabajadorId,
-        periodo: nominaForm.periodo,
-        salario_neto: Number(nominaForm.salarioNeto),
-        horas_extras: Number(nominaForm.horasExtras),
-        retenciones: Number(nominaForm.retenciones),
-        total_neto: totNeto,
-        estado: nominaForm.estado,
-        fecha_pago: nominaForm.fechaPago || null,
-        metodo_pago: nominaForm.metodoPago || null,
-        comentarios: nominaForm.comentarios || '',
-        trabajador: workerObj
-      };
-      setNominas(prev => [localNom, ...prev]);
-      return localNom;
+      console.error("Error creando nómina en Supabase:", err.message);
+      setError(err);
+      return { success: false, error: 'Persistencia no disponible' };
     }
   }, []);
 
@@ -70,23 +53,11 @@ export function useNominas() {
         metodo_pago: updated.metodo_pago,
         comentarios: updated.comentarios
       } : n));
+      return { success: true };
     } catch (err) {
-      console.warn("Fallo en Supabase, editando nómina localmente:", err.message);
-      
-      const valorHoraExtra = 15000;
-      const totNeto = Number(nominaForm.salarioNeto) + (Number(nominaForm.horasExtras) * valorHoraExtra) - Number(nominaForm.retenciones);
-
-      setNominas(prev => prev.map(n => n.id === id ? {
-        ...n,
-        salario_neto: Number(nominaForm.salarioNeto),
-        horas_extras: Number(nominaForm.horasExtras),
-        retenciones: Number(nominaForm.retenciones),
-        total_neto: totNeto,
-        estado: nominaForm.estado,
-        fecha_pago: nominaForm.fechaPago || null,
-        metodo_pago: nominaForm.metodoPago || null,
-        comentarios: nominaForm.comentarios || ''
-      } : n));
+      console.error("Error actualizando nómina en Supabase:", err.message);
+      setError(err);
+      return { success: false, error: 'Persistencia no disponible' };
     }
   }, []);
 
@@ -95,9 +66,11 @@ export function useNominas() {
     try {
       await nominasService.deleteNomina(id);
       setNominas(prev => prev.filter(n => n.id !== id));
+      return { success: true };
     } catch (err) {
-      console.warn("Fallo en Supabase, eliminando nómina localmente:", err.message);
-      setNominas(prev => prev.filter(n => n.id !== id));
+      console.error("Error eliminando nómina en Supabase:", err.message);
+      setError(err);
+      return { success: false, error: 'Persistencia no disponible' };
     }
   }, []);
 
@@ -113,6 +86,7 @@ export function useNominas() {
     if (!window.confirm(`¿Generar nóminas iniciales para ${pendingWorkers.length} trabajadores activos para el período ${periodo}?`)) return;
 
     const newRecords = [];
+    let failures = 0;
     for (const w of pendingWorkers) {
       const basePay = w.rol === 'Tractorista' ? 4250000 : w.rol === 'Supervisor de Campo' ? 5500000 : 3500000;
       const form = {
@@ -134,26 +108,18 @@ export function useNominas() {
           trabajador: w
         });
       } catch (err) {
-        const localNom = {
-          id: `n-${Date.now()}-${Math.random()}`,
-          trabajador_id: w.id,
-          periodo,
-          salario_neto: basePay,
-          horas_extras: 0,
-          retenciones: 0,
-          total_neto: basePay,
-          estado: 'Procesando',
-          fecha_pago: null,
-          metodo_pago: 'Transferencia Bancaria',
-          comentarios: 'Nómina mensual generada automáticamente',
-          trabajador: w
-        };
-        newRecords.push(localNom);
+        failures++;
+        console.error(`Error creando nómina para ${w.id} en Supabase:`, err.message);
       }
     }
 
     setNominas(prev => [...newRecords, ...prev]);
-    alert(`Se han generado ${newRecords.length} registros de nómina correctamente para ${periodo}.`);
+    if (failures > 0) {
+      setError(new Error('Persistencia no disponible'));
+      alert(`Se generaron ${newRecords.length} nóminas para ${periodo}. ${failures} no pudieron guardarse: persistencia no disponible.`);
+    } else if (newRecords.length > 0) {
+      alert(`Se han generado ${newRecords.length} registros de nómina correctamente para ${periodo}.`);
+    }
   }, [nominas]);
 
   useEffect(() => {

@@ -4,7 +4,7 @@ import { useLotsContext } from '../../context/LotsContext';
 import { useApplicationsContext } from '../../context/ApplicationsContext';
 import { useGoogleEarthEngine } from '../../hooks/useGoogleEarthEngine';
 import { calculateAgeInDays, formatDuration } from '../../utils/date.utils';
-import { generateMockHistogramAndStats, getHistoricalIndexPoints } from '../../utils/mock.utils';
+import { getHistoricalIndexPoints } from '../../utils/mock.utils';
 import LedgerPanel from '../LedgerPanel';
 import LeafletMap from '../LeafletMap';
 
@@ -46,6 +46,7 @@ export default function DashboardView() {
   const {
     geeLoading,
     geeWarning,
+    geeError,
     geeData,
     histogramIndex,
     isEvolutionModalOpen,
@@ -297,15 +298,30 @@ export default function DashboardView() {
                     </div>
 
                     {(() => {
-                      const charSum = selectedLote.codigo_interno.charCodeAt(0) + (selectedLote.codigo_interno.charCodeAt(1) || 0);
-                      const activeIndexValue = histogramIndex === 'NDVI' ? selectedLote.ndvi_actual
-                        : histogramIndex === 'NDRE' ? (selectedLote.ndre_actual || 0.48)
-                        : histogramIndex === 'SAVI' ? (selectedLote.savi_actual || 0.58)
-                        : (selectedLote.humedad_actual || 0.15);
+                      const activeGeeData = geeData.index === histogramIndex && geeData.histogram ? geeData : null;
 
-                      const activeGeeData = geeData.index === histogramIndex && geeData.histogram
-                        ? geeData
-                        : generateMockHistogramAndStats(histogramIndex, charSum, activeIndexValue);
+                      if (!activeGeeData) {
+                        return (
+                          <div style={{ marginTop: '8px', minHeight: '200px', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: '8px', textAlign: 'center', padding: '20px', border: '1px dashed var(--border-color)', borderRadius: '8px', color: 'var(--text-muted)' }}>
+                            {geeLoading ? (
+                              <>
+                                <RefreshCw size={22} style={{ color: 'var(--primary)', animation: 'spin 1s linear infinite' }} />
+                                <span style={{ fontSize: '11.5px' }}>Cargando datos del índice {histogramIndex}...</span>
+                              </>
+                            ) : geeError ? (
+                              <>
+                                <AlertTriangle size={22} style={{ color: '#ef4444' }} />
+                                <span style={{ fontSize: '11.5px', color: '#ef4444' }}>{geeError}</span>
+                              </>
+                            ) : (
+                              <>
+                                <Info size={22} style={{ opacity: 0.4 }} />
+                                <span style={{ fontSize: '11.5px' }}>Sin datos disponibles del índice {histogramIndex} para este lote.</span>
+                              </>
+                            )}
+                          </div>
+                        );
+                      }
 
                       const { stats, distribution, histogram } = activeGeeData;
                       const maxCount = Math.max(...histogram.map(b => b.count), 1);

@@ -220,7 +220,7 @@ export default function Step1LotInfo({
 
           {/* Columna de datos geográficos */}
           <div className="step1-geo-col">
-            <GeoRow label="Departamento" value={geoInfo?.departamento || 'Valle del Cauca'} />
+            <GeoRow label="Departamento" value={geoInfo?.departamento || '—'} />
             <GeoRow label="Municipio"    value={geoInfo?.municipio    || 'Zarzal'} />
             <GeoRow label="Vereda"       value={geoInfo?.vereda       || 'La Paila'} />
             <div className="step1-geo-row">

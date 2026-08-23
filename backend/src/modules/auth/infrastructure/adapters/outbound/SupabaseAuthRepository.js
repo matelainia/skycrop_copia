@@ -201,33 +201,8 @@ export class SupabaseAuthRepository extends AuthRepositoryPort {
     };
   }
 
-  async createDefaultLote(companyId) {
-    // Upsert idempotente: si ya existe un lote con ese codigo_interno para la empresa,
-    // no falla ni duplica. UNIQUE(company_id, codigo_interno) garantiza la seguridad.
-    const { data, error } = await supabaseAdmin
-      .from('lotes')
-      .upsert(
-        [
-          {
-            company_id: companyId,
-            codigo_interno: 'LM',
-            nombre: 'Las Margaritas',
-            cultivo: 'Café',
-            centroide_lat: 4.1234,
-            centroide_lng: -73.6543,
-            area_ha: 15.5
-          }
-        ],
-        { onConflict: 'company_id,codigo_interno', ignoreDuplicates: true }
-      )
-      .select()
-      .maybeSingle();
-
-    if (error) {
-      throw new DatabaseError(`Error al crear predio por defecto para empresa ${companyId}`, error);
-    }
-    return data;
-  }
+  // createDefaultLote() eliminado en cleanup/remove-mock-data (038):
+  // los datos de negocio (lotes) los crea el usuario desde la UI, jamás el backend.
 
   /**
    * Ejecuta el bootstrap completo de usuario/organización en una sola transacción
@@ -236,7 +211,6 @@ export class SupabaseAuthRepository extends AuthRepositoryPort {
    * La función en la BD garantiza:
    *  1. Upsert en profiles
    *  2. Upsert en companies
-   *  3. Lote por defecto si no existe ninguno (idempotente)
    *  4. Upsert en company_users
    *
    * @returns {{ company_id: string, user_id: string, role_id: string }}

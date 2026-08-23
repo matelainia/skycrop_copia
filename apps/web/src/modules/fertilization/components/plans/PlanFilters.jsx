@@ -18,20 +18,8 @@
 import React, { useCallback, useMemo } from 'react';
 import { Search, Filter, X } from 'lucide-react';
 import { CROPS, PLAN_STATUS_LABELS, VALIDITY_STATUS_LABELS } from '../../types/fertilization.types.js';
-import { mockPlansData } from '../../data/mockPlans.js';
 
-/** Extrae predios únicos del mock (en producción vendría de Supabase) */
-function getUniqueFarms() {
-  const seen = new Map();
-  mockPlansData.forEach((p) => {
-    if (!seen.has(p.farmId)) seen.set(p.farmId, { id: p.farmId, name: p.farmName });
-  });
-  return [...seen.values()];
-}
-
-const FARMS = getUniqueFarms();
-
-const PlanFilters = React.memo(function PlanFilters({ filters, onFiltersChange, onReset }) {
+const PlanFilters = React.memo(function PlanFilters({ filters, onFiltersChange, onReset, farms = [] }) {
   const hasActiveFilters = useMemo(
     () => Object.values(filters).some((v) => v !== ''),
     [filters],
@@ -80,7 +68,7 @@ const PlanFilters = React.memo(function PlanFilters({ filters, onFiltersChange, 
           aria-label="Filtrar por predio"
         >
           <option value="">Todos</option>
-          {FARMS.map((f) => (
+          {(farms || []).map((f) => (
             <option key={f.id} value={f.id}>{f.name}</option>
           ))}
         </select>

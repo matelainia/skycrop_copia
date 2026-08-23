@@ -37,8 +37,16 @@ export class ProcessGeeIndexUseCase {
     });
 
     // 2. Modo Simulado / Mock si el servicio GEE no está listo
+    // Política de datos: la simulación SOLO existe fuera de producción.
     if (!this.geeService.isInitialized()) {
-      console.log('[ProcessGeeIndexUseCase] GEE no está inicializado. Ejecutando simulación.');
+      if (process.env.NODE_ENV === 'production') {
+        throw new Error(
+          'Google Earth Engine no está configurado (GEE_SERVICE_ACCOUNT_KEY). No se generan datos simulados en producción.'
+        );
+      }
+      console.log(
+        '[ProcessGeeIndexUseCase] GEE no está inicializado. Ejecutando simulación (solo dev).'
+      );
       return this.generateMockResult(hash, loteId, indexType, sumCoords);
     }
 
@@ -156,7 +164,10 @@ export class ProcessGeeIndexUseCase {
         geeErr.message
       );
 
-      // Fallback gracioso a modo simulado (contingencia operativa de Skycrop)
+      // Fallback gracioso a modo simulado (contingencia) — SOLO fuera de producción
+      if (process.env.NODE_ENV === 'production') {
+        throw geeErr;
+      }
       const mockResult = await this.generateMockResult(hash, loteId, indexType, sumCoords);
       mockResult.error = geeErr.message;
       mockResult.warning = `Fallo en GEE (${geeErr.message}). Utilizando simulación de contingencia.`;

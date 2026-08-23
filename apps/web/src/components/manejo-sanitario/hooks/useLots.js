@@ -7,169 +7,6 @@ import { validateLot } from '../validators/lot.validator';
 import { calculateArea, calculatePerimeter, calculateCentroid } from '../utils/geo.utils';
 import { useCompanyContext } from '../../../context/CompanyContext';
 
-const INITIAL_LOTES_MOCK = [
-  {
-    id: "d9b7f5d0-9d3b-4889-b88d-e4fb38f6d601",
-    codigo_interno: "A1",
-    nombre: "Lote A1 - Maíz Híbrido",
-    cultivo: "Maíz",
-    variedad: "DK-7088",
-    fecha_siembra: "2026-02-15",
-    estado_fenológico: "Vegetativo",
-    sistema_productivo: "Convencional",
-    responsable_tecnico: "Pedro Gómez",
-    observaciones: "Vigor óptimo, aplicación de fungicida en curso para prevención de roya.",
-    area_ha: 12.45,
-    perimetro_m: 1842.6,
-    centroide_lat: 3.5182,
-    centroide_lng: -76.3054,
-    estado_sanitario: "excelente",
-    ndvi_actual: 0.78,
-    ndvi_trend: "+0.03",
-    disease_detected: "Ninguna (preventivo)",
-    incidence_pct: 0,
-    severity_pct: 0,
-    trabajadores: [
-      { id: "w1", nombre: "Pedro Gómez", actividad: "Aplicación de Fungicida", ingreso: "26 May 2026", duracion: "02:45:18" }
-    ],
-    adjuntos: [
-      { name: "Receta_Agronomica_Roya.pdf", type: "application/pdf", size: "340 KB", date: "25 May 2026" }
-    ],
-    coordinates: [
-      [3.521, -76.308],
-      [3.522, -76.304],
-      [3.516, -76.302],
-      [3.515, -76.306],
-      [3.521, -76.308]
-    ]
-  },
-  {
-    id: "d9b7f5d0-9d3b-4889-b88d-e4fb38f6d602",
-    codigo_interno: "A2",
-    nombre: "Lote A2 - Maíz Híbrido",
-    cultivo: "Maíz",
-    variedad: "DK-7088",
-    fecha_siembra: "2026-02-18",
-    estado_fenológico: "Floración",
-    sistema_productivo: "Convencional",
-    responsable_tecnico: "Pedro Gómez",
-    observaciones: "Gusano cogollero detectado en nivel umbral bajo.",
-    area_ha: 8.32,
-    perimetro_m: 1120.4,
-    centroide_lat: 3.5225,
-    centroide_lng: -76.3012,
-    estado_sanitario: "bueno",
-    ndvi_actual: 0.69,
-    ndvi_trend: "+0.01",
-    disease_detected: "Gusano Cogollero",
-    incidence_pct: 2.5,
-    severity_pct: 0.5,
-    trabajadores: [],
-    adjuntos: [],
-    coordinates: [
-      [3.525, -76.303],
-      [3.526, -76.299],
-      [3.521, -76.297],
-      [3.520, -76.301],
-      [3.525, -76.303]
-    ]
-  },
-  {
-    id: "d9b7f5d0-9d3b-4889-b88d-e4fb38f6d603",
-    codigo_interno: "B1",
-    nombre: "Lote B1 - Soya Orgánica",
-    cultivo: "Soya",
-    variedad: "Soya-Org-1",
-    fecha_siembra: "2026-03-10",
-    estado_fenológico: "Vaina Llena",
-    sistema_productivo: "Orgánico Certificado",
-    responsable_tecnico: "Juan Pérez",
-    observaciones: "Monitoreo de trips indica incremento leve de poblaciones.",
-    area_ha: 15.60,
-    perimetro_m: 1720.5,
-    centroide_lat: 3.5135,
-    centroide_lng: -76.3085,
-    estado_sanitario: "regular",
-    ndvi_actual: 0.56,
-    ndvi_trend: "-0.02",
-    disease_detected: "Trips del Frijol",
-    incidence_pct: 8.4,
-    severity_pct: 2.8,
-    trabajadores: [],
-    adjuntos: [],
-    coordinates: [
-      [3.515, -76.312],
-      [3.516, -76.307],
-      [3.511, -76.305],
-      [3.510, -76.310],
-      [3.515, -76.312]
-    ]
-  },
-  {
-    id: "d9b7f5d0-9d3b-4889-b88d-e4fb38f6d604",
-    codigo_interno: "C1",
-    nombre: "Lote C1 - Girasol",
-    cultivo: "Girasol",
-    variedad: "Helios-22",
-    fecha_siembra: "2026-04-05",
-    estado_fenológico: "Desarrollo Vegetativo",
-    sistema_productivo: "Convencional",
-    responsable_tecnico: "Laura Gómez",
-    observaciones: "Mildiu foliar detectado en sector norte con estrés hídrico activo.",
-    area_ha: 9.75,
-    perimetro_m: 980.1,
-    centroide_lat: 3.5115,
-    centroide_lng: -76.3155,
-    estado_sanitario: "bajo",
-    ndvi_actual: 0.41,
-    ndvi_trend: "-0.05",
-    disease_detected: "Mildiu del Girasol",
-    incidence_pct: 18.5,
-    severity_pct: 12.0,
-    trabajadores: [
-      { id: "w2", nombre: "Laura Gómez", actividad: "Monitoreo fitosanitario", ingreso: "25 May 2026", duracion: "01:30:00" }
-    ],
-    adjuntos: [],
-    coordinates: [
-      [3.513, -76.318],
-      [3.514, -76.314],
-      [3.509, -76.313],
-      [3.508, -76.317],
-      [3.513, -76.318]
-    ]
-  },
-  {
-    id: "d9b7f5d0-9d3b-4889-b88d-e4fb38f6d605",
-    codigo_interno: "D1",
-    nombre: "Lote D1 - Cacao CCN51",
-    cultivo: "Cacao",
-    variedad: "CCN51",
-    fecha_siembra: "2024-05-12",
-    estado_fenológico: "Fructificación",
-    sistema_productivo: "Agroforestal",
-    responsable_tecnico: "Carlos Ruiz",
-    observaciones: "Alta tasa de fotosíntesis. Sin plagas.",
-    area_ha: 6.25,
-    perimetro_m: 790.3,
-    centroide_lat: 3.5165,
-    centroide_lng: -76.3125,
-    estado_sanitario: "excelente",
-    ndvi_actual: 0.82,
-    ndvi_trend: "+0.04",
-    disease_detected: "Ninguna",
-    incidence_pct: 0,
-    severity_pct: 0,
-    trabajadores: [],
-    adjuntos: [],
-    coordinates: [
-      [3.518, -76.315],
-      [3.519, -76.311],
-      [3.514, -76.309],
-      [3.513, -76.313],
-      [3.518, -76.315]
-    ]
-  }
-];
 
 export const useLots = () => {
   const { companyId } = useCompanyContext();
@@ -280,10 +117,6 @@ export const useLots = () => {
       if (dbLotes && dbLotes.length > 0) {
         setLotes(
           dbLotes.map((l) => {
-            const localLote = INITIAL_LOTES_MOCK.find(
-              (il) => il.codigo_interno === l.codigo_interno || il.nombre === l.nombre
-            );
-
             let coordinates = l.coordinates;
             if (!coordinates || coordinates.length === 0) {
               if (l.geom) {
@@ -305,26 +138,20 @@ export const useLots = () => {
             }
 
             return createLot({
-              ...localLote,
               ...l,
-              estado_fenológico:
-                l.estado_fenologico || l.estado_fenológico || localLote?.estado_fenologico,
-              coordinates: coordinates || localLote?.coordinates || [],
-              trabajadores: l.trabajadores || localLote?.trabajadores || [],
-              adjuntos: l.adjuntos || localLote?.adjuntos || []
+              estado_fenológico: l.estado_fenologico || l.estado_fenológico || null,
+              coordinates: coordinates || [],
+              trabajadores: l.trabajadores || [],
+              adjuntos: l.adjuntos || []
             });
           })
         );
       } else {
-        console.log('[Lotes Hook] No lotes returned from DB. Using initial mock lotes.');
-        setLotes(INITIAL_LOTES_MOCK.map((il) => createLot(il)));
+        setLotes([]);
       }
     } catch (err) {
-      console.warn(
-        '[Lotes Hook] Error loading lotes from Supabase. Falling back to initial mock lotes:',
-        err.message
-      );
-      setLotes(INITIAL_LOTES_MOCK.map((il) => createLot(il)));
+      console.warn('[Lotes Hook] Error cargando lotes desde Supabase:', err.message);
+      setLotes([]);
     } finally {
       setLotesLoading(false);
     }
@@ -636,4 +463,3 @@ export const useLots = () => {
     handleAttachmentUpload
   };
 };
-export { INITIAL_LOTES_MOCK };

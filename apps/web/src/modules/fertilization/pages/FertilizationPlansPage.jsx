@@ -71,6 +71,10 @@ export default function FertilizationPlansPage({ onViewPlan }) {
         filters={filters}
         onFiltersChange={setFilters}
         onReset={resetFilters}
+        farms={(plans || [])
+          .filter((p) => p.lotId || p.lotName)
+          .map((p) => ({ id: p.lotId || p.lotName, name: p.lotName || p.lotId }))
+          .filter((f, i, arr) => arr.findIndex((x) => x.id === f.id) === i)}
       />
 
       {/* ── Tabla ────────────────────────────────────────────────────────── */}
