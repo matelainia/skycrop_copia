@@ -4,6 +4,7 @@ import crypto from 'crypto';
 import path from 'path';
 import legacyApp from '../api/legacy.js';
 import { auditMiddleware } from './shared/audit/auditMiddleware.js';
+import { optionalAuth } from './shared/middleware/authenticate.js';
 import { errorHandler } from './shared/middleware/errorHandler.js';
 
 import { authRouter } from './modules/auth/infrastructure/adapters/inbound/ExpressAuthRouter.js';
@@ -64,6 +65,10 @@ app.use(
 
 // Middlewares globales para la nueva arquitectura
 app.use(express.json());
+
+// Identidad verificada (token Bearer) disponible para todos los routers modulares.
+// Nunca rechaza: cada controlador decide cómo tratar peticiones sin identidad.
+app.use('/api', optionalAuth);
 
 // Log de peticiones modular
 app.use((req, res, next) => {

@@ -6,170 +6,8 @@ import { createLot } from '../types/Lot';
 import { validateLot } from '../validators/lot.validator';
 import { calculateArea, calculatePerimeter, calculateCentroid } from '../utils/geo.utils';
 import { useCompanyContext } from '../../../context/CompanyContext';
+import { supabase } from '../../../lib/supabaseClient';
 
-const INITIAL_LOTES_MOCK = [
-  {
-    id: "d9b7f5d0-9d3b-4889-b88d-e4fb38f6d601",
-    codigo_interno: "A1",
-    nombre: "Lote A1 - Maíz Híbrido",
-    cultivo: "Maíz",
-    variedad: "DK-7088",
-    fecha_siembra: "2026-02-15",
-    estado_fenológico: "Vegetativo",
-    sistema_productivo: "Convencional",
-    responsable_tecnico: "Pedro Gómez",
-    observaciones: "Vigor óptimo, aplicación de fungicida en curso para prevención de roya.",
-    area_ha: 12.45,
-    perimetro_m: 1842.6,
-    centroide_lat: 3.5182,
-    centroide_lng: -76.3054,
-    estado_sanitario: "excelente",
-    ndvi_actual: 0.78,
-    ndvi_trend: "+0.03",
-    disease_detected: "Ninguna (preventivo)",
-    incidence_pct: 0,
-    severity_pct: 0,
-    trabajadores: [
-      { id: "w1", nombre: "Pedro Gómez", actividad: "Aplicación de Fungicida", ingreso: "26 May 2026", duracion: "02:45:18" }
-    ],
-    adjuntos: [
-      { name: "Receta_Agronomica_Roya.pdf", type: "application/pdf", size: "340 KB", date: "25 May 2026" }
-    ],
-    coordinates: [
-      [3.521, -76.308],
-      [3.522, -76.304],
-      [3.516, -76.302],
-      [3.515, -76.306],
-      [3.521, -76.308]
-    ]
-  },
-  {
-    id: "d9b7f5d0-9d3b-4889-b88d-e4fb38f6d602",
-    codigo_interno: "A2",
-    nombre: "Lote A2 - Maíz Híbrido",
-    cultivo: "Maíz",
-    variedad: "DK-7088",
-    fecha_siembra: "2026-02-18",
-    estado_fenológico: "Floración",
-    sistema_productivo: "Convencional",
-    responsable_tecnico: "Pedro Gómez",
-    observaciones: "Gusano cogollero detectado en nivel umbral bajo.",
-    area_ha: 8.32,
-    perimetro_m: 1120.4,
-    centroide_lat: 3.5225,
-    centroide_lng: -76.3012,
-    estado_sanitario: "bueno",
-    ndvi_actual: 0.69,
-    ndvi_trend: "+0.01",
-    disease_detected: "Gusano Cogollero",
-    incidence_pct: 2.5,
-    severity_pct: 0.5,
-    trabajadores: [],
-    adjuntos: [],
-    coordinates: [
-      [3.525, -76.303],
-      [3.526, -76.299],
-      [3.521, -76.297],
-      [3.520, -76.301],
-      [3.525, -76.303]
-    ]
-  },
-  {
-    id: "d9b7f5d0-9d3b-4889-b88d-e4fb38f6d603",
-    codigo_interno: "B1",
-    nombre: "Lote B1 - Soya Orgánica",
-    cultivo: "Soya",
-    variedad: "Soya-Org-1",
-    fecha_siembra: "2026-03-10",
-    estado_fenológico: "Vaina Llena",
-    sistema_productivo: "Orgánico Certificado",
-    responsable_tecnico: "Juan Pérez",
-    observaciones: "Monitoreo de trips indica incremento leve de poblaciones.",
-    area_ha: 15.60,
-    perimetro_m: 1720.5,
-    centroide_lat: 3.5135,
-    centroide_lng: -76.3085,
-    estado_sanitario: "regular",
-    ndvi_actual: 0.56,
-    ndvi_trend: "-0.02",
-    disease_detected: "Trips del Frijol",
-    incidence_pct: 8.4,
-    severity_pct: 2.8,
-    trabajadores: [],
-    adjuntos: [],
-    coordinates: [
-      [3.515, -76.312],
-      [3.516, -76.307],
-      [3.511, -76.305],
-      [3.510, -76.310],
-      [3.515, -76.312]
-    ]
-  },
-  {
-    id: "d9b7f5d0-9d3b-4889-b88d-e4fb38f6d604",
-    codigo_interno: "C1",
-    nombre: "Lote C1 - Girasol",
-    cultivo: "Girasol",
-    variedad: "Helios-22",
-    fecha_siembra: "2026-04-05",
-    estado_fenológico: "Desarrollo Vegetativo",
-    sistema_productivo: "Convencional",
-    responsable_tecnico: "Laura Gómez",
-    observaciones: "Mildiu foliar detectado en sector norte con estrés hídrico activo.",
-    area_ha: 9.75,
-    perimetro_m: 980.1,
-    centroide_lat: 3.5115,
-    centroide_lng: -76.3155,
-    estado_sanitario: "bajo",
-    ndvi_actual: 0.41,
-    ndvi_trend: "-0.05",
-    disease_detected: "Mildiu del Girasol",
-    incidence_pct: 18.5,
-    severity_pct: 12.0,
-    trabajadores: [
-      { id: "w2", nombre: "Laura Gómez", actividad: "Monitoreo fitosanitario", ingreso: "25 May 2026", duracion: "01:30:00" }
-    ],
-    adjuntos: [],
-    coordinates: [
-      [3.513, -76.318],
-      [3.514, -76.314],
-      [3.509, -76.313],
-      [3.508, -76.317],
-      [3.513, -76.318]
-    ]
-  },
-  {
-    id: "d9b7f5d0-9d3b-4889-b88d-e4fb38f6d605",
-    codigo_interno: "D1",
-    nombre: "Lote D1 - Cacao CCN51",
-    cultivo: "Cacao",
-    variedad: "CCN51",
-    fecha_siembra: "2024-05-12",
-    estado_fenológico: "Fructificación",
-    sistema_productivo: "Agroforestal",
-    responsable_tecnico: "Carlos Ruiz",
-    observaciones: "Alta tasa de fotosíntesis. Sin plagas.",
-    area_ha: 6.25,
-    perimetro_m: 790.3,
-    centroide_lat: 3.5165,
-    centroide_lng: -76.3125,
-    estado_sanitario: "excelente",
-    ndvi_actual: 0.82,
-    ndvi_trend: "+0.04",
-    disease_detected: "Ninguna",
-    incidence_pct: 0,
-    severity_pct: 0,
-    trabajadores: [],
-    adjuntos: [],
-    coordinates: [
-      [3.518, -76.315],
-      [3.519, -76.311],
-      [3.514, -76.309],
-      [3.513, -76.313],
-      [3.518, -76.315]
-    ]
-  }
-];
 
 export const useLots = () => {
   const { companyId } = useCompanyContext();
@@ -229,10 +67,10 @@ export const useLots = () => {
     observaciones: '',
     geom: null,
     coordinates: null,
-    area_ha: 0,
+    area_ha: '',
     perimetro_m: 0,
-    centroide_lat: 3.518,
-    centroide_lng: -76.305
+    centroide_lat: null,
+    centroide_lng: null
   });
 
   // Weather station values
@@ -280,10 +118,6 @@ export const useLots = () => {
       if (dbLotes && dbLotes.length > 0) {
         setLotes(
           dbLotes.map((l) => {
-            const localLote = INITIAL_LOTES_MOCK.find(
-              (il) => il.codigo_interno === l.codigo_interno || il.nombre === l.nombre
-            );
-
             let coordinates = l.coordinates;
             if (!coordinates || coordinates.length === 0) {
               if (l.geom) {
@@ -305,26 +139,20 @@ export const useLots = () => {
             }
 
             return createLot({
-              ...localLote,
               ...l,
-              estado_fenológico:
-                l.estado_fenologico || l.estado_fenológico || localLote?.estado_fenologico,
-              coordinates: coordinates || localLote?.coordinates || [],
-              trabajadores: l.trabajadores || localLote?.trabajadores || [],
-              adjuntos: l.adjuntos || localLote?.adjuntos || []
+              estado_fenológico: l.estado_fenologico || l.estado_fenológico || null,
+              coordinates: coordinates || [],
+              trabajadores: l.trabajadores || [],
+              adjuntos: l.adjuntos || []
             });
           })
         );
       } else {
-        console.log('[Lotes Hook] No lotes returned from DB. Using initial mock lotes.');
-        setLotes(INITIAL_LOTES_MOCK.map((il) => createLot(il)));
+        setLotes([]);
       }
     } catch (err) {
-      console.warn(
-        '[Lotes Hook] Error loading lotes from Supabase. Falling back to initial mock lotes:',
-        err.message
-      );
-      setLotes(INITIAL_LOTES_MOCK.map((il) => createLot(il)));
+      console.warn('[Lotes Hook] Error cargando lotes desde Supabase:', err.message);
+      setLotes([]);
     } finally {
       setLotesLoading(false);
     }
@@ -335,29 +163,43 @@ export const useLots = () => {
     loadLotes();
   }, [companyId]);
 
+  // Sincronización en tiempo real con Supabase: cualquier INSERT/UPDATE/DELETE
+  // en la tabla lotes (de esta u otra sesión) refresca la lista.
+  useEffect(() => {
+    if (!supabase || !supabase.channel) return undefined;
+    let channel = null;
+    try {
+      channel = supabase
+        .channel('lotes_realtime')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'lotes' },
+          () => { loadLotes(); }
+        )
+        .subscribe();
+    } catch (err) {
+      console.warn('[Lotes] Realtime no disponible, se usa refetch manual:', err?.message);
+    }
+    return () => {
+      if (channel) {
+        try { supabase.removeChannel(channel); } catch { /* noop */ }
+      }
+    };
+  }, [companyId]);
+
   const handleAddLote = async (onAuditLogged) => {
     const val = validateLot(newLote);
     if (!val.isValid) return { success: false, errors: val.errors };
 
-    let defaultCoords = newLote.coordinates;
-    let area = newLote.area_ha;
-    let perimeter = newLote.perimetro_m;
-    let centroid = [newLote.centroide_lat, newLote.centroide_lng];
-
-    if (!defaultCoords) {
-      const lat = 3.518;
-      const lng = -76.305;
-      defaultCoords = [
-        [lat + 0.001, lng - 0.001],
-        [lat + 0.001, lng + 0.001],
-        [lat - 0.001, lng + 0.001],
-        [lat - 0.001, lng - 0.001],
-        [lat + 0.001, lng - 0.001]
-      ];
-      area = 4.0;
-      perimeter = 800;
-      centroid = [lat, lng];
-    }
+    // Política de datos: si no hay archivo espacial, NO se inventan coordenadas
+    // ni área. geom/área/perímetro quedan null y el usuario puede digitar el área.
+    const coordinates = newLote.coordinates || null;
+    const area = newLote.area_ha || null;
+    const perimeter = newLote.perimetro_m || null;
+    const centroid = [
+      newLote.centroide_lat ?? null,
+      newLote.centroide_lng ?? null
+    ];
 
     const dbPayload = {
       codigo_interno: newLote.codigo_interno,
@@ -374,10 +216,10 @@ export const useLots = () => {
       perimetro_m: perimeter,
       centroide_lat: centroid[0],
       centroide_lng: centroid[1],
-      geom: defaultCoords ? {
+      geom: coordinates ? {
         type: 'Polygon',
         coordinates: [
-          defaultCoords.map(c => [c[1], c[0]]) // Invert [lat, lng] to [lng, lat] for GeoJSON
+          coordinates.map(c => [c[1], c[0]]) // Invert [lat, lng] to [lng, lat] for GeoJSON
         ]
       } : null
     };
@@ -385,9 +227,10 @@ export const useLots = () => {
     try {
       const savedLote = await lotRepository.create(dbPayload);
 
+      // La fila mostrada proviene de Supabase (respuesta real del INSERT)
       const item = createLot({
         ...savedLote,
-        coordinates: defaultCoords,
+        coordinates: coordinates || [],
         trabajadores: [],
         adjuntos: []
       });
@@ -395,6 +238,9 @@ export const useLots = () => {
       setLotes(prev => [item, ...prev]);
       setIsLoteDrawerOpen(false);
       setSelectedLote(item);
+
+      // Sincronización con la fuente de verdad: recarga desde Supabase
+      loadLotes();
       if (onAuditLogged) {
         onAuditLogged(item.codigo_interno, "Registro de nuevo lote agrícola");
       }
@@ -403,20 +249,20 @@ export const useLots = () => {
       setNewLote({
         codigo_interno: '',
         nombre: '',
-        cultivo: 'Maíz',
+        cultivo: '',
         cultivo_id: null,
         variedad: '',
         fecha_siembra: '',
-        estado_fenológico: 'Vegetativo',
+        estado_fenológico: '',
         sistema_productivo: 'Convencional',
         responsable_tecnico: '',
         observaciones: '',
         geom: null,
         coordinates: null,
-        area_ha: 0,
+        area_ha: '',
         perimetro_m: 0,
-        centroide_lat: 3.518,
-        centroide_lng: -76.305
+        centroide_lat: null,
+        centroide_lng: null
       });
 
       return { success: true, item };
@@ -636,4 +482,3 @@ export const useLots = () => {
     handleAttachmentUpload
   };
 };
-export { INITIAL_LOTES_MOCK };

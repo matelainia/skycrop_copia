@@ -26,7 +26,8 @@ export class ExpressApplicationAuditController {
 
       const result = await this.confirmHighToxicityAuditUseCase.execute({
         aplicacion_id,
-        usuario_id,
+        // La identidad del autor proviene del token verificado; el body es solo fallback dev
+        usuario_id: req.tenant?.userId || usuario_id,
         ingredientes,
         advertencia_confirmada,
         declaracion_profesional,

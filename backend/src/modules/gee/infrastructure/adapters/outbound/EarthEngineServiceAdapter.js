@@ -13,7 +13,7 @@ export class EarthEngineServiceAdapter extends GeeServicePort {
 
   async initialize() {
     const serviceAccountKey = env.GEE_SERVICE_ACCOUNT_KEY;
-    if (!serviceAccountKey) {
+    if (!serviceAccountKey || !serviceAccountKey.trim()) {
       console.warn(
         '⚠️ GEE: GEE_SERVICE_ACCOUNT_KEY no está configurada en las variables de entorno. Ejecutando en Modo Simulación.'
       );
@@ -23,18 +23,31 @@ export class EarthEngineServiceAdapter extends GeeServicePort {
 
     try {
       let privateKey;
-      try {
-        privateKey = JSON.parse(serviceAccountKey);
-      } catch (parseErr) {
-        console.warn(
-          '⚠️ GEE: Cuenta de servicio no es un JSON limpio directamente. Reemplazando retornos...'
+      const rawKey = serviceAccountKey.trim();
+
+      if (rawKey.startsWith('{')) {
+        try {
+          privateKey = JSON.parse(rawKey);
+        } catch (parseErr) {
+          privateKey = JSON.parse(rawKey.replace(/\\n/g, '\n'));
+        }
+      } else if (rawKey.includes('BEGIN PRIVATE KEY')) {
+        const clientEmail =
+          process.env.GEE_SERVICE_ACCOUNT_EMAIL ||
+          'skycrop-earth-engine@skycrop.iam.gserviceaccount.com';
+        privateKey = {
+          client_email: clientEmail,
+          private_key: rawKey.replace(/\\n/g, '\n')
+        };
+      } else {
+        throw new Error(
+          'La credencial de GEE debe ser un JSON completo de Service Account o una clave RSA en formato PEM.'
         );
-        privateKey = JSON.parse(serviceAccountKey.replace(/\\n/g, '\n'));
       }
 
       console.log('🔄 GEE: Iniciando autenticación con Google Earth Engine...');
 
-      await new Promise((resolve, reject) => {
+      await new Promise((resolve) => {
         ee.data.authenticateViaPrivateKey(
           privateKey,
           () => {
@@ -47,20 +60,28 @@ export class EarthEngineServiceAdapter extends GeeServicePort {
                 resolve();
               },
               (err) => {
-                console.error('❌ GEE: Fallo durante la inicialización:', err);
-                reject(err);
+                console.warn('⚠️ GEE: Fallo durante la inicialización:', err?.message || err);
+                this.geeInitializationError = err?.message || String(err);
+                resolve();
               }
             );
           },
           (err) => {
-            console.error('❌ GEE: Fallo durante la autenticación de la llave privada:', err);
-            reject(err);
+            console.warn(
+              '⚠️ GEE: Autenticación de llave privada no completada. Operando en modo satelital continuo (ArcGIS/Sentinel):',
+              err?.message || err
+            );
+            this.geeInitializationError = err?.message || String(err);
+            resolve();
           }
         );
       });
     } catch (err) {
       this.geeInitializationError = err.message;
-      console.error('⚠️ GEE: Error en la inicialización de Earth Engine:', err.message);
+      console.warn(
+        '⚠️ GEE: Aviso en inicialización de Earth Engine (el servicio operará en modo continuo):',
+        err.message
+      );
     }
   }
 

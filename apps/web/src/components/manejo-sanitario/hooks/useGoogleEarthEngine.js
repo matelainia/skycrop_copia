@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
 import { geeRepository } from '../repositories/geeRepository';
-import { generateMockHistogramAndStats } from '../utils/mock.utils';
 
 export const useGoogleEarthEngine = (selectedLote) => {
   const [geeLoading, setGeeLoading] = useState(false);
   const [geeWarning, setGeeWarning] = useState(null);
+  const [geeError, setGeeError] = useState(null);
   const [histogramIndex, setHistogramIndex] = useState('NDVI');
   const [isEvolutionModalOpen, setIsEvolutionModalOpen] = useState(false);
   const [hoveredBar, setHoveredBar] = useState(null);
@@ -12,7 +12,8 @@ export const useGoogleEarthEngine = (selectedLote) => {
     stats: null,
     distribution: null,
     histogram: null,
-    index: 'NDVI'
+    index: 'NDVI',
+    tileUrl: null
   });
 
   useEffect(() => {
@@ -20,6 +21,7 @@ export const useGoogleEarthEngine = (selectedLote) => {
 
     setGeeLoading(true);
     setGeeWarning(null);
+    setGeeError(null);
 
     const indexType = histogramIndex.toUpperCase();
 
@@ -35,26 +37,26 @@ export const useGoogleEarthEngine = (selectedLote) => {
             tileUrl: data.tileUrl || null
           });
         } else {
-          console.warn('[GEE Hook] Backend error, generating mock index data:', data.message);
-          const mock = generateMockHistogramAndStats(indexType, selectedLote.centroide_lat + selectedLote.centroide_lng, selectedLote.ndvi_actual);
+          console.warn('[GEE Hook] Error del backend:', data.message);
+          if (data.warning) setGeeWarning(data.warning);
+          setGeeError(data.message || 'No se pudieron obtener datos del índice desde el servidor.');
           setGeeData({
-            stats: mock.stats,
-            distribution: mock.distribution,
-            histogram: mock.histogram,
+            stats: null,
+            distribution: null,
+            histogram: null,
             index: indexType,
             tileUrl: null
           });
-          if (data.warning) setGeeWarning(data.warning);
         }
       })
       .catch(err => {
-        console.warn('[GEE Hook] HTTP Fetch error, generating mock index data:', err.message);
+        console.warn('[GEE Hook] Error HTTP:', err.message);
         setGeeLoading(false);
-        const mock = generateMockHistogramAndStats(indexType, selectedLote.centroide_lat + selectedLote.centroide_lng, selectedLote.ndvi_actual);
+        setGeeError(err.message || 'Error de red al consultar Google Earth Engine.');
         setGeeData({
-          stats: mock.stats,
-          distribution: mock.distribution,
-          histogram: mock.histogram,
+          stats: null,
+          distribution: null,
+          histogram: null,
           index: indexType,
           tileUrl: null
         });
@@ -64,6 +66,7 @@ export const useGoogleEarthEngine = (selectedLote) => {
   return {
     geeLoading,
     geeWarning,
+    geeError,
     geeData,
     histogramIndex,
     isEvolutionModalOpen,

@@ -12,6 +12,35 @@
  * Content-Disposition: attachment para que el navegador lo descargue.
  */
 
+/**
+ * Escapa entidades HTML para prevenir XSS almacenado en el documento exportado.
+ * Los datos del plan provienen de usuarios (nombres, observaciones, comentarios).
+ */
+function escapeHtmlValue(value) {
+  if (typeof value !== 'string') return value;
+  return value.replace(
+    /[&<>"']/g,
+    (c) =>
+      ({
+        '&': '&amp;',
+        '<': '&lt;',
+        '>': '&gt;',
+        '"': '&quot;',
+        "'": '&#39;'
+      })[c]
+  );
+}
+
+function escapeDeep(value) {
+  if (Array.isArray(value)) return value.map(escapeDeep);
+  if (value && typeof value === 'object') {
+    const out = {};
+    for (const [k, v] of Object.entries(value)) out[k] = escapeDeep(v);
+    return out;
+  }
+  return escapeHtmlValue(value);
+}
+
 export class FertilizationPdfAdapter {
   /**
    * Genera el documento del plan de fertilización.
@@ -19,12 +48,14 @@ export class FertilizationPdfAdapter {
    * @returns {Promise<{ buffer: Buffer, contentType: string, filename: string }>}
    */
   async generatePlanPdf(detail) {
-    const plan = detail.plan || {};
-    const items = detail.items || [];
-    const apps = detail.applications || [];
-    const obs = detail.observations || [];
-    const alerts = detail.alerts || [];
-    const nutri = detail.nutrition || [];
+    // Sanitización XSS: se escapan todos los strings antes de interpolar en HTML
+    const safe = escapeDeep(detail || {});
+    const plan = safe.plan || {};
+    const items = safe.items || [];
+    const apps = safe.applications || [];
+    const obs = safe.observations || [];
+    const alerts = safe.alerts || [];
+    const nutri = safe.nutrition || [];
 
     const html = this._buildHtml({ plan, items, apps, obs, alerts, nutri });
     const buffer = Buffer.from(html, 'utf-8');

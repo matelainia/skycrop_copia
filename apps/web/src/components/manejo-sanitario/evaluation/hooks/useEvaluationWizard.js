@@ -115,18 +115,12 @@ export function useEvaluationWizard(
   useEffect(() => {
     if (mode === 'view') return;
     supabase.from('companies').select('id, nombre').then(({ data }) => {
+      setCompanies(Array.isArray(data) ? data : []);
       if (data && data.length > 0) {
-        setCompanies(data);
         setFormData(prev => ({ ...prev, companyId: prev.companyId || data[0].id }));
-      } else {
-        const fallback = { id: companyId || 'default-company', nombre: currentCompanyName || 'Empresa Principal' };
-        setCompanies([fallback]);
-        setFormData(prev => ({ ...prev, companyId: fallback.id }));
       }
     }).catch(() => {
-      const fallback = { id: companyId || 'default-company', nombre: currentCompanyName || 'Empresa Principal' };
-      setCompanies([fallback]);
-      setFormData(prev => ({ ...prev, companyId: fallback.id }));
+      setCompanies([]);
     });
   }, [mode]);
 
@@ -135,18 +129,12 @@ export function useEvaluationWizard(
     supabase.from('predios').select('id, nombre, ubicacion')
       .eq('company_id', formData.companyId)
       .then(({ data }) => {
+        setPredios(Array.isArray(data) ? data : []);
         if (data && data.length > 0) {
-          setPredios(data);
           setFormData(prev => ({ ...prev, predioId: prev.predioId || data[0].id }));
-        } else {
-          const fallback = { id: 'default-predio', nombre: 'Predio Principal' };
-          setPredios([fallback]);
-          setFormData(prev => ({ ...prev, predioId: fallback.id }));
         }
       }).catch(() => {
-        const fallback = { id: 'default-predio', nombre: 'Predio Principal' };
-        setPredios([fallback]);
-        setFormData(prev => ({ ...prev, predioId: fallback.id }));
+        setPredios([]);
       });
   }, [formData.companyId, mode]);
 
@@ -187,6 +175,12 @@ export function useEvaluationWizard(
   // ─────────────────────────────────────────────────────────────────────────
   // DATOS DERIVADOS: lote y objeto seleccionados
   // ─────────────────────────────────────────────────────────────────────────
+  const masterDataMessage = useMemo(() => (
+    mode !== 'view' && (companies.length === 0 || predios.length === 0)
+      ? 'Crea una empresa y un predio para continuar.'
+      : null
+  ), [mode, companies, predios]);
+
   const selectedLoteData = useMemo(
     () => lotes.find(l => l.id === formData.loteId) || null,
     [lotes, formData.loteId]
@@ -631,6 +625,7 @@ export function useEvaluationWizard(
     companies,
     predios,
     lotes,
+    masterDataMessage,
     // Datos agronómicos
     agronomyForm,
     geoInfo,

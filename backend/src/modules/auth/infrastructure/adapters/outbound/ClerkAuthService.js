@@ -14,13 +14,16 @@ export class ClerkAuthService extends ClerkServicePort {
       });
       return decoded;
     } catch (err) {
-      // Fallback para desarrollo si la secret key de Clerk es ficticia o falla la red
-      const decodedPayload = jwt.decode(token);
-      if (decodedPayload && decodedPayload.sub) {
-        console.warn(
-          `[ClerkAuthService] verifyToken falló (${err.message}). Usando payload decodificado del JWT en desarrollo.`
-        );
-        return decodedPayload;
+      // Fallback SOLO en desarrollo: nunca se acepta un JWT sin verificar firma en producción.
+      // Permite trabajar con secret keys de Clerk ficticias durante el desarrollo local.
+      if (process.env.NODE_ENV !== 'production') {
+        const decodedPayload = jwt.decode(token);
+        if (decodedPayload && decodedPayload.sub) {
+          console.warn(
+            `[ClerkAuthService] [DEV] verifyToken falló (${err.message}). Aceptando payload decodificado SIN verificación de firma (solo desarrollo).`
+          );
+          return decodedPayload;
+        }
       }
       throw new AuthenticationError(`Token de Clerk inválido o expirado: ${err.message}`);
     }

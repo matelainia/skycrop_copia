@@ -1,5 +1,5 @@
-const supabaseUrl = 'https://gynttnymneanbziywqqr.supabase.co';
-const supabaseAnonKey = 'sb_publishable_YQgpOzCvrEjkfjZbR5tv7Q_-KMPafye';
+﻿const supabaseUrl = 'https://gynttnymneanbziywqqr.supabase.co';
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
 
 async function testAllTables() {
   const tables = ['lotes', 'trabajadores', 'maquinaria', 'inventario', 'cultivos', 'protocolos_evaluacion'];

@@ -18,8 +18,12 @@ import { CompleteApplicationUseCase } from '../../../application/complete-applic
 import { ExportPlanPdfUseCase } from '../../../application/export-plan-pdf.usecase.js';
 import { SugerirPlanUseCase } from '../../../application/sugerir-plan.usecase.js';
 
-// Controlador (inbound)
+// Controlador plan operacional (inbound)
 import { ExpressFertilizationController } from './ExpressFertilizationController.js';
+
+// Motor de cálculo determinístico
+import { FertilizationCalculationService } from '../../../calculation/services/FertilizationCalculationService.js';
+import { ExpressCalculationController } from './ExpressCalculationController.js';
 
 const router = express.Router();
 
@@ -46,6 +50,10 @@ const controller = new ExpressFertilizationController(
   storageAdapter
 );
 
+// ─── Motor de cálculo (DI) ────────────────────────────────────────────────────
+const calculationService = new FertilizationCalculationService();
+const calcController = new ExpressCalculationController(calculationService);
+
 // ─── Definición de rutas ──────────────────────────────────────────────────────
 
 // POST /sugerir-plan             → Generar plan base con IA
@@ -71,6 +79,35 @@ router.get('/planes/:planId/exportar.pdf', controller.exportPdf);
 
 // POST /uploads/adjunto-observacion  → Subir adjunto
 router.post('/uploads/adjunto-observacion', controller.uploadAttachment);
+
+// ─── Rutas del Motor de Cálculo (/calculo/*) ──────────────────────────────────
+
+// POST  /calculo                          → Ejecutar cálculo determinístico
+router.post('/calculo', calcController.postCalculate);
+
+// GET   /calculo/cultivos                 → Catálogo de cultivos
+router.get('/calculo/cultivos', calcController.getCrops);
+
+// GET   /calculo/cultivos/:cropId/etapas  → Etapas fenológicas de un cultivo
+router.get('/calculo/cultivos/:cropId/etapas', calcController.getStages);
+
+// GET   /calculo/nutrientes               → Catálogo de nutrientes
+router.get('/calculo/nutrientes', calcController.getNutrients);
+
+// GET   /calculo/fertilizantes            → Catálogo de fertilizantes
+router.get('/calculo/fertilizantes', calcController.getFertilizers);
+
+// GET   /calculo/reglas                   → Reglas agronómicas activas
+router.get('/calculo/reglas', calcController.getRules);
+
+// POST  /calculo/analisis-suelo           → Registrar análisis de suelo
+router.post('/calculo/analisis-suelo', calcController.postSoilAnalysis);
+
+// GET   /calculo/historial                → Historial de cálculos de la empresa
+router.get('/calculo/historial', calcController.getHistory);
+
+// GET   /calculo/:calculationId           → Detalle de un cálculo con snapshot
+router.get('/calculo/:calculationId', calcController.getCalculationDetail);
 
 export const fertilizationRouter = router;
 export default fertilizationRouter;

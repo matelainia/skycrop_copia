@@ -32,6 +32,7 @@ export default function EvaluationDataEntry({ onBack, onNext, mode = 'create', m
     companies,
     predios,
     lotes,
+    masterDataMessage,
     agronomyForm,
     geoInfo,
     geoLoading,
@@ -152,6 +153,12 @@ export default function EvaluationDataEntry({ onBack, onNext, mode = 'create', m
           {error && (
             <div className="eval-error-banner">
               {error}
+            </div>
+          )}
+
+          {masterDataMessage && mode !== 'view' && (
+            <div className="eval-error-banner" role="alert">
+              {masterDataMessage}
             </div>
           )}
 

@@ -19,119 +19,6 @@ import { productRepository } from '../repositories/productRepository';
 
 
 // ─────────────────────────────────────────────────────────────────────────────
-// BASE DE DATOS MOCK (sólo como fallback si el API no responde)
-// ─────────────────────────────────────────────────────────────────────────────
-
-export const PRODUCTOS_DB = [
-  {
-    id: 'prod-1', nombre: 'Amistar® Top 325 SC', tipo: 'Fungicida',
-    ingredientes: [
-      { nombre: 'Azoxystrobin', concentracion: '20%', grupo_quimico: 'QoI (Estrobilurina)', registro_ica: '1054-ICA', cat_toxicologica: 'III', frac: 'C3', irac: '—', hrac: '—', funcion: 'Fungicida' },
-      { nombre: 'Difenoconazol', concentracion: '12.5%', grupo_quimico: 'DMI (Triazol)', registro_ica: '1054-ICA', cat_toxicologica: 'III', frac: 'G1', irac: '—', hrac: '—', funcion: 'Fungicida' }
-    ],
-    dosis_recomendada: 0.75, dosis_max: 1.0, unidad_dosis: 'L/ha', carencia_dias: 21, residualidad_dias: 14
-  },
-  {
-    id: 'prod-2', nombre: 'Clorantraniliprol 20 SC', tipo: 'Insecticida',
-    ingredientes: [
-      { nombre: 'Clorantraniliprol', concentracion: '20%', grupo_quimico: 'Diamida antranílica', registro_ica: '2189-ICA', cat_toxicologica: 'III', frac: '—', irac: '28', hrac: '—', funcion: 'Insecticida' }
-    ],
-    dosis_recomendada: 0.2, dosis_max: 0.4, unidad_dosis: 'L/ha', carencia_dias: 14, residualidad_dias: 21
-  },
-  {
-    id: 'prod-3', nombre: 'Roundup Power® 360 SL', tipo: 'Herbicida',
-    ingredientes: [
-      { nombre: 'Glifosato (sal isopropilamina)', concentracion: '36%', grupo_quimico: 'Inhibidor EPSPS', registro_ica: '3021-ICA', cat_toxicologica: 'III', frac: '—', irac: '—', hrac: 'H9', funcion: 'Herbicida' }
-    ],
-    dosis_recomendada: 2.5, dosis_max: 4.0, unidad_dosis: 'L/ha', carencia_dias: 7, residualidad_dias: 21
-  },
-  {
-    id: 'prod-4', nombre: 'Lorsban® 4E', tipo: 'Insecticida',
-    ingredientes: [
-      { nombre: 'Clorpirifos', concentracion: '48%', grupo_quimico: 'Organofosforado', registro_ica: '4102-ICA', cat_toxicologica: 'II', frac: '—', irac: '1B', hrac: '—', funcion: 'Insecticida' }
-    ],
-    dosis_recomendada: 1.0, dosis_max: 2.0, unidad_dosis: 'L/ha', carencia_dias: 30, residualidad_dias: 45
-  },
-  {
-    id: 'prod-5', nombre: 'Mancozeb 80 WP', tipo: 'Fungicida',
-    ingredientes: [
-      { nombre: 'Mancozeb', concentracion: '80%', grupo_quimico: 'Ditiocarbamato', registro_ica: '5092-ICA', cat_toxicologica: 'III', frac: 'M3', irac: '—', hrac: '—', funcion: 'Fungicida' }
-    ],
-    dosis_recomendada: 2.0, dosis_max: 3.0, unidad_dosis: 'kg/ha', carencia_dias: 28, residualidad_dias: 14
-  },
-  {
-    id: 'prod-6', nombre: 'Aceite Mineral 83 EC', tipo: 'Coadyuvante',
-    ingredientes: [
-      { nombre: 'Aceite Mineral parafínico', concentracion: '83%', grupo_quimico: 'Coadyuvante', registro_ica: '6033-ICA', cat_toxicologica: 'IV', frac: 'N/A', irac: '—', hrac: '—', funcion: 'Coadyuvante' }
-    ],
-    dosis_recomendada: 0.5, dosis_max: 1.0, unidad_dosis: 'L/ha', carencia_dias: 0, residualidad_dias: 0
-  },
-  {
-    id: 'prod-7', nombre: 'Trichoderma harzianum WP', tipo: 'Bioinsumo',
-    ingredientes: [
-      { nombre: 'Trichoderma harzianum', concentracion: '1×10⁸ UFC/g', grupo_quimico: 'Hongo antagonista', registro_ica: '7024-ICA', cat_toxicologica: 'IV', frac: 'BM01', irac: '—', hrac: '—', funcion: 'Biofungicida' }
-    ],
-    dosis_recomendada: 1.0, dosis_max: 2.0, unidad_dosis: 'kg/ha', carencia_dias: 0, residualidad_dias: 7
-  },
-  {
-    id: 'prod-8', nombre: 'Fosfito de Potasio 40-20', tipo: 'Fertilización foliar',
-    ingredientes: [
-      { nombre: 'Ácido fosforoso (Fosfito)', concentracion: '40%', grupo_quimico: 'Fertilizante inductor', registro_ica: '8115-ICA', cat_toxicologica: 'IV', frac: 'P07', irac: '—', hrac: '—', funcion: 'Fertilizante foliar / Fungistático' }
-    ],
-    dosis_recomendada: 2.0, dosis_max: 3.5, unidad_dosis: 'L/ha', carencia_dias: 0, residualidad_dias: 7
-  },
-  {
-    id: 'prod-9', nombre: 'Emamectina Benzoato 5 SG', tipo: 'Insecticida',
-    ingredientes: [
-      { nombre: 'Emamectina Benzoato', concentracion: '5%', grupo_quimico: 'Avermectina', registro_ica: '9056-ICA', cat_toxicologica: 'II', frac: '—', irac: '6', hrac: '—', funcion: 'Insecticida' }
-    ],
-    dosis_recomendada: 0.25, dosis_max: 0.5, unidad_dosis: 'kg/ha', carencia_dias: 7, residualidad_dias: 14
-  },
-  {
-    id: 'prod-10', nombre: 'Cobre Metálico 50 WP', tipo: 'Fungicida',
-    ingredientes: [
-      { nombre: 'Óxido cuproso', concentracion: '50%', grupo_quimico: 'Cobre (Inorgánico multisitio)', registro_ica: '10047-ICA', cat_toxicologica: 'III', frac: 'M1', irac: '—', hrac: '—', funcion: 'Fungicida / Bactericida' }
-    ],
-    dosis_recomendada: 1.5, dosis_max: 2.5, unidad_dosis: 'kg/ha', carencia_dias: 14, residualidad_dias: 10
-  },
-  {
-    id: 'prod-11', nombre: 'Imidacloprid 35 SC', tipo: 'Insecticida',
-    ingredientes: [
-      { nombre: 'Imidacloprid', concentracion: '35%', grupo_quimico: 'Neonicotinoide', registro_ica: '11018-ICA', cat_toxicologica: 'II', frac: '—', irac: '4A', hrac: '—', funcion: 'Insecticida' }
-    ],
-    dosis_recomendada: 0.35, dosis_max: 0.6, unidad_dosis: 'L/ha', carencia_dias: 21, residualidad_dias: 28
-  },
-  {
-    id: 'prod-12', nombre: 'Cal Dolomítica 95%', tipo: 'Correctivo',
-    ingredientes: [
-      { nombre: 'CaCO₃ + MgCO₃', concentracion: '95%', grupo_quimico: 'Mineral correctivo', registro_ica: '12029-ICA', cat_toxicologica: 'IV', frac: 'N/A', irac: '—', hrac: '—', funcion: 'Corrector de acidez' }
-    ],
-    dosis_recomendada: 500, dosis_max: 2000, unidad_dosis: 'kg/ha', carencia_dias: 0, residualidad_dias: 90
-  },
-  {
-    id: 'prod-13', nombre: 'Propiconazol 25 EC', tipo: 'Fungicida',
-    ingredientes: [
-      { nombre: 'Propiconazol', concentracion: '25%', grupo_quimico: 'DMI (Triazol)', registro_ica: '13040-ICA', cat_toxicologica: 'III', frac: 'G1', irac: '—', hrac: '—', funcion: 'Fungicida' }
-    ],
-    dosis_recomendada: 0.5, dosis_max: 0.8, unidad_dosis: 'L/ha', carencia_dias: 21, residualidad_dias: 14
-  },
-  {
-    id: 'prod-14', nombre: 'Lambda-cihalotrina 10 EC', tipo: 'Insecticida',
-    ingredientes: [
-      { nombre: 'Lambda-cihalotrina', concentracion: '10%', grupo_quimico: 'Piretroide sintético', registro_ica: '14051-ICA', cat_toxicologica: 'II', frac: '—', irac: '3A', hrac: '—', funcion: 'Insecticida' }
-    ],
-    dosis_recomendada: 0.15, dosis_max: 0.25, unidad_dosis: 'L/ha', carencia_dias: 7, residualidad_dias: 14
-  },
-  {
-    id: 'prod-15', nombre: 'Metarhizium anisopliae WP', tipo: 'Bioinsumo',
-    ingredientes: [
-      { nombre: 'Metarhizium anisopliae', concentracion: '1×10⁹ con./g', grupo_quimico: 'Hongo entomopatógeno', registro_ica: '15062-ICA', cat_toxicologica: 'IV', frac: '—', irac: 'M05.09', hrac: '—', funcion: 'Bioinsecticida' }
-    ],
-    dosis_recomendada: 1.5, dosis_max: 2.5, unidad_dosis: 'kg/ha', carencia_dias: 0, residualidad_dias: 14
-  }
-];
-
-// ─────────────────────────────────────────────────────────────────────────────
 // CONSTANTES DE UI
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -480,15 +367,10 @@ export default function PlanificadorAplicaciones({ lotes = [], preselectedLoteId
     debounceTimers.current[rowId] = setTimeout(async () => {
       try {
         const data = await productRepository.search(query);
-        setSearchState(prev => ({ ...prev, [rowId]: { results: Array.isArray(data) ? data : [], loading: false } }));
+        setSearchState(prev => ({ ...prev, [rowId]: { results: Array.isArray(data) ? data : [], loading: false, error: false } }));
       } catch (err) {
         console.warn('[PRODUCTOS SEARCH]', err.message);
-        // Fallback al mock local
-        const q = query.toLowerCase();
-        const fallback = PRODUCTOS_DB
-          .filter(p => p.nombre.toLowerCase().includes(q) || p.ingredientes.some(i => i.nombre.toLowerCase().includes(q)))
-          .map(p => ({ id: p.id, nombre: p.nombre, tipo: p.tipo, fabricante: null }));
-        setSearchState(prev => ({ ...prev, [rowId]: { results: fallback, loading: false } }));
+        setSearchState(prev => ({ ...prev, [rowId]: { results: [], loading: false, error: true } }));
       }
     }, 280);
   }, []);
@@ -497,32 +379,6 @@ export default function PlanificadorAplicaciones({ lotes = [], preselectedLoteId
   const handleSelectProduct = useCallback(async (rowId, suggestion) => {
     setDropdownOpen(null);
     setSearchState(prev => ({ ...prev, [rowId]: { results: [], loading: false } }));
-
-    // Si viene del mock local (id empieza con 'prod-'), usar datos locales
-    if (typeof suggestion.id === 'string' && suggestion.id.startsWith('prod-')) {
-      const dbProd = PRODUCTOS_DB.find(p => p.id === suggestion.id);
-      if (dbProd) {
-        setProductos(prev => prev.map(p => {
-          if (p._id !== rowId) return p;
-          return {
-            ...p,
-            _search: '',
-            nombre_producto: dbProd.nombre,
-            registro_ica: dbProd.ingredientes[0]?.registro_ica || '',
-            ingrediente_activo: dbProd.ingredientes.map(i => i.nombre).join(' + '),
-            concentracion: dbProd.ingredientes.map(i => i.concentracion).join(' / '),
-            dosis: String(dbProd.dosis_recomendada),
-            unidad: dbProd.unidad_dosis,
-            costo_estimado: '',
-            carencia_dias: String(dbProd.carencia_dias ?? ''),
-            residualidad_dias: String(dbProd.residualidad_dias ?? ''),
-            _db_data: dbProd,
-            _is_manual: false
-          };
-        }));
-      }
-      return;
-    }
 
     // Pedir detalle completo al backend
     try {
@@ -1125,8 +981,14 @@ export default function PlanificadorAplicaciones({ lotes = [], preselectedLoteId
                           })}
                           {!searchState[row._id]?.loading && (searchState[row._id]?.results || []).length === 0 && (row._search || row.nombre_producto).length > 0 && (
                             <div style={{ padding: '12px 14px', color: 'var(--text-muted)', fontSize: '12px' }}>
-                              <span style={{ opacity: 0.7 }}>Sin resultados en la BD.</span>{' '}
-                              <span style={{ color: '#8b5cf6', fontWeight: '600' }}>El nombre ingresado se guardará manualmente.</span>
+                              {searchState[row._id]?.error ? (
+                                <span style={{ color: '#f59e0b', fontWeight: '600' }}>No se pudo consultar el inventario. Crea el producto en Inventario.</span>
+                              ) : (
+                                <>
+                                  <span style={{ opacity: 0.7 }}>Sin resultados en la BD.</span>{' '}
+                                  <span style={{ color: '#8b5cf6', fontWeight: '600' }}>El nombre ingresado se guardará manualmente.</span>
+                                </>
+                              )}
                             </div>
                           )}
                           {!searchState[row._id]?.loading && (searchState[row._id]?.results || []).length === 0 && !(row._search || row.nombre_producto) && (

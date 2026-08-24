@@ -146,7 +146,8 @@ export class ExpressAgronomyController {
   saveProtocolo = async (req, res, next) => {
     try {
       const payload = req.body;
-      const userId = payload.created_by || payload.user_id || 'system';
+      // Atribución de autoría desde el token verificado (fallback dev: body/'system')
+      const userId = req.tenant?.userId || payload.created_by || payload.user_id || 'system';
       const estado = payload.estado || 'borrador';
 
       if (!payload.objeto_evaluacion_id && !payload.objeto_nombre) {
@@ -174,7 +175,7 @@ export class ExpressAgronomyController {
     try {
       const { id } = req.params;
       const payload = req.body;
-      const userId = payload.updated_by || payload.user_id || 'system';
+      const userId = req.tenant?.userId || payload.updated_by || payload.user_id || 'system';
 
       if (this.protocolSvc) {
         const { protocolo, nuevaVersion } = await this.protocolSvc.editar(id, payload, userId);
@@ -202,7 +203,7 @@ export class ExpressAgronomyController {
   publicarProtocolo = async (req, res, next) => {
     try {
       const { id } = req.params;
-      const userId = req.body?.user_id || req.query?.user_id || 'system';
+      const userId = req.tenant?.userId || req.body?.user_id || req.query?.user_id || 'system';
       const comentario = req.body?.comentario || null;
 
       const data = this.protocolSvc
@@ -221,7 +222,7 @@ export class ExpressAgronomyController {
   cloneProtocolo = async (req, res, next) => {
     try {
       const { id } = req.params;
-      const userId = req.body?.user_id || req.query?.user_id || 'system';
+      const userId = req.tenant?.userId || req.body?.user_id || req.query?.user_id || 'system';
       const data = this.protocolSvc
         ? await this.protocolSvc.clonar(id, userId)
         : await this.protocolRepo.listProtocolos({ objeto_id: id });
@@ -240,15 +241,13 @@ export class ExpressAgronomyController {
     try {
       const { protocolo, user_id } = req.body;
       if (!protocolo) {
-        return res
-          .status(400)
-          .json({
-            success: false,
-            error: 'Se requiere el objeto "protocolo" en el cuerpo de la petición'
-          });
+        return res.status(400).json({
+          success: false,
+          error: 'Se requiere el objeto "protocolo" en el cuerpo de la petición'
+        });
       }
       const data = this.protocolSvc
-        ? await this.protocolSvc.importar(protocolo, user_id || 'system')
+        ? await this.protocolSvc.importar(protocolo, req.tenant?.userId || user_id || 'system')
         : await this.protocolRepo.insertCabecera(protocolo);
       return res
         .status(201)

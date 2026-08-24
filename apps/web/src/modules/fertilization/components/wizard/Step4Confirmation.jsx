@@ -1,4 +1,4 @@
-import { CheckCircle2, UploadCloud, Paperclip } from 'lucide-react';
+﻿import { CheckCircle2, UploadCloud, Paperclip } from 'lucide-react';
 import { formatCOP } from '../../../../utils/format.js';
 
 
@@ -27,8 +27,8 @@ export default function Step4Confirmation({ data, setData, totalBudget }) {
           <CheckCircle2 size={18} />
         </div>
         <div>
-          <h3>Confirmación y guardado</h3>
-          <p>Verifica el resumen antes de crear el plan de fertilización</p>
+          <h3>ConfirmaciÃ³n y guardado</h3>
+          <p>Verifica el resumen antes de crear el plan de fertilizaciÃ³n</p>
         </div>
       </div>
 
@@ -36,29 +36,29 @@ export default function Step4Confirmation({ data, setData, totalBudget }) {
       <div className="confirmation-summary-grid">
         <div className="summary-box">
           <span className="box-label">NOMBRE</span>
-          <span className="box-value highlight">{data.general.name || '—'}</span>
+          <span className="box-value highlight">{data.general.name || 'â€”'}</span>
         </div>
         <div className="summary-box">
           <span className="box-label">RESPONSABLE</span>
-          <span className="box-value">{data.general.responsibleName || 'Sebastián Díaz'}</span>
+          <span className="box-value">{data.general.responsibleName || '—'}</span>
         </div>
         <div className="summary-box">
           <span className="box-label">LOTE</span>
-          <span className="box-value">{data.general.lotName || 'Lote 12 - El Paraíso'}</span>
+          <span className="box-value">{data.general.lotName || 'Lote 12 - El ParaÃ­so'}</span>
         </div>
 
         <div className="summary-box">
           <span className="box-label">SECTOR</span>
-          <span className="box-value">{data.general.sector || 'Sector Norte'}</span>
+          <span className="box-value">{data.general.sector || '—'}</span>
         </div>
         <div className="summary-box">
-          <span className="box-label">ÁREA</span>
+          <span className="box-label">ÃREA</span>
           <span className="box-value">{data.general.area || 4.5} ha</span>
         </div>
         <div className="summary-box">
           <span className="box-label">VIGENCIA</span>
           <span className="box-value">
-            {data.general.startDate} → {data.general.endDate}
+            {data.general.startDate} â†’ {data.general.endDate}
           </span>
         </div>
 
@@ -72,7 +72,7 @@ export default function Step4Confirmation({ data, setData, totalBudget }) {
         </div>
         <div className="summary-box">
           <span className="box-label">DENSIDAD</span>
-          <span className="box-value">{data.crop.density} árboles/ha</span>
+          <span className="box-value">{data.crop.density} Ã¡rboles/ha</span>
         </div>
 
         <div className="summary-box">
@@ -86,7 +86,7 @@ export default function Step4Confirmation({ data, setData, totalBudget }) {
         <div className="summary-box">
           <span className="box-label">APLICACIONES</span>
           <span className="box-value highlight text-green">
-            {data.applications.length} – {formatCOP(totalBudget)}
+            {data.applications.length} â€“ {formatCOP(totalBudget)}
           </span>
         </div>
       </div>
@@ -97,7 +97,7 @@ export default function Step4Confirmation({ data, setData, totalBudget }) {
         <textarea
           rows={3}
           className="form-textarea"
-          placeholder="Notas de campo, restricciones de aplicación, acuerdos con el equipo..."
+          placeholder="Notas de campo, restricciones de aplicaciÃ³n, acuerdos con el equipo..."
           value={data.confirmation.observations}
           onChange={e => updateConfirmation('observations', e.target.value)}
         />
@@ -109,13 +109,13 @@ export default function Step4Confirmation({ data, setData, totalBudget }) {
         <div className="dropzone-box">
           <UploadCloud size={24} className="dropzone-icon" />
           <p className="dropzone-text">
-            Arrastra archivos de análisis de suelo o fotos del lote aquí o{' '}
+            Arrastra archivos de anÃ¡lisis de suelo o fotos del lote aquÃ­ o{' '}
             <label className="dropzone-link">
               selecciona de tu equipo
               <input type="file" multiple className="sr-only" onChange={handleFileDrop} />
             </label>
           </p>
-          <span className="dropzone-hint">Formatos soportados: PDF, PNG, JPG (máx. 10MB)</span>
+          <span className="dropzone-hint">Formatos soportados: PDF, PNG, JPG (mÃ¡x. 10MB)</span>
         </div>
 
         {data.confirmation.attachments.length > 0 && (

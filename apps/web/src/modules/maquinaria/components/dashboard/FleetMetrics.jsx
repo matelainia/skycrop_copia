@@ -45,8 +45,8 @@ export const FleetMetrics = ({ metrics }) => {
           <span className="card-label" style={{ fontSize: '11px' }}>EFICIENCIA OPERATIVA</span>
           <div className="card-icon-box green" style={{ width: '30px', height: '30px' }}><ShieldCheck size={16} /></div>
         </div>
-        <div className="card-value" style={{ fontSize: '24px', margin: '4px 0' }}>92%</div>
-        <div className="card-desc" style={{ fontSize: '11px' }}>vs. meta diaria</div>
+        <div className="card-value" style={{ fontSize: '24px', margin: '4px 0', color: 'var(--text-muted)' }}>—</div>
+        <div className="card-desc" style={{ fontSize: '11px' }}>Sin datos suficientes</div>
       </div>
     </div>
   );

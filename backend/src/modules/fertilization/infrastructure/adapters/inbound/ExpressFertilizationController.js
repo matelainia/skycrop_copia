@@ -4,6 +4,7 @@
  * Extrae parámetros del request, invoca use cases y formatea la respuesta.
  */
 import { ValidationError, AuthenticationError } from '../../../../../shared/errors/AppErrors.js';
+import { resolveTenant } from '../../../../../shared/middleware/authenticate.js';
 
 export class ExpressFertilizationController {
   /**
@@ -47,17 +48,17 @@ export class ExpressFertilizationController {
   }
 
   // ─── Helper: extraer company_id y user_id del request ─────────────────────
+  // Prioriza la identidad verificada del token (req.tenant). Los valores
+  // enviados por el cliente solo aplican como fallback en desarrollo.
   _getAuth(req, requireToken = false) {
     const authHeader = req.headers['authorization'] || req.headers['Authorization'];
     if (requireToken && (!authHeader || !authHeader.startsWith('Bearer '))) {
       throw new AuthenticationError('No autenticado. Token de autorización faltante.');
     }
-    const companyId =
-      req.user?.company_id || req.user?.empresa_id || req.auth?.orgId || 'company_dev';
-    const userId =
-      req.user?.id || req.auth?.userId || req.auth?.sub || (authHeader ? 'user_dev' : null);
-    const userName = req.user?.name || req.user?.full_name || 'Usuario Dev';
-    return { companyId, userId, userName };
+    return resolveTenant(req, {
+      fallbackCompanyId: 'company_dev',
+      fallbackUserId: authHeader ? 'user_dev' : null
+    });
   }
 
   // ─── POST /api/v1/fertilizacion/sugerir-plan ────────────────────────────────

@@ -59,6 +59,7 @@ function MaquinariaContent({ subTab = 'flota', setSubTab }) {
       {activeSubView === 'costos' && (
         <CostosPage
           machineryHook={machineryHook}
+          operationHook={operationHook}
         />
       )}
       {activeSubView === 'alertas' && (
@@ -68,7 +69,7 @@ function MaquinariaContent({ subTab = 'flota', setSubTab }) {
         />
       )}
       {activeSubView === 'reportes' && (
-        <ReportesPage />
+        <ReportesPage machineryHook={machineryHook} />
       )}
     </>
   );

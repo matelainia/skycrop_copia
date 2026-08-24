@@ -1,21 +1,22 @@
-import { createClient } from '@supabase/supabase-js';
+﻿import { createClient } from '@supabase/supabase-js';
 
 const supabaseUrl = 'https://gynttnymneanbziywqqr.supabase.co';
-const supabaseKey = 'sb_publishable_YQgpOzCvrEjkfjZbR5tv7Q_-KMPafye';
+require('dotenv').config();
+const supabaseKey = process.env.SUPABASE_ANON_KEY;
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 const LOTES_PARA_BD = [
   {
     id: 'd9b7f5d0-9d3b-4889-b88d-e4fb38f6d601',
     codigo_interno: 'A1',
-    nombre: 'Lote A1 - Maíz Híbrido',
-    cultivo: 'Maíz',
+    nombre: 'Lote A1 - MaÃ­z HÃ­brido',
+    cultivo: 'MaÃ­z',
     variedad: 'DK-7088',
     fecha_siembra: '2026-02-15',
     estado_fenologico: 'Vegetativo',
     sistema_productivo: 'Convencional',
     responsable_tecnico: 'Sebastian Diaz',
-    observaciones: 'Vigor óptimo, aplicación de fungicida en curso para prevención de roya.',
+    observaciones: 'Vigor Ã³ptimo, aplicaciÃ³n de fungicida en curso para prevenciÃ³n de roya.',
     area_ha: 12.45,
     perimetro_m: 1842.6,
     centroide_lat: 3.5182,
@@ -26,11 +27,11 @@ const LOTES_PARA_BD = [
   {
     id: 'd9b7f5d0-9d3b-4889-b88d-e4fb38f6d602',
     codigo_interno: 'A2',
-    nombre: 'Lote A2 - Maíz Híbrido',
-    cultivo: 'Maíz',
+    nombre: 'Lote A2 - MaÃ­z HÃ­brido',
+    cultivo: 'MaÃ­z',
     variedad: 'DK-7088',
     fecha_siembra: '2026-02-18',
-    estado_fenologico: 'Floración',
+    estado_fenologico: 'FloraciÃ³n',
     sistema_productivo: 'Convencional',
     responsable_tecnico: 'Sebastian Diaz',
     observaciones: 'Gusano cogollero detectado en nivel umbral bajo.',
@@ -44,12 +45,12 @@ const LOTES_PARA_BD = [
   {
     id: 'd9b7f5d0-9d3b-4889-b88d-e4fb38f6d603',
     codigo_interno: 'B1',
-    nombre: 'Lote B1 - Soya Orgánica',
+    nombre: 'Lote B1 - Soya OrgÃ¡nica',
     cultivo: 'Soya',
     variedad: 'Soya-Org-1',
     fecha_siembra: '2026-03-10',
     estado_fenologico: 'Vaina Llena',
-    sistema_productivo: 'Orgánico Certificado',
+    sistema_productivo: 'OrgÃ¡nico Certificado',
     responsable_tecnico: 'Sebastian Diaz',
     observaciones: 'Monitoreo de trips indica incremento leve de poblaciones.',
     area_ha: 15.60,
@@ -69,7 +70,7 @@ const LOTES_PARA_BD = [
     estado_fenologico: 'Desarrollo Vegetativo',
     sistema_productivo: 'Convencional',
     responsable_tecnico: 'Sebastian Diaz',
-    observaciones: 'Mildiu foliar detectado en sector norte con estrés hídrico activo.',
+    observaciones: 'Mildiu foliar detectado en sector norte con estrÃ©s hÃ­drico activo.',
     area_ha: 9.75,
     perimetro_m: 980.1,
     centroide_lat: 3.5115,
@@ -84,10 +85,10 @@ const LOTES_PARA_BD = [
     cultivo: 'Cacao',
     variedad: 'CCN51',
     fecha_siembra: '2024-05-12',
-    estado_fenologico: 'Fructificación',
+    estado_fenologico: 'FructificaciÃ³n',
     sistema_productivo: 'Agroforestal',
     responsable_tecnico: 'Sebastian Diaz',
-    observaciones: 'Alta tasa de fotosíntesis. Sin plagas.',
+    observaciones: 'Alta tasa de fotosÃ­ntesis. Sin plagas.',
     area_ha: 6.25,
     perimetro_m: 790.3,
     centroide_lat: 3.5165,
