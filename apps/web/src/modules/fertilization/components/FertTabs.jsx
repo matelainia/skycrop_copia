@@ -8,6 +8,7 @@ import {
   FlaskConical,
   Microscope,
   History,
+  Calculator,
 } from 'lucide-react';
 
 const TABS = [
@@ -17,6 +18,7 @@ const TABS = [
   { id: 'aplicaciones',     label: 'Aplicaciones',              icon: FlaskConical },
   { id: 'analisis-suelos',  label: 'Análisis de Suelos',        icon: Microscope },
   { id: 'historial',        label: 'Historial',                 icon: History },
+  { id: 'calculadora',      label: 'Calculadora de Fertilización', icon: Calculator },
 ];
 
 function FertTabs({ activeTab = 'resumen', onTabChange }) {

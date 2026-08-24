@@ -1,7 +1,7 @@
 /**
  * Dashboard.jsx — Main Master Page for Fertilización Module
- * 
- * Main menu tabs: Resumen, Planes de Fertilización, Recomendaciones, Aplicaciones, Análisis de Suelos, Historial.
+ *
+ * Tabs: Resumen | Planes | Recomendaciones | Aplicaciones | Análisis de Suelos | Historial | Calculadora
  */
 
 import React, { useState, useCallback } from 'react';
@@ -17,18 +17,19 @@ import LoadingDashboard from '../components/states/LoadingDashboard.jsx';
 import ErrorDashboard from '../components/states/ErrorDashboard.jsx';
 import FertilizationPlansPage from './FertilizationPlansPage.jsx';
 import PlanDetailPage from './PlanDetailPage.jsx';
+import CalculadoraPage from '../components/calculadora/CalculadoraPage.jsx';
 
 // Recommendations Component
 import RecommendationsDashboard from '../components/recommendations/RecommendationsDashboard.jsx';
 import { FertilizationWizardModal } from '../components/wizard/FertilizationWizardModal.jsx';
 
 const DASHBOARD_WIDGETS = [
-  { id: 'metrics',         enabled: true,  label: 'KPIs' },
-  { id: 'plans',           enabled: true,  label: 'Planes de Fertilización' },
-  { id: 'recommendations', enabled: true,  label: 'Próximas Recomendaciones' },
-  { id: 'soilAnalysis',    enabled: true,  label: 'Análisis de Suelos' },
-  { id: 'agronomicTip',    enabled: true,  label: 'Consejo Agronómico' },
-  { id: 'aiInsights',      enabled: true,  label: 'IA Agronómica' },
+  { id: 'metrics', enabled: true, label: 'KPIs' },
+  { id: 'plans', enabled: true, label: 'Planes de Fertilización' },
+  { id: 'recommendations', enabled: true, label: 'Próximas Recomendaciones' },
+  { id: 'soilAnalysis', enabled: true, label: 'Análisis de Suelos' },
+  { id: 'agronomicTip', enabled: true, label: 'Consejo Agronómico' },
+  { id: 'aiInsights', enabled: true, label: 'IA Agronómica' },
 ];
 
 export default function Dashboard() {
@@ -74,7 +75,7 @@ export default function Dashboard() {
 
   return (
     <div className="fert-module" id="fertilizacion-dashboard">
-      
+
       {/* Header */}
       <DashboardHeader
         activeTab={activeTab}
@@ -145,7 +146,12 @@ export default function Dashboard() {
           />
         )}
 
-        {/* OTROS TABS */}
+        {/* TAB 7: CALCULADORA DE FERTILIZACIÓN */}
+        {activeTab === 'calculadora' && (
+          <CalculadoraPage />
+        )}
+
+        {/* OTROS TABS (aplicaciones, analisis-suelos, historial) */}
         {(activeTab === 'aplicaciones' || activeTab === 'analisis-suelos' || activeTab === 'historial') && (
           <div
             style={{
