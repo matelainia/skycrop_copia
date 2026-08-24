@@ -6,6 +6,7 @@ import { createLot } from '../types/Lot';
 import { validateLot } from '../validators/lot.validator';
 import { calculateArea, calculatePerimeter, calculateCentroid } from '../utils/geo.utils';
 import { useCompanyContext } from '../../../context/CompanyContext';
+import { supabase } from '../../../lib/supabaseClient';
 
 
 export const useLots = () => {
@@ -66,10 +67,10 @@ export const useLots = () => {
     observaciones: '',
     geom: null,
     coordinates: null,
-    area_ha: 0,
+    area_ha: '',
     perimetro_m: 0,
-    centroide_lat: 3.518,
-    centroide_lng: -76.305
+    centroide_lat: null,
+    centroide_lng: null
   });
 
   // Weather station values
@@ -162,29 +163,43 @@ export const useLots = () => {
     loadLotes();
   }, [companyId]);
 
+  // Sincronización en tiempo real con Supabase: cualquier INSERT/UPDATE/DELETE
+  // en la tabla lotes (de esta u otra sesión) refresca la lista.
+  useEffect(() => {
+    if (!supabase || !supabase.channel) return undefined;
+    let channel = null;
+    try {
+      channel = supabase
+        .channel('lotes_realtime')
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'lotes' },
+          () => { loadLotes(); }
+        )
+        .subscribe();
+    } catch (err) {
+      console.warn('[Lotes] Realtime no disponible, se usa refetch manual:', err?.message);
+    }
+    return () => {
+      if (channel) {
+        try { supabase.removeChannel(channel); } catch { /* noop */ }
+      }
+    };
+  }, [companyId]);
+
   const handleAddLote = async (onAuditLogged) => {
     const val = validateLot(newLote);
     if (!val.isValid) return { success: false, errors: val.errors };
 
-    let defaultCoords = newLote.coordinates;
-    let area = newLote.area_ha;
-    let perimeter = newLote.perimetro_m;
-    let centroid = [newLote.centroide_lat, newLote.centroide_lng];
-
-    if (!defaultCoords) {
-      const lat = 3.518;
-      const lng = -76.305;
-      defaultCoords = [
-        [lat + 0.001, lng - 0.001],
-        [lat + 0.001, lng + 0.001],
-        [lat - 0.001, lng + 0.001],
-        [lat - 0.001, lng - 0.001],
-        [lat + 0.001, lng - 0.001]
-      ];
-      area = 4.0;
-      perimeter = 800;
-      centroid = [lat, lng];
-    }
+    // Política de datos: si no hay archivo espacial, NO se inventan coordenadas
+    // ni área. geom/área/perímetro quedan null y el usuario puede digitar el área.
+    const coordinates = newLote.coordinates || null;
+    const area = newLote.area_ha || null;
+    const perimeter = newLote.perimetro_m || null;
+    const centroid = [
+      newLote.centroide_lat ?? null,
+      newLote.centroide_lng ?? null
+    ];
 
     const dbPayload = {
       codigo_interno: newLote.codigo_interno,
@@ -201,10 +216,10 @@ export const useLots = () => {
       perimetro_m: perimeter,
       centroide_lat: centroid[0],
       centroide_lng: centroid[1],
-      geom: defaultCoords ? {
+      geom: coordinates ? {
         type: 'Polygon',
         coordinates: [
-          defaultCoords.map(c => [c[1], c[0]]) // Invert [lat, lng] to [lng, lat] for GeoJSON
+          coordinates.map(c => [c[1], c[0]]) // Invert [lat, lng] to [lng, lat] for GeoJSON
         ]
       } : null
     };
@@ -212,9 +227,10 @@ export const useLots = () => {
     try {
       const savedLote = await lotRepository.create(dbPayload);
 
+      // La fila mostrada proviene de Supabase (respuesta real del INSERT)
       const item = createLot({
         ...savedLote,
-        coordinates: defaultCoords,
+        coordinates: coordinates || [],
         trabajadores: [],
         adjuntos: []
       });
@@ -222,6 +238,9 @@ export const useLots = () => {
       setLotes(prev => [item, ...prev]);
       setIsLoteDrawerOpen(false);
       setSelectedLote(item);
+
+      // Sincronización con la fuente de verdad: recarga desde Supabase
+      loadLotes();
       if (onAuditLogged) {
         onAuditLogged(item.codigo_interno, "Registro de nuevo lote agrícola");
       }
@@ -230,20 +249,20 @@ export const useLots = () => {
       setNewLote({
         codigo_interno: '',
         nombre: '',
-        cultivo: 'Maíz',
+        cultivo: '',
         cultivo_id: null,
         variedad: '',
         fecha_siembra: '',
-        estado_fenológico: 'Vegetativo',
+        estado_fenológico: '',
         sistema_productivo: 'Convencional',
         responsable_tecnico: '',
         observaciones: '',
         geom: null,
         coordinates: null,
-        area_ha: 0,
+        area_ha: '',
         perimetro_m: 0,
-        centroide_lat: 3.518,
-        centroide_lng: -76.305
+        centroide_lat: null,
+        centroide_lng: null
       });
 
       return { success: true, item };
