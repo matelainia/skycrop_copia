@@ -2,24 +2,65 @@
  * FertilizationEngine.js
  * Orquestador principal del motor de cálculo de fertilización.
  *
- * PIPELINE COMPLETO:
- *   input
+ * PIPELINE PROPUESTO (§12) — Separación agronómica correcta:
+ *                 ┌──────────────────────┐
+ *                 │       PASO 1         │
+ *                 │ Análisis del suelo    │
+ *                 └──────────┬───────────┘
+ *                            │
+ *                            ▼
+ *                 ┌──────────────────────┐
+ *                 │ SoilSupplyEngine      │  ← Oferta nutricional (kg/ha)
+ *                 │ (SoilAdjustmentEngine)│     pH, MO, CIC, textura, ppm→kg/ha
+ *                 └──────────┬───────────┘
+ *                            │
+ *                            │
+ * ┌───────────────────┐       │
+ * │      PASO 2       │       │
+ * │ Requerimientos    │       │
+ * │ nutricionales     │       │
+ * └─────────┬─────────┘       │
+ *           │                 │
+ *           ▼                 ▼
+ *  ┌────────────────────────────────┐
+ *  │      NutrientBalanceEngine     │  ← Demanda - Oferta = Déficit
+ *  │      (BalanceEngine)           │
+ *  └───────────────┬────────────────┘
+ *                 │
+ *                 ▼
+ *       ┌────────────────────┐
+ *       │ AdjustmentEngine   │  ← pH / MO / textura / eficiencia / etapa
+ *       └─────────┬──────────┘
+ *                 │
+ *                 ▼
+ *       ┌────────────────────┐
+ *       │ FertilizerEngine   │  ← NPK + secundarios + micronutrientes
+ *       │ (Selection/Formulation) │
+ *       └─────────┬──────────┘
+ *                 │
+ *                 ▼
+ *       ┌────────────────────┐
+ *       │ Recommendation     │  ← dosis / ha, dosis / planta, bultos, kg
+ *       └────────────────────┘
+ *
+ * PIPELINE DETALLADO:
+ *   input (Paso1 lote+suelo + Paso2 requerimientos)
  *     ↓
  *   validate (ValidationEngine)
  *     ↓
- *   load rules (via repository)
+ *   load rules + requirements (via repository / o customRequirements del Paso2)
  *     ↓
  *   build evaluation context
  *     ↓
  *   evaluate rules (RuleEngine) → correctionFactors, efficiencies, warnings
  *     ↓
- *   diagnose soil (SoilAdjustmentEngine) → soilContributions, soilContext
+ *   SoilSupplyEngine → soilContributions, soilContext   (oferta efectiva kg/ha)
  *     ↓
- *   calculate requirements (RequirementEngine) → requirements (post-corrección)
+ *   RequirementEngine → requirements (post-corrección) (demanda nutricional)
  *     ↓
- *   calculate balance (BalanceEngine) → netDemands
+ *   NutrientBalanceEngine → netDemands, balanceDetail   (déficit)
  *     ↓
- *   apply efficiency (EfficiencyEngine) → effectiveDemands
+ *   AdjustmentEngine → adjustedDemands, effectiveDemands (necesidad corregida)
  *     ↓
  *   [RAMA A — catálogo] select fertilizers (FertilizerSelectionEngine)
  *   [RAMA B — fuentes del usuario] formulate (FormulationEngine + ResultBuilder)
@@ -45,14 +86,18 @@ import { RuleEngine } from '../rules/RuleEngine.js';
 import { getActiveVersions } from '../rules/RuleVersionManager.js';
 import { RequirementEngine } from './RequirementEngine.js';
 import { SoilAdjustmentEngine } from './SoilAdjustmentEngine.js';
+import { SoilSupplyEngine } from './SoilSupplyEngine.js';
 import { BalanceEngine } from './BalanceEngine.js';
+import { NutrientBalanceEngine } from './NutrientBalanceEngine.js';
 import { EfficiencyEngine } from './EfficiencyEngine.js';
+import { AdjustmentEngine } from './AdjustmentEngine.js';
 import { FertilizerSelectionEngine } from './FertilizerSelectionEngine.js';
 import { FormulationEngine } from './FormulationEngine.js';
 import { FormulationResultBuilder } from './FormulationResultBuilder.js';
 import { ValidationEngine } from './ValidationEngine.js';
 import { RecommendationEngine } from './RecommendationEngine.js';
 import { FertilizationResult } from '../domain/entities/FertilizationResult.js';
+import { SoilAnalysis } from '../domain/entities/SoilAnalysis.js';
 import { normalizeFertilizerSources } from '../formulas/formulation.formulas.js';
 import { createRulesSnapshot } from '../rules/RuleVersionManager.js';
 import {
@@ -79,13 +124,18 @@ export class FertilizationEngine {
     this.soilAnalysisRepo = repositories.soilAnalysisRepo;
     this.calculationRepo = repositories.calculationRepo ?? null;
 
-    // Sub-engines
+    // Sub-engines — nombres alineados a arquitectura propuesta (§12), alias para compatibilidad
     this.validationEngine = new ValidationEngine();
     this.ruleEngine = new RuleEngine();
     this.requirementEngine = new RequirementEngine();
-    this.soilEngine = new SoilAdjustmentEngine();
-    this.balanceEngine = new BalanceEngine();
+    // SoilSupplyEngine es el nombre agronómico; SoilAdjustmentEngine se mantiene como alias
+    this.soilEngine = new SoilSupplyEngine();
+    this.soilSupplyEngine = this.soilEngine;
+    // NutrientBalanceEngine es el nombre agronómico; BalanceEngine alias
+    this.balanceEngine = new NutrientBalanceEngine();
+    this.nutrientBalanceEngine = this.balanceEngine;
     this.efficiencyEngine = new EfficiencyEngine();
+    this.adjustmentEngine = new AdjustmentEngine();
     this.selectionEngine = new FertilizerSelectionEngine();
     this.formulationEngine = new FormulationEngine();
     this.formulationResultBuilder = new FormulationResultBuilder();
@@ -108,7 +158,13 @@ export class FertilizationEngine {
       stageId,
       targetYieldTHa,
       methodology,
+      requirementSource,
+      customRequirements,
+      requirementDistributions,
+      variety,
+      productionSystem,
       soilAnalysisId,
+      soilAnalysis: soilAnalysisInline,
       companyId,
       lotId,
       farmId,
@@ -122,14 +178,80 @@ export class FertilizationEngine {
 
     try {
       // ── PASO 2: Cargar datos desde repositorios ─────────────────────────
+      // Soil inline (Paso1) tiene prioridad si no hay soilAnalysisId persistido
+      // Permite calcular sin haber persistido el análisis: oferta se estima transientemente
+      const soilInlinePromise = (() => {
+        if (soilAnalysisId) return this.soilAnalysisRepo.findById(soilAnalysisId);
+        if (
+          soilAnalysisInline &&
+          typeof soilAnalysisInline === 'object' &&
+          soilAnalysisInline.pH !== undefined &&
+          soilAnalysisInline.pH !== null &&
+          soilAnalysisInline.pH !== ''
+        ) {
+          try {
+            const nutrients = {};
+            for (const code of ['N', 'P', 'K', 'Ca', 'Mg', 'S']) {
+              const v = soilAnalysisInline[code];
+              if (v !== null && v !== undefined && v !== '' && !isNaN(Number(v))) {
+                const isCmol = ['K', 'Ca', 'Mg'].includes(code);
+                nutrients[code] = { value: Number(v), unit: isCmol ? 'cmol/kg' : 'mg/kg' };
+              }
+            }
+            // También tomar nutrientes si vienen como objeto anidado P:{value,unit} etc.
+            for (const code of ['P', 'K', 'Ca', 'Mg']) {
+              if (
+                soilAnalysisInline[code] &&
+                typeof soilAnalysisInline[code] === 'object' &&
+                soilAnalysisInline[code].value !== undefined
+              ) {
+                nutrients[code] = {
+                  value: Number(soilAnalysisInline[code].value),
+                  unit:
+                    soilAnalysisInline[code].unit ||
+                    (['K', 'Ca', 'Mg'].includes(code) ? 'cmol/kg' : 'mg/kg')
+                };
+              }
+            }
+            return Promise.resolve(
+              new SoilAnalysis({
+                id: 'inline-transient',
+                ph: Number(soilAnalysisInline.pH) || 6.5,
+                organicMatter:
+                  soilAnalysisInline.organicMatter != null &&
+                  soilAnalysisInline.organicMatter !== ''
+                    ? Number(soilAnalysisInline.organicMatter)
+                    : null,
+                cec:
+                  soilAnalysisInline.cec != null && soilAnalysisInline.cec !== ''
+                    ? Number(soilAnalysisInline.cec)
+                    : null,
+                texture: soilAnalysisInline.texture || soilAnalysisInline.textura || null,
+                nutrients,
+                metadata: { inline: true, variety, productionSystem }
+              })
+            );
+          } catch {
+            return Promise.resolve(null);
+          }
+        }
+        return Promise.resolve(null);
+      })();
+
+      // Si el Paso 2 envió customRequirements, no es necesario cargar de DB (pero igual cargamos para trazabilidad)
+      const shouldLoadRequirements = !(
+        customRequirements && Object.keys(customRequirements).length > 0
+      );
       const [crop, stage, cropRequirements, allRules, fertilizers, soilAnalysis] =
         await Promise.all([
           this.cropRepo.findById(cropId),
           this.cropRepo.findStageById(stageId),
-          this.requirementRepo.findByCropAndStage(cropId, stageId, companyId),
+          shouldLoadRequirements
+            ? this.requirementRepo.findByCropAndStage(cropId, stageId, companyId)
+            : Promise.resolve([]),
           this.ruleRepo.findActive(companyId, farmId, lotId),
           this.fertilizerRepo.findActive(companyId),
-          soilAnalysisId ? this.soilAnalysisRepo.findById(soilAnalysisId) : Promise.resolve(null)
+          soilInlinePromise
         ]);
 
       // ── PASO 3: Activar solo las versiones vigentes de reglas ───────────
@@ -182,12 +304,17 @@ export class FertilizationEngine {
       }
 
       // ── PASO 7: Calcular requerimientos ──────────────────────────────────
+      // SoilSupplyEngine ya no se llama aquí para oferta; pero la DEMANDA proviene del Paso 2
+      // Si customRequirements existe, RequirementEngine lo usa directamente (fuente = técnico)
+      // Si no, escala desde DB según metodología y targetYield
       const reqResult = this.requirementEngine.calculate({
         requirements: cropRequirements,
         targetYieldTHa,
         methodology: methodology ?? null,
         correctionFactors: ruleResult.correctionFactors,
-        additionalRequirements: ruleResult.additionalRequirements
+        additionalRequirements: ruleResult.additionalRequirements,
+        customRequirements: customRequirements ?? null,
+        requirementDistributions: requirementDistributions ?? null
       });
 
       // ── PASO 8: Balance nutricional ──────────────────────────────────────

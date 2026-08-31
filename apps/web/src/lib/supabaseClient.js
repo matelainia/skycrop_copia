@@ -20,7 +20,16 @@ const TENANT_TABLES = [
   'lotes', 'maquinaria', 'inventario', 'trabajadores', 'cosechas',
   'monitoreos', 'aplicaciones', 'bodegas', 'labores',
   'jornadas_maquinaria', 'nominas', 'cursos_formacion',
-  'registros_formacion', 'cuadrillas', 'almacenamientos', 'audit_logs'
+  'registros_formacion', 'cuadrillas', 'almacenamientos', 'audit_logs',
+  // Fertilización — multiempresa estricta (RLS + proxy)
+  'fertilization_plans', 'fertilization_plan_items', 'fertilization_applications',
+  'fertilization_observations', 'fertilization_observation_comments',
+  'fertilization_observation_attachments', 'fertilization_observation_nutrients',
+  'fertilization_alerts', 'fertilization_field_conditions',
+  'fertilizacion_recomendaciones', 'fertilizacion_recomendacion_detalle',
+  'fert_calc_soil_analyses', 'fert_calc_calculations', 'fert_calc_calculation_snapshots',
+  // Análisis de Suelos — documental + analítico (RLS + proxy)
+  'analisis_suelos', 'resultados_analisis_suelo', 'laboratorios'
 ];
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;

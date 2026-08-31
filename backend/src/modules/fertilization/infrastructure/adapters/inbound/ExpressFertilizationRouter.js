@@ -100,6 +100,12 @@ router.get('/calculo/fertilizantes', calcController.getFertilizers);
 // GET   /calculo/reglas                   → Reglas agronómicas activas
 router.get('/calculo/reglas', calcController.getRules);
 
+// GET   /calculo/requerimientos           → Requerimientos escalados (Paso 2)
+router.get('/calculo/requerimientos', calcController.getRequirements);
+
+// POST  /calculo/balance-preview          → Preview Demanda vs Oferta vs Déficit (Paso 3)
+router.post('/calculo/balance-preview', calcController.getBalancePreview);
+
 // POST  /calculo/analisis-suelo           → Registrar análisis de suelo
 router.post('/calculo/analisis-suelo', calcController.postSoilAnalysis);
 

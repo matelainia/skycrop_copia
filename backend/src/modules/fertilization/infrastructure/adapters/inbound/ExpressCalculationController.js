@@ -25,6 +25,8 @@ export class ExpressCalculationController {
     this.postSoilAnalysis = this.postSoilAnalysis.bind(this);
     this.getHistory = this.getHistory.bind(this);
     this.getCalculationDetail = this.getCalculationDetail.bind(this);
+    this.getRequirements = this.getRequirements.bind(this);
+    this.getBalancePreview = this.getBalancePreview.bind(this);
   }
 
   // ─── Helper: extraer company_id del request ────────────────────────────────
@@ -175,6 +177,49 @@ export class ExpressCalculationController {
         offset
       });
       res.json({ success: true, data: history, error: null });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  // ─── GET /calculo/requerimientos ─────────────────────────────────────────
+  /**
+   * Obtiene requerimientos nutricionales escalados para el Paso 2.
+   * Query: ?cropId=uuid&stageId=uuid&targetYieldTHa=5&productionSystem=convencional&variety=CCN51
+   * Responde con tabla editable base para el frontend.
+   */
+  async getRequirements(req, res, next) {
+    try {
+      const { companyId } = this._getAuth(req);
+      const { cropId, stageId, targetYieldTHa, productionSystem, variety, methodology } = req.query;
+      if (!cropId) throw new ValidationError('cropId es requerido');
+      if (!targetYieldTHa) throw new ValidationError('targetYieldTHa es requerido');
+      const result = await this.calculationService.getRequirements({
+        cropId,
+        stageId: stageId || null,
+        targetYieldTHa: parseFloat(targetYieldTHa),
+        methodology: methodology || null,
+        productionSystem: productionSystem || null,
+        variety: variety || null,
+        companyId
+      });
+      res.json({ success: true, data: result, error: null });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  // ─── POST /calculo/balance-preview ───────────────────────────────────────
+  /**
+   * Preview del balance nutricional sin persistir: Demanda vs Oferta vs Déficit
+   * Body: { cropId, stageId, targetYieldTHa, customRequirements?, requirementDistributions?, soilAnalysis?, soilAnalysisId?, methodology? }
+   */
+  async getBalancePreview(req, res, next) {
+    try {
+      const { companyId } = this._getAuth(req);
+      const input = { ...req.body, companyId };
+      const preview = await this.calculationService.getBalancePreview(input);
+      res.json({ success: true, data: preview, error: null });
     } catch (err) {
       next(err);
     }

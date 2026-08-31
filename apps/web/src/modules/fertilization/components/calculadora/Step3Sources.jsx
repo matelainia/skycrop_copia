@@ -12,7 +12,7 @@
  *  - Precio y disponibilidad son opcionales.
  *  - No hay datos mock: si el catálogo no está disponible, se registra manual.
  */
-import { Plus, Trash2, Package, FlaskConical, Info } from 'lucide-react';
+import { Plus, Trash2, Package, FlaskConical, Info, Calculator } from 'lucide-react';
 import { SOURCE_NUTRIENTS } from '../../hooks/useCalculadora.js';
 
 const NUTRIENT_LABELS = {
@@ -35,16 +35,25 @@ const inp = (err) => ({
 });
 const errT = { fontSize: '12px', color: '#EF4444', marginTop: '4px', display: 'block' };
 
-function SourceCard({ source, index, errors, catalog, onRemove, onField, onComposition, onLoadCatalog }) {
+function SourceCard({ source, index, errors, catalog, onRemove, onField, onComposition, onLoadCatalog, onSuggestDose }) {
   const rowErr = errors?.[index];
   const compTotal = Object.values(source.composition)
     .map((v) => parseFloat(v))
     .filter((v) => !Number.isNaN(v) && v > 0)
     .reduce((s, v) => s + v, 0);
+  // Cálculo de aporte por dosis para preview Excel inmediato
+  const doseNum = parseFloat(source.doseKgHa);
+  const hasDose = Number.isFinite(doseNum) && doseNum > 0;
+  const perNutrientPreview = hasDose ? Object.entries(source.composition)
+    .map(([nut, pctStr]) => {
+      const pct = parseFloat(pctStr);
+      if (!pct || pct <= 0) return null;
+      return { nut, kg: (doseNum * pct) / 100 };
+    }).filter(Boolean) : [];
 
   return (
     <div style={{ padding: '18px', borderRadius: '14px', background: 'var(--bg-app)', border: '1px solid var(--border-color)' }}>
-      <div style={{ display: 'grid', gridTemplateColumns: '1.6fr 1.2fr .9fr .9fr auto', gap: '12px', alignItems: 'start' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 0.9fr 0.8fr 0.8fr 0.7fr auto', gap: '12px', alignItems: 'start' }}>
         <div>
           <label style={lbl}>Producto <span style={{ color: '#EF4444' }}>*</span></label>
           <input
@@ -64,6 +73,27 @@ function SourceCard({ source, index, errors, catalog, onRemove, onField, onCompo
                 <option key={f.id} value={f.id}>{f.commercialName || f.name || f.id}</option>
               ))}
             </select>
+          )}
+        </div>
+        <div>
+          <label style={lbl}>Dosis (kg/ha) <span style={{ color: '#059669', fontWeight: '700' }}>● Excel</span></label>
+          <input
+            style={inp(rowErr?.doseKgHa)}
+            type="number" min="0" step="1" placeholder="Ej: 100"
+            value={source.doseKgHa}
+            onChange={(e) => onField(source.key, 'doseKgHa', e.target.value)}
+          />
+          <button
+            onClick={() => onSuggestDose && onSuggestDose(source.key)}
+            title="Sugerir dosis para cubrir déficit del nutriente principal"
+            style={{ marginTop: '4px', fontSize: '10px', padding: '4px 6px', borderRadius: '6px', border: '1px dashed var(--primary)', background: 'rgba(5,150,105,.06)', cursor: 'pointer', color: 'var(--primary)', fontWeight: '700', width: '100%' }}
+          >
+            Sugerir dosis
+          </button>
+          {hasDose && (
+            <div style={{ fontSize: '10px', color: 'var(--text-secondary)', marginTop: '4px', lineHeight: 1.3 }}>
+              {perNutrientPreview.slice(0,3).map(p => `${p.nut}:${p.kg.toFixed(1)}`).join(' · ')}{perNutrientPreview.length>3?'…':''}
+            </div>
           )}
         </div>
         <div>
@@ -154,6 +184,7 @@ export default function Step3Sources({ calc }) {
   const {
     sources, sourceErrors, errors, fertilizerCatalog,
     addSource, removeSource, updateSource, updateSourceComposition, loadFromCatalog,
+    suggestDoseForSource, autoSuggestAllDoses, realTimeBalance,
   } = calc;
 
   return (
@@ -171,9 +202,23 @@ export default function Step3Sources({ calc }) {
       </div>
 
       <div style={card}>
-        <div style={{ ...sec, marginBottom: '12px' }}>
-          <FlaskConical size={16} color="#7C3AED" />
-          <span>Fuentes Fertilizantes ({sources.length})</span>
+        <div style={{ ...sec, marginBottom: '12px', justifyContent: 'space-between' }}>
+          <div style={{ display:'flex', alignItems:'center', gap:'8px' }}>
+            <FlaskConical size={16} color="#7C3AED" />
+            <span>Fuentes Fertilizantes ({sources.length})</span>
+            {realTimeBalance && (
+              <span style={{ fontSize:'11px', padding:'3px 8px', borderRadius:'20px', background: realTimeBalance.hasDeficit ? 'rgba(239,68,68,.12)' : 'rgba(5,150,105,.12)', color: realTimeBalance.hasDeficit ? '#DC2626' : '#059669', fontWeight:'700' }}>
+                {realTimeBalance.hasDeficit ? `Déficit: editar dosis` : realTimeBalance.hasExcess ? 'Exceso: revise dosis' : 'Cobertura completa'}
+              </span>
+            )}
+          </div>
+          <button
+            onClick={autoSuggestAllDoses}
+            title="Calcula dosis para que el aporte cubra el déficit (Excel dinámico)"
+            style={{ padding:'7px 12px', borderRadius:'10px', border:'1px solid var(--primary)', background:'rgba(5,150,105,.08)', cursor:'pointer', fontSize:'12px', fontWeight:'700', color:'var(--primary)', display:'flex', alignItems:'center', gap:'6px' }}
+          >
+            <Calculator size={13} /> Auto-ajustar dosis
+          </button>
         </div>
 
         {errors.sourcesGlobal && <span style={{ ...errT, marginTop: 0, marginBottom: '10px' }}>{errors.sourcesGlobal}</span>}
@@ -190,6 +235,7 @@ export default function Step3Sources({ calc }) {
               onField={updateSource}
               onComposition={updateSourceComposition}
               onLoadCatalog={loadFromCatalog}
+              onSuggestDose={suggestDoseForSource}
             />
           ))}
         </div>

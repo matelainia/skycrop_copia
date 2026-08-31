@@ -15,15 +15,30 @@ const DashboardHeader = memo(function DashboardHeader({
   activeTab = 'resumen',
   onNewRecommendation,
   onNewPlan,
+  onNewAplicacion,
+  onNewAnalisisSuelo,
 }) {
 
   // CTA dinámico según el tab activo
   const isPlanesTab = activeTab === 'planes';
-  const ctaLabel    = isPlanesTab ? '+ Nuevo Plan de Fertilización' : 'Nueva Recomendación';
-  const ctaHandler  = isPlanesTab ? onNewPlan : onNewRecommendation;
-  const ctaAriaLabel = isPlanesTab
-    ? 'Crear nuevo plan de fertilización'
-    : 'Crear nueva recomendación de fertilización';
+  const isAplicacionesTab = activeTab === 'aplicaciones';
+  const isAnalisisTab = activeTab === 'analisis-suelos';
+  let ctaLabel = 'Nueva Recomendación';
+  let ctaHandler = onNewRecommendation;
+  let ctaAriaLabel = 'Crear nueva recomendación de fertilización';
+  if (isPlanesTab) {
+    ctaLabel = '+ Nuevo Plan de Fertilización';
+    ctaHandler = onNewPlan;
+    ctaAriaLabel = 'Crear nuevo plan de fertilización';
+  } else if (isAplicacionesTab) {
+    ctaLabel = '+ Nueva Aplicación';
+    ctaHandler = onNewAplicacion;
+    ctaAriaLabel = 'Crear nueva aplicación de fertilización';
+  } else if (isAnalisisTab) {
+    ctaLabel = '+ Nuevo Análisis de Suelo';
+    ctaHandler = onNewAnalisisSuelo;
+    ctaAriaLabel = 'Crear nuevo análisis de suelo';
+  }
 
   return (
     <div className="fert-header">

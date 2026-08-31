@@ -44,20 +44,64 @@ const FertilizerSourceSchema = z
     { message: 'La suma de la composición no puede superar 100%' }
   );
 
+const SoilInlineSchema = z
+  .object({
+    pH: z.number().min(0).max(14).nullable().optional(),
+    organicMatter: z.number().min(0).max(100).nullable().optional(),
+    cec: z.number().min(0).nullable().optional(),
+    texture: z.string().nullable().optional(),
+    N: z.number().nullable().optional(),
+    P: z.number().nullable().optional(),
+    K: z.number().nullable().optional(),
+    Ca: z.number().nullable().optional(),
+    Mg: z.number().nullable().optional(),
+    S: z.number().nullable().optional(),
+    bulkDensity: z.number().nullable().optional(),
+    samplingDepthCm: z.number().nullable().optional()
+  })
+  .passthrough()
+  .optional()
+  .nullable();
+
+const CustomRequirementsSchema = z
+  .record(z.string(), z.number().min(0).nullable())
+  .optional()
+  .nullable();
+
+const RequirementDistributionsSchema = z
+  .record(z.string(), z.number().min(0).max(100).nullable())
+  .optional()
+  .nullable();
+
 const CalculationInputSchema = z.object({
-  cropId: z.string().uuid({ message: 'cropId debe ser UUID' }),
-  stageId: z.string().uuid({ message: 'stageId debe ser UUID' }),
+  // cropId/stageId pueden ser UUID reales de fert_calc_* o ids legibles del frontend (cacao/vegetativo) — ambos aceptados
+  cropId: z.string().min(1, { message: 'cropId es requerido' }),
+  stageId: z.string().min(1, { message: 'stageId es requerido' }),
   targetYieldTHa: z
     .number({ required_error: 'targetYieldTHa es requerido' })
     .positive({ message: 'targetYieldTHa debe ser > 0' }),
   methodology: z
-    .enum(['extraction', 'stage_fixed', 'stage_yield', 'balance'])
+    .enum(['extraction', 'stage_fixed', 'stage_yield', 'balance', 'custom'])
     .optional()
     .nullable(),
-  soilAnalysisId: z.string().uuid().optional().nullable(),
-  companyId: z.string().uuid().optional().nullable(),
-  lotId: z.string().uuid().optional().nullable(),
-  farmId: z.string().uuid().optional().nullable(),
+  /** Fuente del requerimiento proveniente del Paso 2: skycrop_db | custom | extraction | balance */
+  requirementSource: z
+    .enum(['skycrop_db', 'custom', 'extraction', 'balance', 'stage_fixed'])
+    .optional()
+    .nullable(),
+  /** Requerimientos nutricionales explícitos del Paso 2 cuando source = custom */
+  customRequirements: CustomRequirementsSchema,
+  /** Distribución % por nutriente para la aplicación actual (Paso 2) */
+  requirementDistributions: RequirementDistributionsSchema,
+  /** Meta de rendimiento + sistema productivo ampliados para trazabilidad */
+  variety: z.string().nullable().optional(),
+  productionSystem: z.string().nullable().optional(),
+  soilAnalysisId: z.string().min(1).optional().nullable(),
+  /** Análisis de suelo inline capturado en Paso 1 cuando aún no existe ID persistido */
+  soilAnalysis: SoilInlineSchema,
+  companyId: z.string().min(1).optional().nullable(),
+  lotId: z.string().min(1).optional().nullable(),
+  farmId: z.string().min(1).optional().nullable(),
   applicationMethod: z.enum(['granular', 'liquid', 'foliar']).default('granular'),
   /** Superficie del lote en hectáreas (para kg/lote y ajuste de bultos). */
   areaHa: z.number().positive().optional().nullable(),

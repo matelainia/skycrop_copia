@@ -34,7 +34,22 @@ export class CropRequirement {
     referenceYield = null,
     methodology = CALCULATION_METHODOLOGY.EXTRACTION,
     source = null,
-    status = 'active'
+    status = 'active',
+    // Campos extendidos 039 — opcionales
+    productionSystem = null,
+    variety = null,
+    yieldMin = null,
+    yieldMax = null,
+    unit = 'kg/ha',
+    distributionPct = null,
+    sourceAuthor = null,
+    sourceYear = null,
+    sourceDocument = null,
+    sourcePage = null,
+    observations = null,
+    version = '1.0.0',
+    isActive = true,
+    companyId = null
   }) {
     if (!id) throw new InvalidInputError('CropRequirement: id es requerido.');
     if (!cropId) throw new InvalidInputError('CropRequirement: cropId es requerido.');
@@ -57,6 +72,20 @@ export class CropRequirement {
     this.methodology = methodology;
     this.source = source;
     this.status = status;
+    this.productionSystem = productionSystem;
+    this.variety = variety;
+    this.yieldMin = yieldMin;
+    this.yieldMax = yieldMax;
+    this.unit = unit;
+    this.distributionPct = distributionPct;
+    this.sourceAuthor = sourceAuthor;
+    this.sourceYear = sourceYear;
+    this.sourceDocument = sourceDocument;
+    this.sourcePage = sourcePage;
+    this.observations = observations;
+    this.version = version;
+    this.isActive = isActive;
+    this.companyId = companyId;
   }
 
   /** @returns {boolean} Si es un requerimiento total del ciclo (sin etapa específica) */

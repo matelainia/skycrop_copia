@@ -8,6 +8,9 @@ export { FertilizationCalculationService } from './services/FertilizationCalcula
 
 // Motor (para uso avanzado o testing)
 export { FertilizationEngine } from './engine/FertilizationEngine.js';
+export { SoilSupplyEngine } from './engine/SoilSupplyEngine.js';
+export { NutrientBalanceEngine } from './engine/NutrientBalanceEngine.js';
+export { AdjustmentEngine } from './engine/AdjustmentEngine.js';
 
 // Entidades del dominio
 export { Crop } from './domain/entities/Crop.js';
