@@ -126,6 +126,194 @@ export class FertilizationCalculationService {
     }
   }
 
+  // ─── Requerimientos nutricionales (Paso 2) ──────────────────────────────────
+
+  /**
+   * Obtiene requerimientos nutricionales escalados para el Paso 2.
+   * @param {Object} params
+   * @param {string} params.cropId
+   * @param {string|null} params.stageId
+   * @param {number} params.targetYieldTHa
+   * @param {string|null} [params.methodology]
+   * @param {string|null} [params.productionSystem]
+   * @param {string|null} [params.variety]
+   * @param {string|null} [params.companyId]
+   * @returns {Promise<Object>} { requirements: Record<code,kgHa>, metadata }
+   */
+  async getRequirements({
+    cropId,
+    stageId,
+    targetYieldTHa,
+    methodology,
+    productionSystem,
+    variety,
+    companyId
+  }) {
+    try {
+      // Cargar requerimientos base desde DB
+      const requirements = await this.requirementRepo.findByCropAndStage(
+        cropId,
+        stageId,
+        companyId
+      );
+      // Filtrar por sistema productivo / variedad si el repo no lo hizo
+      let filtered = requirements;
+      if (productionSystem) {
+        const psFiltered = filtered.filter(
+          (r) => !r.productionSystem || r.productionSystem === productionSystem
+        );
+        if (psFiltered.length) filtered = psFiltered;
+      }
+      if (variety) {
+        const varFiltered = filtered.filter((r) => !r.variety || r.variety === variety);
+        if (varFiltered.length) filtered = varFiltered;
+      }
+      // Usar RequirementEngine para escalar
+      const { RequirementEngine } = await import('../engine/RequirementEngine.js');
+      const engine = new RequirementEngine();
+      const result = engine.calculate({
+        requirements: filtered,
+        targetYieldTHa,
+        methodology: methodology || null
+      });
+      return {
+        requirements: result.requirements,
+        metadata: result.metadata,
+        source: result.metadata.source,
+        cropId,
+        stageId,
+        targetYieldTHa,
+        methodology: methodology || 'any',
+        productionSystem: productionSystem || null,
+        variety: variety || null
+      };
+    } catch (err) {
+      throw new DatabaseError('Error obteniendo requerimientos nutricionales', err);
+    }
+  }
+
+  /**
+   * Preview de balance sin fertilizantes: Demanda vs Oferta vs Déficit
+   * @param {Object} input - mismo shape que calculate pero sin fertilizerSources
+   * @returns {Promise<Object>} { requirements, soilContributions, balanceDetail, netDemands }
+   */
+  async getBalancePreview(input) {
+    try {
+      // Validar mínimamente
+      const {
+        cropId,
+        stageId,
+        targetYieldTHa,
+        methodology,
+        customRequirements,
+        requirementDistributions,
+        soilAnalysisId,
+        soilAnalysis,
+        companyId
+      } = input;
+      if (!cropId || !stageId || !targetYieldTHa) {
+        throw new DatabaseError(
+          'cropId, stageId y targetYieldTHa son requeridos para el balance preview'
+        );
+      }
+      // Reutilizar el engine sin pasar por validación completa de fertilizantes
+      // Llamar a calculate con fertilizerSources vacío y capturar balance
+      // Mejor: instanciar engines directamente para preview lightweight
+      const { RequirementEngine } = await import('../engine/RequirementEngine.js');
+      const { SoilSupplyEngine } = await import('../engine/SoilSupplyEngine.js');
+      const { NutrientBalanceEngine } = await import('../engine/NutrientBalanceEngine.js');
+      const { RuleEngine } = await import('../rules/RuleEngine.js');
+      const { getActiveVersions } = await import('../rules/RuleVersionManager.js');
+
+      const [crop, stage, cropRequirements, allRules, soil] = await Promise.all([
+        this.cropRepo.findById(cropId).catch(() => ({ id: cropId, name: cropId })),
+        this.cropRepo.findStageById(stageId).catch(() => ({ id: stageId, name: stageId })),
+        customRequirements && Object.keys(customRequirements).length
+          ? Promise.resolve([])
+          : this.requirementRepo.findByCropAndStage(cropId, stageId, companyId).catch(() => []),
+        this.ruleRepo.findActive(companyId, null, null).catch(() => []),
+        soilAnalysisId
+          ? this.soilAnalysisRepo.findById(soilAnalysisId).catch(() => null)
+          : soilAnalysis && soilAnalysis.pH
+            ? (async () => {
+                const { SoilAnalysis } = await import('../domain/entities/SoilAnalysis.js');
+                const nutrients = {};
+                for (const code of ['N', 'P', 'K', 'Ca', 'Mg', 'S']) {
+                  const v = soilAnalysis[code] ?? soilAnalysis[code.toLowerCase?.()] ?? null;
+                  if (v !== null && v !== '' && !isNaN(Number(v))) {
+                    const isCmol = ['K', 'Ca', 'Mg'].includes(code);
+                    nutrients[code] = { value: Number(v), unit: isCmol ? 'cmol/kg' : 'mg/kg' };
+                  }
+                }
+                return new SoilAnalysis({
+                  id: 'inline-preview',
+                  ph: Number(soilAnalysis.pH) || 6.5,
+                  organicMatter: soilAnalysis.organicMatter
+                    ? Number(soilAnalysis.organicMatter)
+                    : null,
+                  cec: soilAnalysis.cec ? Number(soilAnalysis.cec) : null,
+                  texture: soilAnalysis.texture || null,
+                  nutrients
+                });
+              })()
+            : Promise.resolve(null)
+      ]);
+
+      const activeRules = getActiveVersions(allRules || []);
+      const ruleEngine = new RuleEngine();
+      const evaluationContext = {
+        crop: { id: crop?.id, name: crop?.name },
+        stage: { id: stage?.id, name: stage?.name },
+        targetYield: targetYieldTHa,
+        methodology: methodology || null,
+        companyId,
+        soil: soil
+          ? { pH: soil.pH, organicMatter: soil.organicMatter, cec: soil.cec, texture: soil.texture }
+          : {}
+      };
+      const ruleResult = ruleEngine.evaluate(activeRules, evaluationContext);
+
+      const soilEngine = new SoilSupplyEngine();
+      const soilResult = soil
+        ? soilEngine.analyze({
+            soilAnalysis: soil,
+            requiredNutrients: ['N', 'P2O5', 'K2O', 'Ca', 'Mg', 'S']
+          })
+        : { soilContext: {}, soilContributions: {}, warnings: [] };
+
+      const reqEngine = new RequirementEngine();
+      const reqResult = reqEngine.calculate({
+        requirements: cropRequirements,
+        targetYieldTHa,
+        methodology: methodology || null,
+        correctionFactors: ruleResult.correctionFactors,
+        additionalRequirements: ruleResult.additionalRequirements,
+        customRequirements: customRequirements || null,
+        requirementDistributions: requirementDistributions || null
+      });
+
+      const balanceEngine = new NutrientBalanceEngine();
+      const balanceResult = balanceEngine.calculate({
+        requirements: reqResult.requirements,
+        soilContributions: soilResult.soilContributions
+      });
+
+      return {
+        requirements: reqResult.requirements,
+        requirementMetadata: reqResult.metadata,
+        soilContributions: soilResult.soilContributions,
+        soilContext: soilResult.soilContext,
+        balanceDetail: balanceResult.balanceDetail,
+        netDemands: balanceResult.netDemands,
+        summary: balanceResult.summary || null,
+        warnings: [...ruleResult.warnings.map((w) => w.message), ...soilResult.warnings],
+        methodology: methodology || 'auto'
+      };
+    } catch (err) {
+      throw new DatabaseError('Error generando preview de balance', err);
+    }
+  }
+
   // ─── Análisis de suelo ─────────────────────────────────────────────────────
 
   /**

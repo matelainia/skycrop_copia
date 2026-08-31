@@ -8,6 +8,20 @@ const AuthContext = createContext(null);
 export function AuthProvider({ children }) {
   const { isLoaded, isSignedIn, orgId, getToken, signOut } = useAuth();
   const { user: clerkUser } = useUser();
+  // TEST BYPASS: solo en desarrollo permite validar calculadora sin Clerk (playwright)
+  if (import.meta.env.DEV && typeof window !== 'undefined' && window.localStorage.getItem('bypassAuth') === 'true') {
+    const mockValue = {
+      user: { id: 'test_user', nombre: 'Test', apellido: 'User', email: 'test@skycrop.app' },
+      empresa: { id: 'test-company', nombre: 'Empresa Test' },
+      role: { id: 'administrador', nombre: 'Administrador' },
+      permissions: [{ recurso: '*', accion: '*' }],
+      loading: false,
+      error: null,
+      logout: () => {},
+      hasPermission: () => true,
+    };
+    return <AuthContext.Provider value={mockValue}>{children}</AuthContext.Provider>;
+  }
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);

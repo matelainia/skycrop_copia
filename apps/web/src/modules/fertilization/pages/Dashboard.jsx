@@ -1,7 +1,7 @@
 /**
  * Dashboard.jsx — Main Master Page for Fertilización Module
  *
- * Tabs: Resumen | Planes | Recomendaciones | Aplicaciones | Análisis de Suelos | Historial | Calculadora
+ * Tabs: Resumen | Planes | Recomendaciones | Aplicaciones | Análisis de Suelos | Calculadora
  */
 
 import React, { useState, useCallback } from 'react';
@@ -22,6 +22,9 @@ import CalculadoraPage from '../components/calculadora/CalculadoraPage.jsx';
 // Recommendations Component
 import RecommendationsDashboard from '../components/recommendations/RecommendationsDashboard.jsx';
 import { FertilizationWizardModal } from '../components/wizard/FertilizationWizardModal.jsx';
+import AplicacionesPage from '../components/aplicaciones/AplicacionesPage.jsx';
+import SoilAnalysisPage from '../components/analisis-suelos/SoilAnalysisPage.jsx';
+import '../styles/soilAnalysis.css';
 
 const DASHBOARD_WIDGETS = [
   { id: 'metrics', enabled: true, label: 'KPIs' },
@@ -73,6 +76,21 @@ export default function Dashboard() {
     }, []),
   };
 
+  const [aplicacionesNewTrigger, setAplicacionesNewTrigger] = useState(0);
+  const handleNewAplicacionFromHeader = useCallback(() => {
+    setActiveTab('aplicaciones');
+    // Dispara apertura del drawer real (comunicación por props)
+    setAplicacionesNewTrigger((v) => v + 1);
+    console.info('[Fertilización] Nueva Aplicación solicitada desde header — RLS por empresa');
+  }, []);
+
+  const [soilNewTrigger, setSoilNewTrigger] = useState(0);
+  const handleNewSoilFromHeader = useCallback(() => {
+    setActiveTab('analisis-suelos');
+    setSoilNewTrigger((v) => v + 1);
+    console.info('[Análisis de Suelos] Nuevo análisis solicitado desde header — RLS por empresa/predio');
+  }, []);
+
   return (
     <div className="fert-module" id="fertilizacion-dashboard">
 
@@ -81,6 +99,8 @@ export default function Dashboard() {
         activeTab={activeTab}
         onNewRecommendation={handlers.onNewRecommendation}
         onNewPlan={handlers.onCreatePlan}
+        onNewAplicacion={handleNewAplicacionFromHeader}
+        onNewAnalisisSuelo={handleNewSoilFromHeader}
       />
 
       {/* Shared Wizard Modal */}
@@ -146,36 +166,25 @@ export default function Dashboard() {
           />
         )}
 
-        {/* TAB 7: CALCULADORA DE FERTILIZACIÓN */}
-        {activeTab === 'calculadora' && (
-          <CalculadoraPage />
+        {/* TAB: APLICACIONES — Implementación completa (cero mocks) */}
+        {activeTab === 'aplicaciones' && (
+          <AplicacionesPage
+            externalOpenTrigger={aplicacionesNewTrigger}
+            onNewAplicacion={() => {
+              console.info('[Fertilización] Nueva Aplicación: flujo manual iniciado — empresa aislada por RLS');
+            }}
+            onViewGuide={() => console.info('[Fertilización] Ver Guía de Aplicaciones')}
+          />
         )}
 
-        {/* OTROS TABS (aplicaciones, analisis-suelos, historial) */}
-        {(activeTab === 'aplicaciones' || activeTab === 'analisis-suelos' || activeTab === 'historial') && (
-          <div
-            style={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              padding: '64px 32px',
-              gap: 12,
-              color: '#6B7280',
-              fontFamily: 'Inter, sans-serif',
-              background: '#FFFFFF',
-              borderRadius: '8px',
-              border: '1px solid #E5E7EB',
-            }}
-          >
-            <div style={{ fontSize: 48 }}>🌱</div>
-            <div style={{ fontSize: 16, fontWeight: 600, color: '#111827' }}>
-              Sección de {activeTab.replace('-', ' ').toUpperCase()}
-            </div>
-            <div style={{ fontSize: 14 }}>
-              Esta sección está integrada con el módulo principal de Fertilización.
-            </div>
-          </div>
+        {/* TAB: ANÁLISIS DE SUELOS — Implementación completa (cero mocks) */}
+        {activeTab === 'analisis-suelos' && (
+          <SoilAnalysisPage externalOpenTrigger={soilNewTrigger} />
+        )}
+
+        {/* TAB: CALCULADORA DE FERTILIZACIÓN */}
+        {activeTab === 'calculadora' && (
+          <CalculadoraPage />
         )}
       </div>
 

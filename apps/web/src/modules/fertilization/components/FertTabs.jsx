@@ -7,7 +7,6 @@ import {
   ListChecks,
   FlaskConical,
   Microscope,
-  History,
   Calculator,
 } from 'lucide-react';
 
@@ -17,7 +16,6 @@ const TABS = [
   { id: 'recomendaciones',  label: 'Recomendaciones',           icon: ListChecks },
   { id: 'aplicaciones',     label: 'Aplicaciones',              icon: FlaskConical },
   { id: 'analisis-suelos',  label: 'Análisis de Suelos',        icon: Microscope },
-  { id: 'historial',        label: 'Historial',                 icon: History },
   { id: 'calculadora',      label: 'Calculadora de Fertilización', icon: Calculator },
 ];
 

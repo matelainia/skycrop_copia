@@ -1,0 +1,1075 @@
+/**
+ * soilAnalysis.css
+ * Estilos exclusivos del módulo Análisis de Suelos
+ * Usa tokens de fertilización (--fert-*) mapeados a globals
+ */
+
+/* ─── Página ─────────────────────────────────────────────────────────────── */
+.soil-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+  padding-top: var(--sp-2);
+  animation: soil-page-in 220ms ease-out;
+}
+
+@keyframes soil-page-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Layout con drawer: cuando hay selección, 70/30 */
+.soil-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--sp-5);
+  align-items: start;
+}
+
+.soil-layout--with-drawer {
+  grid-template-columns: 1fr 360px;
+}
+
+@media (max-width: 1100px) {
+  .soil-layout--with-drawer { grid-template-columns: 1fr; }
+}
+
+/* ─── Métricas ───────────────────────────────────────────────────────────── */
+.soil-metrics {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: var(--sp-4);
+}
+
+.soil-metric-card {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-4) var(--sp-5);
+  min-height: 96px;
+  border-radius: var(--fert-radius-card);
+  background: var(--fert-card);
+  border: 1px solid var(--fert-border);
+  box-shadow: var(--fert-shadow);
+  transition: transform 180ms ease, border-color 180ms ease;
+}
+
+.soil-metric-card:hover {
+  transform: translateY(-1px);
+  border-color: var(--fert-border-hover);
+}
+
+.soil-metric-card__icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: var(--fert-primary-light);
+  color: var(--fert-primary);
+  border: 1px solid var(--fert-primary-border);
+}
+
+.soil-metric-card__body { flex: 1; min-width: 0; }
+
+.soil-metric-card__value {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--fert-text-main);
+  font-family: var(--font-display);
+  line-height: 1;
+}
+
+.soil-metric-card__label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--fert-text-muted);
+  margin-top: 4px;
+}
+
+.soil-metric-card__note {
+  font-size: 11px;
+  color: var(--fert-text-muted);
+  margin-top: 4px;
+}
+
+@media (max-width: 1280px) {
+  .soil-metrics { grid-template-columns: repeat(3, 1fr); }
+}
+@media (max-width: 700px) {
+  .soil-metrics { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 480px) {
+  .soil-metrics { grid-template-columns: 1fr; }
+}
+
+/* ─── Toolbar ─────────────────────────────────────────────────────────────── */
+.soil-toolbar {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--sp-3);
+  flex-wrap: wrap;
+}
+
+.soil-toolbar__search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 200px;
+  max-width: 360px;
+}
+
+.soil-toolbar__search-icon {
+  position: absolute;
+  left: 12px;
+  color: var(--fert-text-muted);
+  pointer-events: none;
+}
+
+.soil-toolbar__search-input {
+  width: 100%;
+  padding: 10px 36px 10px 36px;
+  border-radius: var(--fert-radius-input);
+  border: 1px solid var(--fert-border);
+  background: var(--fert-card);
+  color: var(--fert-text-main);
+  font-size: 13px;
+  font-family: var(--font-sans);
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.soil-toolbar__search-input::placeholder { color: var(--fert-text-muted); }
+.soil-toolbar__search-input::-webkit-search-cancel-button { display: none; }
+.soil-toolbar__search-input:focus {
+  outline: 2px solid var(--fert-primary);
+  outline-offset: 2px;
+  border-color: var(--fert-primary);
+}
+
+.soil-toolbar__search-clear {
+  position: absolute;
+  right: 10px;
+  background: none;
+  border: none;
+  color: var(--fert-text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  padding: 2px;
+  border-radius: 4px;
+}
+.soil-toolbar__search-clear:hover { color: var(--fert-text-main); }
+
+.soil-toolbar__filter {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.soil-toolbar__label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--fert-text-muted);
+  font-family: var(--font-sans);
+  white-space: nowrap;
+}
+
+.soil-toolbar__select { min-width: 140px; }
+
+.soil-toolbar__actions {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--sp-2);
+  margin-left: auto;
+}
+
+/* ─── Tabla ───────────────────────────────────────────────────────────────── */
+.soil-main-card { overflow: hidden; }
+
+.soil-table-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.soil-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--font-sans);
+  min-width: 900px;
+}
+
+.soil-table__th {
+  padding: var(--sp-3) var(--sp-4);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--fert-text-muted);
+  text-align: left;
+  border-bottom: 1px solid var(--fert-border);
+  white-space: nowrap;
+  background: #FAFAF9;
+}
+
+.soil-table__row {
+  border-bottom: 1px solid var(--fert-border);
+  transition: background 150ms ease, transform 150ms ease;
+}
+.soil-table__row:last-child { border-bottom: none; }
+.soil-table__row:hover { background: var(--fert-card-hover); }
+.soil-table__row--selected { background: #ECFDF5 !important; }
+
+.soil-table__td {
+  padding: var(--sp-3) var(--sp-4);
+  font-size: 13px;
+  color: var(--fert-text-main);
+  vertical-align: middle;
+}
+
+.soil-table__td--actions {
+  white-space: nowrap;
+  text-align: right;
+}
+
+.soil-table__row--enter {
+  animation: soil-row-in 200ms ease-out;
+}
+
+@keyframes soil-row-in {
+  from { opacity: 0; transform: translateY(4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Celdas específicas */
+.soil-date-cell__date { font-size: 13px; font-weight: 500; color: var(--fert-text-main); }
+.soil-date-cell__ago { font-size: 11px; color: var(--fert-text-muted); margin-top: 2px; }
+
+.soil-lote__name { font-size: 13px; font-weight: 600; color: var(--fert-text-main); }
+.soil-lote__farm { font-size: 11px; color: var(--fert-text-muted); margin-top: 2px; }
+
+.soil-zona__name { font-size: 13px; color: var(--fert-text-main); }
+.soil-zona__desc { font-size: 11px; color: var(--fert-text-muted); margin-top: 2px; }
+
+.soil-lab__name { font-size: 13px; color: var(--fert-text-main); }
+.soil-lab__cert { font-size: 11px; color: var(--fert-text-muted); margin-top: 2px; }
+
+.soil-params {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.soil-param-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  background: #F3F4F6;
+  color: #374151;
+  border: 1px solid #E5E7EB;
+  white-space: nowrap;
+}
+
+.soil-param-pill--more {
+  background: transparent;
+  color: var(--fert-text-muted);
+  border: none;
+  font-weight: 500;
+}
+
+/* ─── Acciones fila ───────────────────────────────────────────────────────── */
+.soil-row-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 4px;
+}
+
+/* ─── Empty / Error / NoResults ───────────────────────────────────────────── */
+.soil-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 56px 32px;
+  gap: var(--sp-4);
+  text-align: center;
+}
+
+.soil-empty__icon {
+  width: 56px;
+  height: 56px;
+  background: var(--fert-primary-light);
+  border: 1px solid var(--fert-primary-border);
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fert-primary);
+}
+
+.soil-empty__title {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--fert-text-main);
+  font-family: var(--font-sans);
+}
+
+.soil-empty__subtitle {
+  font-size: 13px;
+  color: var(--fert-text-muted);
+  font-family: var(--font-sans);
+  line-height: 1.55;
+  max-width: 380px;
+  margin-top: -8px;
+}
+
+.soil-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 32px;
+  gap: var(--sp-3);
+  text-align: center;
+}
+
+.soil-error__icon {
+  width: 44px;
+  height: 44px;
+  background: rgba(220,38,38,0.10);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #DC2626;
+}
+
+.soil-error__msg { font-size: 13px; color: #DC2626; }
+
+/* ─── Skeleton ─────────────────────────────────────────────────────────────── */
+@keyframes soil-skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.45; }
+}
+
+.soil-skeleton {
+  background: var(--border-color);
+  border-radius: 8px;
+  animation: soil-skeleton-pulse 1.6s ease-in-out infinite;
+}
+.soil-skeleton--row { height: 56px; border-radius: 10px; }
+
+/* ─── Paginación ───────────────────────────────────────────────────────────── */
+.soil-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--sp-4) var(--sp-5);
+  border-top: 1px solid var(--fert-border);
+  gap: var(--sp-4);
+  flex-wrap: wrap;
+}
+
+.soil-pagination__counter {
+  font-size: 13px;
+  color: var(--fert-text-muted);
+  font-family: var(--font-sans);
+}
+
+.soil-pagination__controls {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-1);
+}
+
+.soil-pagination__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--fert-card);
+  border: 1px solid var(--fert-border);
+  color: var(--fert-text-muted);
+  cursor: pointer;
+  transition: background 150ms ease, border-color 150ms ease, color 150ms ease;
+}
+.soil-pagination__btn:hover:not(:disabled) {
+  background: var(--fert-card-hover);
+  color: var(--fert-text-main);
+  border-color: var(--fert-border-hover);
+}
+.soil-pagination__btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.soil-pagination__page {
+  min-width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: none;
+  border: 1px solid transparent;
+  font-size: 13px;
+  font-family: var(--font-sans);
+  color: var(--fert-text-muted);
+  cursor: pointer;
+  transition: all 150ms ease;
+}
+.soil-pagination__page:hover { background: var(--fert-card-hover); color: var(--fert-text-main); }
+.soil-pagination__page--active {
+  background: var(--fert-primary);
+  border-color: var(--fert-primary);
+  color: #fff;
+  font-weight: 700;
+}
+.soil-pagination__ellipsis {
+  font-size: 13px;
+  color: var(--fert-text-muted);
+  padding: 0 4px;
+  line-height: 32px;
+}
+
+/* ─── Drawer lateral (detalle) ────────────────────────────────────────────── */
+.soil-drawer-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15,23,42,0.32);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: flex-end;
+  z-index: 60;
+  animation: soil-drawer-backdrop-in 180ms ease-out;
+}
+
+@keyframes soil-drawer-backdrop-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.soil-drawer {
+  width: 400px;
+  max-width: 95vw;
+  height: 100%;
+  background: var(--fert-card);
+  border-left: 1px solid var(--fert-border);
+  box-shadow: -8px 0 32px rgba(0,0,0,0.12);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: soil-drawer-in 260ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes soil-drawer-in {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+
+.soil-drawer__header {
+  padding: var(--sp-4) var(--sp-5);
+  border-bottom: 1px solid var(--fert-border);
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+
+.soil-drawer__title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--fert-text-main);
+  font-family: var(--font-sans);
+}
+
+.soil-drawer__subtitle {
+  font-size: 12px;
+  color: var(--fert-text-muted);
+  margin-top: 2px;
+}
+
+.soil-drawer__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--sp-4) var(--sp-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+}
+
+.soil-drawer__section-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--fert-text-main);
+  margin-bottom: 8px;
+}
+
+.soil-drawer__info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-3);
+}
+
+.soil-drawer__info-label {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--fert-text-muted);
+}
+
+.soil-drawer__info-value {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--fert-text-main);
+  margin-top: 2px;
+}
+
+/* Documento card dentro del drawer */
+.soil-doc-card {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: 12px;
+  border: 1px solid var(--fert-border);
+  background: #F9FAFB;
+}
+
+.soil-doc-card__icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: #FEE2E2;
+  color: #DC2626;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.soil-doc-card__meta { flex: 1; min-width: 0; }
+
+.soil-doc-card__name {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fert-text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.soil-doc-card__size {
+  font-size: 11px;
+  color: var(--fert-text-muted);
+}
+
+.soil-doc-actions {
+  display: flex;
+  gap: var(--sp-2);
+}
+
+/* Resultados dentro del drawer */
+.soil-results-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: var(--sp-3);
+}
+
+.soil-result-tile {
+  padding: var(--sp-3);
+  border-radius: 12px;
+  border: 1px solid var(--fert-border);
+  background: var(--fert-card);
+  text-align: center;
+}
+
+.soil-result-tile__label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--fert-text-muted);
+}
+
+.soil-result-tile__value {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--fert-text-main);
+  margin-top: 4px;
+  font-family: var(--font-display);
+}
+
+.soil-result-tile__unit {
+  font-size: 11px;
+  color: var(--fert-text-muted);
+  margin-top: 2px;
+}
+
+.soil-result-tile__level {
+  font-size: 10px;
+  font-weight: 600;
+  margin-top: 4px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  display: inline-block;
+}
+
+.soil-result-tile__level--bajo { background: rgba(220,38,38,0.10); color: #B91C1C; }
+.soil-result-tile__level--medio { background: rgba(245,158,11,0.12); color: #92400E; }
+.soil-result-tile__level--optimo { background: var(--fert-primary-light); color: var(--fert-primary-dark); }
+.soil-result-tile__level--alto { background: rgba(37,99,235,0.10); color: #1D4ED8; }
+.soil-result-tile__level--muy_alto { background: rgba(124,58,237,0.12); color: #5B21B6; }
+
+/* Ubicación / Mapa */
+.soil-map-card {
+  border-radius: 12px;
+  border: 1px solid var(--fert-border);
+  overflow: hidden;
+  background: var(--fert-card);
+}
+
+.soil-map-placeholder {
+  height: 160px;
+  background: linear-gradient(135deg, #E5F3E8 0%, #C7E8CC 50%, #A8D5BA 100%);
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.soil-map-placeholder::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.25) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.25) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.soil-map-pin {
+  width: 36px;
+  height: 36px;
+  border-radius: 50% 50% 50% 0;
+  background: #059669;
+  transform: rotate(-45deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(5,150,105,0.35);
+  position: relative;
+  z-index: 1;
+}
+
+.soil-map-pin__inner {
+  width: 12px;
+  height: 12px;
+  background: white;
+  border-radius: 50%;
+  transform: rotate(45deg);
+}
+
+.soil-map-info {
+  padding: var(--sp-3) var(--sp-4);
+}
+
+.soil-map-info__title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--fert-text-main);
+}
+
+.soil-map-info__desc {
+  font-size: 11px;
+  color: var(--fert-text-muted);
+  margin-top: 2px;
+}
+
+.soil-map-info__coords {
+  font-size: 11px;
+  color: var(--fert-text-muted);
+  margin-top: 6px;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* ─── Form: Ventana flotante (modal centrado) — barra lateral oculta ───────── */
+.soil-form-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15,23,42,0.55);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  z-index: 1000;
+  animation: soil-drawer-backdrop-in 180ms ease-out;
+}
+
+.soil-form {
+  width: 680px;
+  max-width: 96vw;
+  max-height: 90vh;
+  height: auto;
+  background: var(--fert-card);
+  border-radius: 20px;
+  border: 1px solid var(--fert-border);
+  box-shadow: 0 24px 64px rgba(0,0,0,0.22);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: soil-modal-in 220ms cubic-bezier(0.16,1,0.3,1);
+}
+
+@keyframes soil-modal-in {
+  from { opacity: 0; transform: scale(0.96) translateY(10px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* Ocultar barra lateral mientras el formulario flotante está abierto */
+body.soil-form-modal-open .sidebar-container {
+  display: none !important;
+}
+body.soil-form-modal-open .main-layout {
+  margin-left: 0 !important;
+  width: 100% !important;
+}
+body.soil-form-modal-open {
+  overflow: hidden !important;
+}
+
+.soil-form__header {
+  padding: var(--sp-5);
+  border-bottom: 1px solid var(--fert-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+
+.soil-form__title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--fert-text-main);
+  font-family: var(--font-display);
+}
+
+.soil-form__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--sp-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-5);
+}
+
+.soil-form__section {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.soil-form__section-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--fert-text-main);
+  display: flex;
+  align-items: center;
+  gap: var(--sp-2);
+}
+
+.soil-form__grid-2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--sp-3);
+}
+
+.soil-form__grid-3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: var(--sp-3);
+}
+
+@media (max-width: 600px) {
+  .soil-form__grid-2, .soil-form__grid-3 { grid-template-columns: 1fr; }
+}
+
+.soil-form__field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.soil-form__label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--fert-text-main);
+  font-family: var(--font-sans);
+}
+
+.soil-form__label--required::after {
+  content: ' *';
+  color: #DC2626;
+}
+
+.soil-form__input,
+.soil-form__select,
+.soil-form__textarea {
+  width: 100%;
+  padding: 9px 12px;
+  border-radius: var(--fert-radius-input);
+  border: 1px solid var(--fert-border);
+  background: var(--fert-card);
+  color: var(--fert-text-main);
+  font-size: 13px;
+  font-family: var(--font-sans);
+  transition: border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.soil-form__input:focus,
+.soil-form__select:focus,
+.soil-form__textarea:focus {
+  outline: 2px solid var(--fert-primary);
+  outline-offset: 2px;
+  border-color: var(--fert-primary);
+}
+
+.soil-form__input--error,
+.soil-form__select--error {
+  border-color: #DC2626;
+  background: #FEF2F2;
+}
+
+.soil-form__error {
+  font-size: 11px;
+  color: #DC2626;
+  margin-top: 2px;
+}
+
+.soil-form__hint {
+  font-size: 11px;
+  color: var(--fert-text-muted);
+}
+
+.soil-form__footer {
+  padding: var(--sp-4) var(--sp-5);
+  border-top: 1px solid var(--fert-border);
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--sp-3);
+  background: #FAFAF9;
+}
+
+/* ─── Uploader ────────────────────────────────────────────────────────────── */
+.soil-uploader {
+  border: 2px dashed var(--fert-border);
+  border-radius: 14px;
+  padding: var(--sp-6) var(--sp-5);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--sp-3);
+  text-align: center;
+  background: #FAFAF9;
+  transition: border-color 180ms ease, background 180ms ease;
+  cursor: pointer;
+}
+
+.soil-uploader:hover {
+  border-color: var(--fert-primary);
+  background: var(--fert-primary-light);
+}
+
+.soil-uploader--dragging {
+  border-color: var(--fert-primary);
+  background: var(--fert-primary-light);
+  transform: scale(1.01);
+}
+
+.soil-uploader__icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: var(--fert-card);
+  border: 1px solid var(--fert-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--fert-primary);
+}
+
+.soil-uploader__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--fert-text-main);
+}
+
+.soil-uploader__subtitle {
+  font-size: 12px;
+  color: var(--fert-text-muted);
+}
+
+.soil-uploader__file {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+  padding: var(--sp-3) var(--sp-4);
+  border-radius: 12px;
+  border: 1px solid var(--fert-border);
+  background: var(--fert-card);
+  width: 100%;
+  text-align: left;
+}
+
+.soil-uploader__progress {
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background: #E5E7EB;
+  overflow: hidden;
+  margin-top: 8px;
+}
+
+.soil-uploader__progress-bar {
+  height: 100%;
+  background: var(--fert-primary);
+  border-radius: 999px;
+  transition: width 300ms ease;
+}
+
+/* ─── Resultados form ────────────────────────────────────────────────────── */
+.soil-results-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.soil-results-row {
+  display: grid;
+  grid-template-columns: 1.2fr 0.9fr 0.7fr auto;
+  gap: var(--sp-2);
+  align-items: end;
+}
+
+@media (max-width: 600px) {
+  .soil-results-row { grid-template-columns: 1fr 1fr; }
+}
+
+/* ─── GPS ─────────────────────────────────────────────────────────────────── */
+.soil-gps-card {
+  padding: var(--sp-4);
+  border-radius: 12px;
+  border: 1px solid var(--fert-border);
+  background: #FAFAF9;
+  display: flex;
+  flex-direction: column;
+  gap: var(--sp-3);
+}
+
+.soil-gps-card--success {
+  background: #ECFDF5;
+  border-color: #A7F3D0;
+}
+
+/* ─── PDF Viewer Modal ────────────────────────────────────────────────────── */
+.soil-pdf-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15,23,42,0.55);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 80;
+  padding: var(--sp-5);
+  animation: soil-drawer-backdrop-in 160ms ease-out;
+}
+
+.soil-pdf-modal {
+  width: 900px;
+  max-width: 95vw;
+  height: 84vh;
+  background: var(--fert-card);
+  border-radius: 16px;
+  border: 1px solid var(--fert-border);
+  box-shadow: 0 24px 64px rgba(0,0,0,0.22);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: soil-pdf-in 220ms cubic-bezier(0.16,1,0.3,1);
+}
+
+@keyframes soil-pdf-in {
+  from { opacity: 0; transform: scale(0.98) translateY(6px); }
+  to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.soil-pdf-modal__header {
+  padding: var(--sp-4) var(--sp-5);
+  border-bottom: 1px solid var(--fert-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+}
+
+.soil-pdf-modal__body {
+  flex: 1;
+  background: #F3F4F6;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.soil-pdf-modal__footer {
+  padding: var(--sp-3) var(--sp-5);
+  border-top: 1px solid var(--fert-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--sp-3);
+  background: #FAFAF9;
+}
+
+/* ─── Badge ───────────────────────────────────────────────────────────────── */
+.soil-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+
+.soil-badge--draft     { background: rgba(107,114,128,0.12); color: #4B5563; }
+.soil-badge--completed { background: var(--fert-primary-light); color: var(--fert-primary-dark); border: 1px solid var(--fert-primary-border); }
+.soil-badge--archived  { background: rgba(107,114,128,0.10); color: #6B7280; }
+.soil-badge--anulado   { background: rgba(220,38,38,0.10); color: #B91C1C; }
+
+/* ─── Botones locales (reusa .fert-btn) ───────────────────────────────────── */

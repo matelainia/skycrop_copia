@@ -64,7 +64,16 @@ app.use(
 );
 
 // Middlewares globales para la nueva arquitectura
-app.use(express.json());
+// NOTA: no parsear JSON para rutas proxied a Supabase (/api/rest, /api/storage, /api/realtime, /api/auth/v1)
+// porque http-proxy-middleware necesita el stream crudo; si se consume aquí se produce ECONNRESET/timeout en POST.
+const jsonParser = express.json();
+app.use((req, res, next) => {
+  const proxyPrefixes = ['/api/rest', '/api/storage', '/api/realtime', '/api/auth/v1'];
+  if (proxyPrefixes.some((p) => req.originalUrl.startsWith(p) || req.url.startsWith(p))) {
+    return next();
+  }
+  return jsonParser(req, res, next);
+});
 
 // Identidad verificada (token Bearer) disponible para todos los routers modulares.
 // Nunca rechaza: cada controlador decide cómo tratar peticiones sin identidad.

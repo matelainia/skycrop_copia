@@ -33,6 +33,26 @@ export class SoilAnalysis {
     cec = null,
     texture = null,
     nutrients = {},
+    // Props directas para compatibilidad con SoilAdjustmentEngine y repositorios legacy
+    N = null,
+    P = null,
+    K = null,
+    Ca = null,
+    Mg = null,
+    S = null,
+    Fe = null,
+    Mn = null,
+    Zn = null,
+    Cu = null,
+    B = null,
+    pH = null, // alias
+    pExtractant = null,
+    bulkDensity = null,
+    samplingDepthCm = null,
+    caSaturation = null,
+    mgSaturation = null,
+    kSaturation = null,
+    alSaturation = null,
     labName = null,
     sampleDate = null,
     reportDate = null,
@@ -58,14 +78,38 @@ export class SoilAnalysis {
       throw new InvalidSoilAnalysisError(`SoilAnalysis: CEC debe ser >= 0 (recibido: ${cec}).`);
     }
 
+    // pH puede venir como pH o ph
+    const finalPh = pH ?? ph;
     this.id = id;
     this.companyId = companyId;
     this.loteId = loteId;
-    this.ph = ph;
+    this.ph = finalPh;
+    this.pH = finalPh;
     this.organicMatter = organicMatter;
     this.cec = cec;
     this.texture = texture;
-    this.nutrients = { ...nutrients };
+    // Normalizar nutrientes: si vienen como props directas, mapear a map y también exponer como props
+    const nutrientMap = { ...nutrients };
+    const directNutrients = { N, P, K, Ca, Mg, S, Fe, Mn, Zn, Cu, B };
+    for (const [code, val] of Object.entries(directNutrients)) {
+      if (val !== null && val !== undefined) {
+        nutrientMap[code] = val;
+        this[code] = val;
+      } else if (nutrientMap[code] !== undefined) {
+        this[code] = nutrientMap[code];
+      } else {
+        this[code] = null;
+      }
+    }
+    // Asegurar que nutrientes faltantes también estén en map
+    this.nutrients = { ...nutrientMap };
+    this.pExtractant = pExtractant;
+    this.bulkDensity = bulkDensity ?? 1.3;
+    this.samplingDepthCm = samplingDepthCm ?? 20;
+    this.caSaturation = caSaturation;
+    this.mgSaturation = mgSaturation;
+    this.kSaturation = kSaturation;
+    this.alSaturation = alSaturation;
     this.labName = labName;
     this.sampleDate = sampleDate ? new Date(sampleDate) : null;
     this.reportDate = reportDate ? new Date(reportDate) : null;
