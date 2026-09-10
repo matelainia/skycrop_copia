@@ -33,15 +33,27 @@
                 "schema": {
                   "type": "object",
                   "properties": {
-                    "success": { "type": "boolean" },
+                    "success": {
+                      "type": "boolean"
+                    },
                     "data": {
                       "type": "object",
                       "properties": {
-                        "user": { "type": "object" },
-                        "company": { "type": "object" },
-                        "role": { "type": "object" },
-                        "permissions": { "type": "array" },
-                        "supabaseToken": { "type": "string" }
+                        "user": {
+                          "type": "object"
+                        },
+                        "company": {
+                          "type": "object"
+                        },
+                        "role": {
+                          "type": "object"
+                        },
+                        "permissions": {
+                          "type": "array"
+                        },
+                        "supabaseToken": {
+                          "type": "string"
+                        }
                       }
                     }
                   }
@@ -91,13 +103,19 @@
             "name": "latitude",
             "in": "query",
             "required": true,
-            "schema": { "type": "number", "example": 4.609 }
+            "schema": {
+              "type": "number",
+              "example": 4.609
+            }
           },
           {
             "name": "longitude",
             "in": "query",
             "required": true,
-            "schema": { "type": "number", "example": -74.081 }
+            "schema": {
+              "type": "number",
+              "example": -74.081
+            }
           }
         ],
         "responses": {
@@ -121,9 +139,31 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "coordinates": { "type": "array", "example": [[4.60, -74.08], [4.61, -74.08], [4.60, -74.07]] },
-                  "indexType": { "type": "string", "example": "NDVI" },
-                  "loteId": { "type": "string", "example": "UUID-del-lote" }
+                  "coordinates": {
+                    "type": "array",
+                    "example": [
+                      [
+                        4.6,
+                        -74.08
+                      ],
+                      [
+                        4.61,
+                        -74.08
+                      ],
+                      [
+                        4.6,
+                        -74.07
+                      ]
+                    ]
+                  },
+                  "indexType": {
+                    "type": "string",
+                    "example": "NDVI"
+                  },
+                  "loteId": {
+                    "type": "string",
+                    "example": "UUID-del-lote"
+                  }
                 }
               }
             }
@@ -145,7 +185,10 @@
             "name": "q",
             "in": "query",
             "required": false,
-            "schema": { "type": "string", "example": "glifosato" }
+            "schema": {
+              "type": "string",
+              "example": "glifosato"
+            }
           }
         ],
         "responses": {
@@ -164,7 +207,10 @@
             "name": "id",
             "in": "path",
             "required": true,
-            "schema": { "type": "integer", "example": 150 }
+            "schema": {
+              "type": "integer",
+              "example": 150
+            }
           }
         ],
         "responses": {
@@ -215,6 +261,201 @@
         "responses": {
           "200": {
             "description": "Auditoría enriquecida correctamente."
+          }
+        }
+      }
+    },
+    "/trazabilidad": {
+      "get": {
+        "summary": "Listar evidencia productiva inmutable (timeline por lote)",
+        "parameters": [
+          {
+            "name": "lote_id",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "event_type",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "source_module",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "responsable",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "desde",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "hasta",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Timeline"
+          }
+        }
+      },
+      "post": {
+        "summary": "Emitir evidencia (solo SkyCrop Core autenticado)",
+        "responses": {
+          "201": {
+            "description": "Evento creado"
+          }
+        }
+      }
+    },
+    "/trazabilidad/{id}": {
+      "get": {
+        "summary": "Detalle de evento + origen (solo lectura)",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Detalle"
+          },
+          "404": {
+            "description": "No encontrado"
+          }
+        }
+      },
+      "put": {
+        "summary": "Bloqueado (inmutable)",
+        "responses": {
+          "405": {
+            "description": "Inmutable"
+          }
+        }
+      },
+      "delete": {
+        "summary": "Bloqueado (inmutable)",
+        "responses": {
+          "405": {
+            "description": "Inmutable"
+          }
+        }
+      }
+    },
+    "/trazabilidad/{id}/verify": {
+      "get": {
+        "summary": "Verificar hash de evento",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Verificacion"
+          }
+        }
+      }
+    },
+    "/trazabilidad/{id}/audit": {
+      "get": {
+        "summary": "Modo auditoria del evento",
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Auditoria"
+          }
+        }
+      }
+    },
+    "/trazabilidad/chain": {
+      "get": {
+        "summary": "Verificar cadena de un lote",
+        "parameters": [
+          {
+            "name": "lote_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Cadena"
+          }
+        }
+      }
+    },
+    "/trazabilidad/summary": {
+      "get": {
+        "summary": "Resumen certificable del lote",
+        "parameters": [
+          {
+            "name": "lote_id",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Resumen"
           }
         }
       }

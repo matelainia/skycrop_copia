@@ -5,8 +5,15 @@ const getBackendUrl = () => {
     : 'https://backend.skycrop.app/api';
 };
 
+function _authHeaders() {
+  try {
+    const t = sessionStorage.getItem('sb_access_token') || localStorage.getItem('sb_access_token') || '';
+    return t ? { Authorization: `Bearer ${t}` } : {};
+  } catch { return {}; }
+}
 const _fetch = async (url, options = {}) => {
-  const res = await fetch(url, options);
+  const headers = { ..._authHeaders(), ...(options.headers || {}) };
+  const res = await fetch(url, { ...options, headers });
   if (!res.ok) {
     const msg = await res.text().catch(() => `Error ${res.status}`);
     throw new Error(`[agronomyRepository] ${res.status} ${res.url}: ${msg}`);

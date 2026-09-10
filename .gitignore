@@ -54,10 +54,10 @@ gee-credentials*.json
 *.key
 # ─── Supabase ───────────────────────────────────
 # Las claves ANON y SERVICE ROLE deben vivir solo en .env
+# Las migraciones SÍ se versionan (fuente de verdad del schema, p. ej. 050).
 # No versionar archivos de configuración exportados de Supabase CLI
 supabase/.branches/
 supabase/config.toml
-supabase/migrations/
 supabase/migrations_v1_backup/
 database/migrations
 # ─── Logs ───────────────────────────────────────
@@ -100,6 +100,12 @@ Desktop.ini
 coverage/
 *.lcov
 .nyc_output/
+# Reportes E2E generados (se retienen localmente, no se versionan)
+tests/e2e/reports/SKYCROP_E2E_REPORT_*
+tests/e2e/reports/SKYCROP_E2E_RESULTADO_COMPLETO_*
+tests/e2e/real/reports/SKYCROP_E2E_REAL_SUPABASE_REPORT_*
+tests/e2e/real/reports/SKYCROP_E2E_REAL_SUPABASE_RESULTADO_COMPLETO_*
+!tests/e2e/reports/.gitkeep
 
 # ─── Temporales y Scratchpads ───────────────────
 scratch/

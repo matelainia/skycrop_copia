@@ -10,7 +10,7 @@ const EMPTY_LABOR_FORM = {
   asignacion: 'cuadrilla',   // 'cuadrilla' | 'individual'
   cuadrillaId: '',
   trabajadoresIds: [],
-  jornal: 1.0,
+  jornal: '',
 };
 
 export default function LaborModal({ 
@@ -36,6 +36,7 @@ export default function LaborModal({
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!laborForm.titulo.trim()) return;
+    if (laborForm.jornal === '' || laborForm.jornal == null) return;
     onSubmit(laborForm);
   };
 
@@ -105,13 +106,15 @@ export default function LaborModal({
             {/* Jornal + Estado */}
             <div className="form-group-container">
               <div>
-                <label className="form-label">Jornal (Fracción de Día)</label>
-                <select 
-                  className="input-glass select-glass" 
+                <label className="form-label">Jornal (Fracción de Día) *</label>
+                <select
+                  className="input-glass select-glass"
                   style={{ width: '100%' }}
-                  value={laborForm.jornal} 
+                  required
+                  value={laborForm.jornal}
                   onChange={e => lfChange('jornal', Number(e.target.value))}
                 >
+                  <option value="">— Seleccionar —</option>
                   <option value="1.0">1.00 Jornal completo (8 hrs)</option>
                   <option value="0.75">0.75 Tres cuartos (6 hrs)</option>
                   <option value="0.5">0.50 Medio jornal (4 hrs)</option>

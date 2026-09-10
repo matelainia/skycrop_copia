@@ -5,9 +5,18 @@ import { createApplication } from '../types/Application';
 import { validateApplication, checkHarvestConflict } from '../validators/application.validator';
 import { normalizarEstado, TRANSICIONES_VALIDAS, ESTADOS_APLICACION } from '../../../constants/aplicaciones';
 import { useCompanyContext } from '../../../context/CompanyContext';
+import { useAuthContext } from '../../../context/AuthContext';
 
 export const useApplications = () => {
   const { companyId } = useCompanyContext();
+  // Limpieza fuentes falsas: actor real desde AuthContext, nunca hardcode.
+  const { user } = useAuthContext();
+  const actorId = user?.id || null;
+  const actorName =
+    [user?.nombre, user?.apellido].filter(Boolean).join(' ').trim() ||
+    user?.email ||
+    actorId ||
+    null;
   const [aplicaciones, setAplicaciones] = useState([]);
   const [aplicacionesLoading, setAplicacionesLoading] = useState(false);
   const [isAppDrawerOpen, setIsAppDrawerOpen] = useState(false);
@@ -80,9 +89,14 @@ export const useApplications = () => {
       unidad_medida: newAplicacion.unidad_medida,
       volumen_aplicado: parseFloat(newAplicacion.volumen_aplicado) || 0,
       metodo_aplicacion: newAplicacion.metodo_aplicacion,
-      operario_responsable: newAplicacion.operario_responsable || 'Andrés Castro',
-      maquinaria_utilizada: newAplicacion.maquinaria_utilizada || 'Manual',
-      condiciones_climaticas: `Temp: ${weatherStation.temp}°C, Viento: ${weatherStation.wind} km/h`,
+      operario_responsable: newAplicacion.operario_responsable?.trim() || actorName,
+      maquinaria_utilizada: newAplicacion.maquinaria_utilizada?.trim() || null,
+      condiciones_climaticas:
+        weatherStation != null &&
+        Number.isFinite(Number(weatherStation.temp)) &&
+        Number.isFinite(Number(weatherStation.wind))
+          ? `Temp: ${weatherStation.temp}°C, Viento: ${weatherStation.wind} km/h`
+          : null,
       fecha_aplicacion: new Date().toISOString(),
       costo_aplicacion: parseFloat(newAplicacion.costo_aplicacion) || 0,
       registro_ica: newAplicacion.registro_ica || null,
@@ -91,7 +105,7 @@ export const useApplications = () => {
       clasificacion_toxicologica: newAplicacion.clasificacion_toxicologica,
       residualidad_nivel: newAplicacion.residualidad_nivel,
       estado_programacion: 'programada',
-      updated_by: 'Andrés Castro'
+      updated_by: actorId
     };
 
     try {
@@ -162,7 +176,7 @@ export const useApplications = () => {
       costo_aplicacion: normalizedApp.costo_aplicacion ?? 0,
       periodo_carencia_dias: normalizedApp.periodo_carencia_dias ?? null,
       estado_programacion: normalizedApp.estado_programacion,
-      updated_by: 'Andrés Castro'
+      updated_by: actorId
     };
 
     try {
@@ -233,7 +247,7 @@ export const useApplications = () => {
     try {
       const payload = {
         estado_programacion: nuevoEstado,
-        updated_by: 'Andrés Castro'
+        updated_by: actorId
       };
       if (nuevoEstado === ESTADOS_APLICACION.EJECUTADA) payload.fecha_ejecucion = ahora;
 
@@ -271,7 +285,7 @@ export const useApplications = () => {
         a.id === app.id ? { ...a, _syncing: false, _sync_error: true } : a
       ));
     }
-  }, []);
+  }, [actorId]);
 
   const handleChangeEstadoAplicacion = useCallback((app, nuevoEstado, lotes, onAuditLogged, onLoteObsUpdated) => {
     const estadoActual = normalizarEstado(app.estado_programacion);
@@ -306,7 +320,7 @@ export const useApplications = () => {
         costo_aplicacion: app.costo_aplicacion ?? 0,
         periodo_carencia_dias: app.periodo_carencia_dias ?? null,
         estado_programacion: normalizarEstado(app.estado_programacion),
-        updated_by: 'Andrés Castro'
+        updated_by: actorId
       };
 
       setAplicaciones(prev => prev.map(a => a.id === app.id ? { ...a, _syncing: true, _sync_error: false } : a));
@@ -354,7 +368,7 @@ export const useApplications = () => {
       try {
         const payload = {
           estado_programacion: normalizarEstado(app.estado_programacion),
-          updated_by: 'Andrés Castro'
+          updated_by: actorId
         };
         if (app.fecha_ejecucion) payload.fecha_ejecucion = app.fecha_ejecucion;
 
@@ -377,7 +391,7 @@ export const useApplications = () => {
         setAplicaciones(prev => prev.map(a => a.id === app.id ? { ...a, _syncing: false, _sync_error: true } : a));
       }
     }
-  }, []);
+  }, [actorId]);
 
   const handleDeleteAplicacion = async (id) => {
     if (window.confirm("¿Estás seguro de que deseas eliminar esta aplicación?")) {

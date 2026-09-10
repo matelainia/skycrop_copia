@@ -47,7 +47,7 @@ export const NominasTable = React.memo(function NominasTable({
                 const sBase = n.salario_neto || 0;
                 const hEx = n.horas_extras || 0;
                 const desc = n.retenciones || 0;
-                const netPay = n.total_neto || (sBase + (hEx * 15000) - desc);
+                const netPay = n.total_neto ?? null;
                 
                 return (
                   <tr key={n.id}>
@@ -63,7 +63,7 @@ export const NominasTable = React.memo(function NominasTable({
                       {desc > 0 ? `-${formatCurrency(desc)}` : '$0'}
                     </td>
                     <td style={{ fontWeight: 700, color: 'var(--primary)' }}>
-                      {formatCurrency(netPay)}
+                      {netPay == null ? '—' : formatCurrency(netPay)}
                     </td>
                     <td>
                       <StatusBadge status={n.estado} />

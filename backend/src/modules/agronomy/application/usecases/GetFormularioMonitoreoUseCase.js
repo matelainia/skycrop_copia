@@ -18,11 +18,11 @@ export class GetFormularioMonitoreoUseCase {
     this.repo = agronomyRepository;
   }
 
-  async execute(loteId) {
-    // 1. Obtener datos del lote y su cultivo asociado
-    const lote = await this.repo.getLoteConCultivo(loteId);
+  async execute(loteId, companyId = null) {
+    // 1. Obtener datos del lote y su cultivo asociado (aislado por tenant si se provee companyId)
+    const lote = await this.repo.getLoteConCultivo(loteId, companyId);
     if (!lote) {
-      return { success: false, error: 'Lote no encontrado', data: null };
+      return { success: false, error: 'Lote no encontrado o sin acceso', data: null };
     }
 
     // Resolver el cultivo: primero por referencia FK, luego por nombre legado

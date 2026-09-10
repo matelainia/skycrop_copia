@@ -5,10 +5,11 @@ const getBackendUrl = () => {
     : 'https://backend.skycrop.app/api';
 };
 
+function _auth() { try { const t = sessionStorage.getItem('sb_access_token') || localStorage.getItem('sb_access_token') || ''; return t ? { Authorization: `Bearer ${t}` } : {}; } catch { return {}; } }
 export const productRepository = {
   async search(query) {
     const backendUrl = getBackendUrl();
-    const res = await fetch(`${backendUrl}/productos?q=${encodeURIComponent(query.trim())}`);
+    const res = await fetch(`${backendUrl}/productos?q=${encodeURIComponent(query.trim())}`, { headers: { ..._auth() } });
     if (!res.ok) {
       throw new Error(`HTTP error ${res.status}`);
     }
@@ -17,7 +18,7 @@ export const productRepository = {
 
   async getDetails(id) {
     const backendUrl = getBackendUrl();
-    const res = await fetch(`${backendUrl}/productos/${id}`);
+    const res = await fetch(`${backendUrl}/productos/${id}`, { headers: { ..._auth() } });
     if (!res.ok) {
       throw new Error(`HTTP error ${res.status}`);
     }
@@ -28,7 +29,7 @@ export const productRepository = {
     const backendUrl = getBackendUrl();
     const res = await fetch(`${backendUrl}/auditoria/alta-toxicidad`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ..._auth() },
       body: JSON.stringify({
         aplicacion_id: appId,
         usuario_id: user,

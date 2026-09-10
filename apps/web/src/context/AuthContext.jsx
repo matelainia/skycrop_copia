@@ -69,19 +69,23 @@ export function AuthProvider({ children }) {
         const errorMsg = typeof err === 'object' && err?.message ? err.message : String(err);
         console.error('[DEBUG FRONTEND] Excepción atrapada en loadProfile:', errorMsg);
         setError(errorMsg);
-        
-        // Fallback local para desarrollo si el backend de perfil devuelve error
-        setProfile({
-          user: { 
-            id: clerkUser?.id || 'user_dev', 
-            nombre: clerkUser?.firstName || clerkUser?.fullName || 'Usuario', 
-            apellido: clerkUser?.lastName || '', 
-            email: clerkUser?.primaryEmailAddress?.emailAddress || 'usuario@skycrop.app' 
-          },
-          company: { id: orgId, nombre: 'Empresa SkyCrop' },
-          role: { id: 'administrador', nombre: 'Administrador' },
-          permissions: [{ recurso: '*', accion: '*' }]
-        });
+        setSupabaseToken(null, null);
+        // Fallback local SOLO en desarrollo; en producción no se otorgan permisos ficticios
+        if (import.meta.env.DEV) {
+          setProfile({
+            user: {
+              id: clerkUser?.id || 'user_dev',
+              nombre: clerkUser?.firstName || clerkUser?.fullName || 'Usuario',
+              apellido: clerkUser?.lastName || '',
+              email: clerkUser?.primaryEmailAddress?.emailAddress || 'usuario@skycrop.app'
+            },
+            company: { id: orgId, nombre: 'Empresa SkyCrop' },
+            role: { id: 'administrador', nombre: 'Administrador' },
+            permissions: [{ recurso: '*', accion: '*' }]
+          });
+        } else {
+          setProfile(null);
+        }
       } finally {
         setLoading(false);
       }
@@ -129,16 +133,20 @@ export function AuthProvider({ children }) {
     email: clerkUser.primaryEmailAddress?.emailAddress || ''
   } : null);
 
-  const activePermissions = profile?.permissions?.length ? profile.permissions : [{ recurso: '*', accion: '*' }];
+  const activePermissions = profile?.permissions?.length
+    ? profile.permissions
+    : (import.meta.env.DEV ? [{ recurso: '*', accion: '*' }] : []);
 
   const hasPermission = (recurso, accion) => {
+    // Sin permisos cargados y fuera de dev, negar por defecto (fail-closed)
+    if (!activePermissions.length) return false;
     return PermissionService.hasPermission(activePermissions, recurso, accion);
   };
 
   const value = {
     user: activeUser,
     empresa: profile?.company || profile?.empresa || (orgId ? { id: orgId, nombre: 'Empresa SkyCrop' } : null),
-    role: profile?.role || { id: 'administrador', nombre: 'Administrador' },
+    role: profile?.role || (import.meta.env.DEV ? { id: 'administrador', nombre: 'Administrador' } : null),
     permissions: activePermissions,
     loading: !isLoaded,
     error,

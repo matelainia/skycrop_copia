@@ -15,6 +15,9 @@ import { applicationAuditRouter } from './modules/application/infrastructure/ada
 import { agronomyRouter } from './modules/agronomy/infrastructure/adapters/inbound/ExpressAgronomyRouter.js';
 import { evaluationRouter } from './modules/evaluation/infrastructure/adapters/inbound/ExpressEvaluationRouter.js';
 import { fertilizationRouter } from './modules/fertilization/infrastructure/adapters/inbound/ExpressFertilizationRouter.js';
+import { harvestRouter } from './modules/harvest/infrastructure/adapters/inbound/ExpressHarvestRouter.js';
+import { traceabilityRouter } from './modules/traceability/infrastructure/adapters/inbound/ExpressTraceabilityRouter.js';
+import { subscribeTraceabilityEvents } from './modules/traceability/infrastructure/TraceabilityEventSubscriber.js';
 
 const app = express();
 
@@ -63,10 +66,32 @@ app.use(
   })
 );
 
+// ── Security headers (defensa en profundidad, mínimo impacto) ───────────────
+app.use((req, res, next) => {
+  res.setHeader('X-Content-Type-Options', 'nosniff');
+  res.setHeader('X-Frame-Options', 'DENY');
+  res.setHeader('Referrer-Policy', 'strict-origin-when-cross-origin');
+  res.setHeader('Permissions-Policy', 'microphone=(), camera=(), geolocation=(self)');
+  res.setHeader('X-XSS-Protection', '0'); // Desactivar viejo filtro, CSP es la defensa moderna
+  // HSTS solo en producción + HTTPS (evitar romper http://localhost)
+  if (process.env.NODE_ENV === 'production') {
+    res.setHeader('Strict-Transport-Security', 'max-age=31536000; includeSubDomains; preload');
+  }
+  // CSP mínima compatible con Swagger UI + Clerk + Supabase Maps
+  // No se aplica a /api/docs que ya tiene su propio HTML, ni a assets estáticos
+  if (!req.path.startsWith('/api-docs') && !req.path.startsWith('/api/swagger.json')) {
+    res.setHeader(
+      'Content-Security-Policy',
+      "default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com https://*.clerk.accounts.dev https://*.clerk.com; style-src 'self' 'unsafe-inline' https://unpkg.com https://fonts.googleapis.com; img-src 'self' data: https: blob:; connect-src 'self' https://*.supabase.co https://*.clerk.accounts.dev https://*.clerk.com https://nominatim.openstreetmap.org; font-src 'self' https://fonts.gstatic.com data:; frame-ancestors 'none'"
+    );
+  }
+  next();
+});
+
 // Middlewares globales para la nueva arquitectura
 // NOTA: no parsear JSON para rutas proxied a Supabase (/api/rest, /api/storage, /api/realtime, /api/auth/v1)
 // porque http-proxy-middleware necesita el stream crudo; si se consume aquí se produce ECONNRESET/timeout en POST.
-const jsonParser = express.json();
+const jsonParser = express.json({ limit: '1mb' });
 app.use((req, res, next) => {
   const proxyPrefixes = ['/api/rest', '/api/storage', '/api/realtime', '/api/auth/v1'];
   if (proxyPrefixes.some((p) => req.originalUrl.startsWith(p) || req.url.startsWith(p))) {
@@ -178,6 +203,15 @@ app.use('/api/v1/auditoria', applicationAuditRouter);
 app.use('/api/v1/agronomia', agronomyRouter);
 app.use('/api/v1/evaluaciones', evaluationRouter);
 app.use('/api/v1/fertilizacion', fertilizationRouter);
+app.use('/api/v1/cosechas', harvestRouter);
+app.use('/api/v1/trazabilidad', traceabilityRouter);
+
+// SkyCrop Core: el sistema es el único generador de evidencia inmutable.
+try {
+  subscribeTraceabilityEvents();
+} catch (err) {
+  console.error('[Traceability] No se pudo suscribir event_generator:', err?.message || err);
+}
 
 // Compatibilidad hacia atrás (intersección del flujo legando antes de ir al monolito)
 app.use('/api/auth', authRouter); // GET /api/auth/me -> GET /me
@@ -189,6 +223,8 @@ app.use('/api/auditoria', applicationAuditRouter); // POST /api/auditoria/*
 app.use('/api/agronomia', agronomyRouter); // GET  /api/agronomia/*
 app.use('/api/evaluaciones', evaluationRouter); // POST/GET /api/evaluaciones/*
 app.use('/api/fertilizacion', fertilizationRouter); // GET/POST/PATCH /api/fertilizacion/*
+app.use('/api/cosechas', harvestRouter); // GET/POST /api/cosechas
+app.use('/api/trazabilidad', traceabilityRouter); // GET/POST /api/trazabilidad (bitácora oficial)
 
 // --- DELEGACIÓN AL MONOLITO LEGADO ---
 // Todo lo que no coincida con el nuevo enrutador será resuelto por el Express heredado

@@ -168,33 +168,42 @@ export const ApplicationsProvider = ({ children }) => {
   };
 
 
-  // Coordinated operation stopper
+  // Coordinated operation stopper.
+  // Solo persiste lo capturado en activeOp; jamas inventa producto/operario/
+  // costo/ICA/carencia (antes: Azoxistrobin, Pedro Gomez, PU-003, 1245000,
+  // ICA-3456-A, 7/24). Sin producto no hay aplicacion que registrar.
   const finishActiveOperation = async (loteId) => {
     const { elapsedSeconds, activeOp } = finishOperation(loteId);
     if (!activeOp) return;
+    if (!activeOp.producto?.trim()) return;
 
     const dbPayload = {
       lote_id: loteId,
-      tipo_aplicacion: activeOp.tipo_operacion === 'Aplicación' ? 'Fitosanitaria' : (activeOp.tipo_operacion || 'Fitosanitaria'),
-      tipo_producto: 'Fungicida',
-      producto_comercial: activeOp.producto || 'Insumo Fitosanitario',
-      ingrediente_activo: 'Azoxistrobin',
-      dosis: activeOp.dosis || '0.5 L/ha',
-      unidad_medida: 'L',
-      volumen_aplicado: 200,
-      metodo_aplicacion: 'Pulverizadora foliar',
-      operario_responsable: activeOp.operator || 'Pedro Gómez',
-      maquinaria_utilizada: activeOp.machinery || 'Pulverizadora PU-003',
-      condiciones_climaticas: `Temp: ${weatherStation.temp}°C, Viento: ${weatherStation.wind} km/h`,
+      tipo_aplicacion: activeOp.tipo_operacion || null,
+      tipo_producto: activeOp.tipo_producto || null,
+      producto_comercial: activeOp.producto.trim(),
+      ingrediente_activo: activeOp.ingrediente_activo?.trim() || null,
+      dosis: activeOp.dosis?.trim() || null,
+      unidad_medida: activeOp.unidad_medida || null,
+      volumen_aplicado: Number(activeOp.volumen_aplicado) || null,
+      metodo_aplicacion: activeOp.metodo_aplicacion?.trim() || null,
+      operario_responsable: activeOp.operator?.trim() || null,
+      maquinaria_utilizada: activeOp.machinery?.trim() || null,
+      condiciones_climaticas:
+        weatherStation != null &&
+        Number.isFinite(Number(weatherStation.temp)) &&
+        Number.isFinite(Number(weatherStation.wind))
+          ? `Temp: ${weatherStation.temp}°C, Viento: ${weatherStation.wind} km/h`
+          : null,
       fecha_aplicacion: new Date().toISOString(),
-      costo_aplicacion: 1245000,
-      registro_ica: 'ICA-3456-A',
-      periodo_carencia_dias: 7,
-      periodo_reingreso_horas: 24,
-      clasificacion_toxicologica: 'Categoría III',
-      residualidad_nivel: 'Medio',
+      costo_aplicacion: Number(activeOp.costo_aplicacion) || null,
+      registro_ica: activeOp.registro_ica?.trim() || null,
+      periodo_carencia_dias: Number(activeOp.periodo_carencia_dias) || null,
+      periodo_reingreso_horas: Number(activeOp.periodo_reingreso_horas) || null,
+      clasificacion_toxicologica: activeOp.clasificacion_toxicologica || null,
+      residualidad_nivel: activeOp.residualidad_nivel || null,
       estado_programacion: 'ejecutada',
-      updated_by: 'Andrés Castro'
+      updated_by: null
     };
 
     try {

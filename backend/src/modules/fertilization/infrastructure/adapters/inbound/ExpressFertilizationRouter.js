@@ -4,6 +4,7 @@
  * Composición de dependencias (DI manual) siguiendo el patrón de evaluationRouter.
  */
 import express from 'express';
+import { requireAuth } from '../../../../../shared/middleware/authenticate.js';
 
 // Adaptadores de salida (outbound)
 import { SupabaseFertilizationRepository } from '../outbound/SupabaseFertilizationRepository.js';
@@ -53,6 +54,9 @@ const controller = new ExpressFertilizationController(
 // ─── Motor de cálculo (DI) ────────────────────────────────────────────────────
 const calculationService = new FertilizationCalculationService();
 const calcController = new ExpressCalculationController(calculationService);
+
+// Autenticación obligatoria (permite dev sin token con advertencia, bloquea en producción)
+router.use(requireAuth);
 
 // ─── Definición de rutas ──────────────────────────────────────────────────────
 

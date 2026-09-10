@@ -262,18 +262,22 @@ export class SupabaseAgronomyRepository extends AgronomyRepositoryPort {
     }
   }
 
-  async getLoteConCultivo(loteId) {
+  async getLoteConCultivo(loteId, companyId = null) {
     try {
-      const { data, error } = await supabaseAdmin
+      let query = supabaseAdmin
         .from('lotes')
         .select(
           `
-          id, codigo_interno, nombre, cultivo, estado_fenologico,
+          id, company_id, codigo_interno, nombre, cultivo, estado_fenologico,
           cultivo_ref:cultivo_id (id, nombre_comun, nombre_cientifico)
         `
         )
-        .eq('id', loteId)
-        .maybeSingle();
+        .eq('id', loteId);
+      // Aislamiento multi-tenant: si se provee companyId, exigir pertenencia
+      if (companyId) {
+        query = query.eq('company_id', companyId);
+      }
+      const { data, error } = await query.maybeSingle();
       if (error) throw error;
       return data;
     } catch (err) {

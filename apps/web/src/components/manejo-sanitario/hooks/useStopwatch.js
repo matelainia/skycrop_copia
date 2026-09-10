@@ -29,14 +29,16 @@ export const useStopwatch = () => {
     return () => clearInterval(timer);
   }, [isOperationActive]);
 
-  const startOperation = (loteId, type, operator = 'Pedro Gómez', machinery = 'Manual', product = 'N/A', dosis = 'N/A') => {
+  // Sin valores presuntos: lo no capturado queda null y finishActiveOperation
+  // no persiste aplicacion sin producto (antes: Pedro Gomez, Azoxistrobin...).
+  const startOperation = (loteId, type, operator = null, machinery = null, product = null, dosis = null) => {
     setActiveOperations(prev => ({
       ...prev,
       [loteId]: {
         tipo_operacion: type,
         actividad: type === 'Aplicación' ? 'Aplicación Fitosanitaria' : type,
-        producto: type === 'Aplicación' ? 'Azoxistrobin 250 SC' : product,
-        dosis: type === 'Aplicación' ? '0.5 L/ha' : dosis,
+        producto: product,
+        dosis,
         startTime: Date.now(),
         operator,
         machinery

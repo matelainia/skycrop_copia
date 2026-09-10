@@ -1,4 +1,5 @@
 import express from 'express';
+import { requireAuth } from '../../../../../shared/middleware/authenticate.js';
 import { SupabaseEvaluationRepository } from '../outbound/SupabaseEvaluationRepository.js';
 import { CreateEvaluationUseCase } from '../../../application/usecases/CreateEvaluationUseCase.js';
 import { DraftEvaluationUseCase } from '../../../application/usecases/DraftEvaluationUseCase.js';
@@ -15,6 +16,9 @@ const draftUseCase = new DraftEvaluationUseCase(repository);
 const geocodeUseCase = new GeocodeLoteUseCase(repository);
 
 const controller = new ExpressEvaluationController(createUseCase, draftUseCase, geocodeUseCase);
+
+// Mutaciones requieren autenticación estricta; lectura de borrador también aislada por tenant
+router.use(requireAuth);
 
 // ─── Rutas del Enrutador ─────────────────────────────────────────────────────
 

@@ -10,9 +10,13 @@ export class ExpressProductController {
   search = async (req, res, next) => {
     try {
       const q = req.query.q || '';
-      const limit = req.query.limit ? parseInt(req.query.limit, 10) : 15;
+      let limit = req.query.limit ? parseInt(req.query.limit, 10) : 15;
+      if (Number.isNaN(limit) || limit < 1) limit = 15;
+      limit = Math.min(limit, 50);
 
-      const result = await this.searchProductsUseCase.execute(q, limit);
+      // H2: tenant desde auth; sin tenant solo catalogo global (repositorio).
+      const companyId = req.tenant?.companyId || null;
+      const result = await this.searchProductsUseCase.execute(q, limit, companyId);
       return res.json(result);
     } catch (err) {
       next(err);
@@ -25,8 +29,9 @@ export class ExpressProductController {
   getById = async (req, res, next) => {
     try {
       const { id } = req.params;
+      const companyId = req.tenant?.companyId || null;
 
-      const result = await this.getProductDetailsUseCase.execute(id);
+      const result = await this.getProductDetailsUseCase.execute(id, companyId);
       return res.json(result);
     } catch (err) {
       next(err);

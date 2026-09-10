@@ -36,10 +36,9 @@ export default function Nominas() {
     let totalHE = 0;
 
     periodNominas.forEach(n => {
-      const sBase = n.salario_neto || 0;
       const hEx = n.horas_extras || 0;
-      const desc = n.retenciones || 0;
-      const net = n.total_neto || (sBase + (hEx * 15000) - desc);
+      // Solo total almacenado; sin tasa guardada no se recompone (era 15000 fijo).
+      const net = n.total_neto ?? 0;
 
       totalEgresos += net;
       totalHE += hEx;
@@ -71,10 +70,7 @@ export default function Nominas() {
     periodNominas.forEach(n => {
       const w = n.trabajador || workers.find(work => work.id === n.trabajador_id);
       const rol = w ? w.rol : 'Otros';
-      const sBase = n.salario_neto || 0;
-      const hEx = n.horas_extras || 0;
-      const desc = n.retenciones || 0;
-      const net = n.total_neto || (sBase + (hEx * 15000) - desc);
+      const net = n.total_neto ?? 0;
 
       if (sumByRole[rol] !== undefined) {
         sumByRole[rol] += net;
@@ -234,7 +230,7 @@ export default function Nominas() {
                 <div className="sidebar-metric-card">
                   <div className="sidebar-metric-title">Horas Extras Reportadas</div>
                   <div className="sidebar-metric-value">{kpiStats.totalHE} hrs</div>
-                  <div className="sidebar-metric-desc">Equivalente a {formatCurrency(kpiStats.totalHE * 15000)} COP</div>
+                  <div className="sidebar-metric-desc">Valorización según tasa de cada registro</div>
                 </div>
 
                 <div className="sidebar-metric-card">

@@ -21,7 +21,7 @@ export class Machine {
     costFuel = 12.0,
     costMaintenance = 8.0,
     costDepreciation = 5.0,
-    photoUrl = 'https://images.unsplash.com/photo-1595273670150-bd0c3c392e46?auto=format&fit=crop&q=80&w=400',
+    photoUrl = null,
     empresaId = null,
     activo = true
   } = {}) {
@@ -72,9 +72,9 @@ export class Machine {
       costFuel: row.cost_fuel,
       costMaintenance: row.cost_maintenance,
       costDepreciation: row.cost_depreciation,
-      photoUrl: row.photo_url || undefined,
-      empresaId: row.empresa_id,
-      activo: row.activo !== false
+      photoUrl: row.photo_url || null,
+      empresaId: row.company_id || null,
+      activo: row.deleted_at ? false : true
     });
   }
 
@@ -82,23 +82,28 @@ export class Machine {
    * Helper to convert client-side model instance to Supabase database formatting
    */
   static toDatabase(machine) {
+    // Esquema real 015: company_id NOT NULL, sin empresa_id/activo. company_id
+    // via empresaId (UUID empresa) o NULL para que el trigger la complete del JWT.
     return {
+      company_id: machine.empresaId || null,
       codigo_id: machine.codigoId?.toUpperCase().trim(),
       name: machine.name?.trim(),
       type: machine.type,
       status: machine.status,
+      operator_name: machine.operatorName?.trim() || null,
+      current_task: machine.currentTask?.trim() || null,
+      current_lot: machine.currentLot?.trim() || null,
       hours_of_operation: Number(machine.hoursOfOperation) || 0,
-      fuel_consumption: machine.fuelConsumption || '15.5 L/h',
+      hours_today: Number(machine.hoursToday) || 0,
+      fuel_consumption: machine.fuelConsumption?.trim() || null,
       cost_operator: Number(machine.costOperator) || 0,
       cost_fuel: Number(machine.costFuel) || 0,
       cost_maintenance: Number(machine.costMaintenance) || 0,
       cost_depreciation: Number(machine.costDepreciation) || 0,
-      next_maintenance_hours: Number(machine.nextMaintenanceHours) || 250,
+      next_maintenance_hours: Number(machine.nextMaintenanceHours) || 0,
       photo_url: machine.photoUrl || null,
-      last_maintenance: machine.lastMaintenance || new Date().toISOString().split('T')[0],
-      next_maintenance: machine.nextMaintenance || null,
-      empresa_id: machine.empresaId,
-      activo: machine.activo
+      last_maintenance: machine.lastMaintenance || null,
+      next_maintenance: machine.nextMaintenance || null
     };
   }
 }

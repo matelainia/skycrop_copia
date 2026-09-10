@@ -31,6 +31,14 @@ export const validateMachine = (machine, existingMachines = []) => {
     errors.nextMaintenanceHours = 'La frecuencia de mantenimiento no puede ser negativa.';
   }
 
+  if (!machine.lastMaintenance) {
+    errors.lastMaintenance = 'La fecha del último mantenimiento es obligatoria.';
+  }
+
+  if (!machine.nextMaintenance) {
+    errors.nextMaintenance = 'La fecha del próximo mantenimiento es obligatoria.';
+  }
+
   if (machine.costOperator < 0) errors.costOperator = 'El costo de operador no puede ser negativo.';
   if (machine.costFuel < 0) errors.costFuel = 'El costo de combustible no puede ser negativo.';
   if (machine.costMaintenance < 0) errors.costMaintenance = 'El costo de mantenimiento no puede ser negativo.';

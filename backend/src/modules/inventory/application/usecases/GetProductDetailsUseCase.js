@@ -5,9 +5,9 @@ export class GetProductDetailsUseCase {
     this.productRepository = productRepository;
   }
 
-  async execute(productId) {
+  async execute(productId, companyId = null) {
     const id = parseInt(productId, 10);
-    const product = await this.productRepository.getProductById(id);
+    const product = await this.productRepository.getProductById(id, companyId);
 
     if (!product) {
       throw new NotFoundError('Ficha de producto no encontrada.');

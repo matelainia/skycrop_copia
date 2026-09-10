@@ -16,6 +16,7 @@ export default function NominaModal({
     periodo: selectedNomina.periodo,
     salarioNeto: selectedNomina.salario_neto,
     horasExtras: selectedNomina.horas_extras,
+    valorHoraExtra: '',
     retenciones: selectedNomina.retenciones,
     estado: selectedNomina.estado,
     fechaPago: selectedNomina.fecha_pago || '',
@@ -24,8 +25,9 @@ export default function NominaModal({
   } : {
     trabajadorId: '',
     periodo: initialPeriod,
-    salarioNeto: 3500000,
+    salarioNeto: '',
     horasExtras: 0,
+    valorHoraExtra: '',
     retenciones: 0,
     estado: 'Procesando',
     fechaPago: '',
@@ -34,15 +36,22 @@ export default function NominaModal({
   });
 
   const handleTrabajadorChange = (wId) => {
-    const w = workers.find(work => work.id === wId);
-    const baseSalary = w ? (w.rol === 'Tractorista' ? 4250000 : w.rol === 'Supervisor de Campo' ? 5500000 : 3500000) : 3500000;
-    setForm(p => ({ ...p, trabajadorId: wId, salarioNeto: baseSalary }));
+    // Sin salarios presuntos por rol: el salario lo digita quien liquida.
+    setForm(p => ({ ...p, trabajadorId: wId }));
   };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (!form.trabajadorId || !form.periodo) {
       alert("Por favor selecciona un trabajador y un período.");
+      return;
+    }
+    if (!Number.isFinite(Number(form.salarioNeto))) {
+      alert("Indique el salario base (COP).");
+      return;
+    }
+    if (!Number.isFinite(Number(form.valorHoraExtra))) {
+      alert("Indique el valor de la hora extra (COP).");
       return;
     }
     onSubmit(form);
@@ -146,16 +155,28 @@ export default function NominaModal({
               </div>
               <div>
                 <label className="form-label">Horas Extras *</label>
-                <input 
-                  type="number" 
-                  className="input-glass" 
-                  style={{ width: '100%' }} 
-                  required 
+                <input
+                  type="number"
+                  className="input-glass"
+                  style={{ width: '100%' }}
+                  required
                   min="0"
-                  value={form.horasExtras} 
-                  onChange={e => setForm(p => ({ ...p, horasExtras: Number(e.target.value) }))} 
+                  value={form.horasExtras}
+                  onChange={e => setForm(p => ({ ...p, horasExtras: Number(e.target.value) }))}
                 />
-                <span style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>Valor H.E: $15.000 COP</span>
+              </div>
+              <div>
+                <label className="form-label">Valor hora extra (COP) *</label>
+                <input
+                  type="number"
+                  className="input-glass"
+                  style={{ width: '100%' }}
+                  required
+                  min="0"
+                  placeholder="Ej: 15000"
+                  value={form.valorHoraExtra}
+                  onChange={e => setForm(p => ({ ...p, valorHoraExtra: Number(e.target.value) }))}
+                />
               </div>
             </div>
 

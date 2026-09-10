@@ -3,13 +3,14 @@ import { supabaseAdmin } from '../../../../../shared/database/supabase.js';
 import { DatabaseError } from '../../../../../shared/errors/AppErrors.js';
 
 export class SupabaseProductRepository extends ProductRepositoryPort {
-  async searchProducts(query, limit = 15) {
+  async searchProducts(query, limit = 15, companyId = null) {
     try {
       let qBuilder = supabaseAdmin
         .from('productos')
         .select(
           `
           id,
+          company_id,
           nombre_producto,
           reg_ica,
           ingrediente_activo,
@@ -21,6 +22,13 @@ export class SupabaseProductRepository extends ProductRepositoryPort {
         )
         .limit(limit)
         .order('nombre_producto', { ascending: true });
+
+      // H2: catalogo global (company_id NULL) + propios; nunca ajenos.
+      if (companyId) {
+        qBuilder = qBuilder.or(`company_id.is.null,company_id.eq.${companyId}`);
+      } else {
+        qBuilder = qBuilder.is('company_id', null);
+      }
 
       if (query.trim().length > 0) {
         // Sanitización: se eliminan caracteres con significado en la gramática de
@@ -42,13 +50,14 @@ export class SupabaseProductRepository extends ProductRepositoryPort {
     }
   }
 
-  async getProductById(id) {
+  async getProductById(id, companyId = null) {
     try {
       const { data, error } = await supabaseAdmin
         .from('productos')
         .select(
           `
           id,
+          company_id,
           nombre_producto,
           reg_ica,
           ingrediente_activo,
@@ -66,6 +75,8 @@ export class SupabaseProductRepository extends ProductRepositoryPort {
         .maybeSingle();
 
       if (error) throw error;
+      // H2: producto de otra empresa => inexistente para este tenant.
+      if (data && data.company_id && companyId && data.company_id !== companyId) return null;
       return data;
     } catch (err) {
       throw new DatabaseError(`Error consultando producto por ID: ${id}`, err);

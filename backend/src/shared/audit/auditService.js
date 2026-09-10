@@ -11,20 +11,42 @@ export class AuditService {
     companyId,
     action,
     module,
+    table = null,
+    recordId = null,
     before = null,
     after = null,
     ip = null,
-    endpoint = null
+    endpoint = null,
+    metadata = null
   }) {
     try {
+      // C4: respetar CHECK audit_logs.accion; company_id NOT NULL (no inventar).
+      const allowed = ['INSERT', 'UPDATE', 'DELETE', 'LOGIN', 'LOGOUT'];
+      if (!allowed.includes(action)) {
+        Logger.error('Accion de auditoria no valida (descartada):', { action, module });
+        return;
+      }
+      if (!companyId) {
+        Logger.error('Auditoria sin company_id (descartada, fail-closed):', { action, module });
+        return;
+      }
+      const afterId =
+        recordId ||
+        (after && typeof after === 'object' && !Buffer.isBuffer(after)
+          ? after.id || after.data?.id || null
+          : null);
+      const uuidRe = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       const record = {
-        usuario_id: userId || 'sistema_api',
-        usuario_email: userEmail || 'sistema_api',
-        company_id: companyId || null,
+        usuario_id: userId || 'sistema',
+        usuario_email: userEmail || userId || 'sistema',
+        company_id: companyId,
         accion: action,
         modulo: module,
-        antes: before,
-        despues: after,
+        tabla: table,
+        registro_id: uuidRe.test(String(afterId || '')) ? afterId : null,
+        antes: Buffer.isBuffer(before) ? '[BINARY]' : before,
+        despues: Buffer.isBuffer(after) ? '[BINARY]' : after,
+        metadata: { ...(metadata || {}), ...(endpoint ? { endpoint } : {}) },
         ip: ip
       };
 

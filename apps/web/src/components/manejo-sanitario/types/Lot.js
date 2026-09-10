@@ -8,7 +8,7 @@ export const createLot = (data = {}) => {
     fecha_siembra: data.fecha_siembra || new Date().toISOString().split('T')[0],
     estado_fenologico: data.estado_fenologico || data.estado_fenológico || 'Vegetativo',
     sistema_productivo: data.sistema_productivo || 'Convencional',
-    responsable_tecnico: (data.responsable_tecnico || '').trim() || 'Andrés Castro',
+    responsable_tecnico: (data.responsable_tecnico || '').trim() || null,
     observaciones: (data.observaciones || '').trim() || 'Sin observaciones.',
     area_ha: parseFloat(data.area_ha) || 0,
     perimetro_m: parseFloat(data.perimetro_m) || 0,
