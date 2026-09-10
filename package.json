@@ -12,6 +12,9 @@
     "build:web": "npm run build --workspace=apps/web",
     "build:auth": "npm run build --workspace=apps/auth",
     "build:all": "npm run build --workspaces",
+    "test:e2e:skycrop": "node tests/e2e/runner.js",
+    "test:e2e:analyze": "node tests/e2e/analyzer.js",
+    "test:e2e:real": "node tests/e2e/real/runner-real.js",
     "prepare": "husky"
   },
   "devDependencies": {

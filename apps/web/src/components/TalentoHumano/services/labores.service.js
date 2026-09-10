@@ -19,7 +19,7 @@ export const getLabores = async () => {
     asignacion: l.asignacion,
     cuadrillaId: l.cuadrilla_id,
     trabajadoresIds: (l.labor_trabajadores || []).map(t => t.trabajador_id),
-    jornal: l.jornal !== undefined && l.jornal !== null ? Number(l.jornal) : 1.0,
+    jornal: l.jornal !== undefined && l.jornal !== null && l.jornal !== '' ? Number(l.jornal) : null,
   }));
 };
 
@@ -33,7 +33,7 @@ export const createLabor = async (laborForm) => {
     estado: laborForm.estado || 'Pendiente',
     asignacion: laborForm.asignacion,
     cuadrilla_id: laborForm.asignacion === 'cuadrilla' && laborForm.cuadrillaId ? laborForm.cuadrillaId : null,
-    jornal: Number(laborForm.jornal) || 1.0
+    jornal: laborForm.jornal === '' || laborForm.jornal == null ? null : Number(laborForm.jornal)
   };
 
   const { data: laborResult, error: laborErr } = await supabase
@@ -67,7 +67,7 @@ export const createLabor = async (laborForm) => {
     asignacion: laborResult[0].asignacion,
     cuadrillaId: laborResult[0].cuadrilla_id,
     trabajadoresIds: workersIds,
-    jornal: Number(laborResult[0].jornal) || 1.0
+    jornal: laborResult[0].jornal == null ? null : Number(laborResult[0].jornal)
   };
 };
 

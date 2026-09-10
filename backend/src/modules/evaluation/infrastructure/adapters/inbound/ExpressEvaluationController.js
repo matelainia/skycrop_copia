@@ -12,6 +12,9 @@ export class ExpressEvaluationController {
    * query/body solo se aceptan como fallback en desarrollo.
    */
   _identity(req) {
+    // En producción solo token; fallback query/body solo en desarrollo para compatibilidad
+    if (req.tenant?.userId)
+      return resolveTenant(req, { fallbackCompanyId: null, fallbackUserId: null });
     return resolveTenant(req, {
       fallbackCompanyId: req.query?.companyId ?? req.body?.companyId ?? null,
       fallbackUserId: req.query?.userId ?? req.body?.userId ?? null
@@ -86,6 +89,7 @@ export class ExpressEvaluationController {
 
   /**
    * POST /api/v1/evaluaciones/geocode
+   * Verifica que el lote pertenezca al tenant del token para evitar BOLA geográfico
    */
   geocodeLote = async (req, res, next) => {
     try {
@@ -95,8 +99,9 @@ export class ExpressEvaluationController {
           .status(400)
           .json({ success: false, error: 'loteId es requerido en el cuerpo de la petición' });
       }
+      const companyId = req.tenant?.companyId || null;
 
-      const result = await this.geocodeLoteUseCase.execute(loteId);
+      const result = await this.geocodeLoteUseCase.execute(loteId, companyId);
       if (!result.success) {
         return res.status(400).json(result);
       }

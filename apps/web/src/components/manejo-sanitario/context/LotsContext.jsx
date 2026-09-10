@@ -25,11 +25,13 @@ export const LotsProvider = ({ children }) => {
     localStorage.setItem('skycrop_auditorias_cc', JSON.stringify(auditorias));
   }, [auditorias]);
 
-  const logAudit = (loteCode, actionText) => {
+  // NOTA: bitacora solo visual/local (no es trazabilidad). El actor se inyecta
+  // por llamada; si falta, se registra ausencia (null), nunca persona ficticia.
+  const logAudit = (loteCode, actionText, usuario = null) => {
     const log = {
       id: `aud-${Date.now()}`,
       fecha: new Date().toISOString(),
-      usuario: "Andrés Castro",
+      usuario,
       lote_codigo: loteCode,
       accion: actionText
     };

@@ -11,14 +11,14 @@ export class GeocodeLoteUseCase {
    * Fallback: Nominatim OpenStreetMap API.
    * Segundo Fallback: Valores por defecto en base a coordenadas.
    */
-  async execute(loteId) {
+  async execute(loteId, companyId = null) {
     if (!loteId) {
       return { success: false, error: 'lote_id es requerido' };
     }
 
     try {
-      // 1. Obtener la geometría / centroide del lote
-      const lote = await this.repo.getLoteGeom(loteId);
+      // 1. Obtener la geometría / centroide del lote (aislado por tenant si companyId presente)
+      const lote = await this.repo.getLoteGeom(loteId, companyId);
       if (!lote) {
         return { success: false, error: 'Lote no encontrado' };
       }

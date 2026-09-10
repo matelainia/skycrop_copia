@@ -5,12 +5,15 @@ const getBackendUrl = () => {
     : 'https://backend.skycrop.app/api';
 };
 
+function _auth() {
+  try { const t = sessionStorage.getItem('sb_access_token') || localStorage.getItem('sb_access_token') || ''; return t ? { Authorization: `Bearer ${t}` } : {}; } catch { return {}; }
+}
 export const geeRepository = {
   async getGeeIndex(coordinates, indexType, loteId) {
     const backendUrl = getBackendUrl();
     const res = await fetch(`${backendUrl}/gee/index`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ..._auth() },
       body: JSON.stringify({
         coordinates,
         indexType,
@@ -28,7 +31,7 @@ export const geeRepository = {
     const backendUrl = getBackendUrl();
     const res = await fetch(`${backendUrl}/auditoria/estado-aplicacion`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ..._auth() },
       body: JSON.stringify({ aplicacion_id: appId })
     });
     

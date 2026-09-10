@@ -6,6 +6,6 @@ export const createCost = (data = {}) => {
     fecha: data.fecha || new Date().toISOString().split('T')[0],
     descripcion: (data.descripcion || '').trim() || 'Costo operacional registrado',
     costo: parseFloat(data.costo) || 0,
-    responsable: (data.responsable || '').trim() || 'Andrés Castro'
+    responsable: (data.responsable || '').trim() || null
   };
 };

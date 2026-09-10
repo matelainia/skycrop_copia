@@ -1,4 +1,5 @@
 import express from 'express';
+import { requireAuth } from '../../../../../shared/middleware/authenticate.js';
 import { SupabaseApplicationAuditRepository } from '../outbound/SupabaseApplicationAuditRepository.js';
 import { ConfirmHighToxicityAuditUseCase } from '../../../application/usecases/ConfirmHighToxicityAuditUseCase.js';
 import { EnrichApplicationStateAuditUseCase } from '../../../application/usecases/EnrichApplicationStateAuditUseCase.js';
@@ -16,6 +17,9 @@ const controller = new ExpressApplicationAuditController(
   confirmHighToxicityAuditUseCase,
   enrichApplicationStateAuditUseCase
 );
+
+// Auditoría de alta toxicidad requiere identidad verificada (trazabilidad legal)
+router.use(requireAuth);
 
 // 2. Definición de rutas
 // POST /api/v1/auditoria/alta-toxicidad -> Registrar confirmación de leída de advertencia

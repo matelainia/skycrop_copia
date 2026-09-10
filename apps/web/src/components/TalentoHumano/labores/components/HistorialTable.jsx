@@ -43,8 +43,8 @@ export const HistorialTable = React.memo(function HistorialTable({
       }
 
       const laborText = `${labor.titulo} ${labor.descripcion || ''} ${labor.lote || ''} ${labor.tipo}`.toLowerCase();
-      const jVal = labor.jornal !== undefined && labor.jornal !== null ? Number(labor.jornal) : 1.0;
-      const hVal = getHorasDeJornal(jVal);
+      const jVal = labor.jornal !== undefined && labor.jornal !== null && labor.jornal !== '' ? Number(labor.jornal) : null;
+      const hVal = jVal == null ? null : getHorasDeJornal(jVal);
 
       if (workersForLabor.length === 0) {
         historyRows.push({
@@ -163,7 +163,7 @@ export const HistorialTable = React.memo(function HistorialTable({
                     </div>
                   </td>
                   <td style={{ fontWeight: 600 }}>
-                    {row.jornal.toFixed(2)} ({row.horas} hrs)
+                    {row.jornal == null ? '—' : `${row.jornal.toFixed(2)} (${row.horas} hrs)`}
                   </td>
                   <td style={{ textAlign: 'right' }}>
                     <div style={{ display: 'flex', gap: 6, justifyContent: 'flex-end' }}>

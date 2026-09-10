@@ -1,4 +1,5 @@
 import express from 'express';
+import { requireAuth } from '../../../../../shared/middleware/authenticate.js';
 import { SupabaseAgronomyRepository } from '../outbound/SupabaseAgronomyRepository.js';
 import { SupabaseProtocolRepository } from '../outbound/SupabaseProtocolRepository.js';
 import { SupabaseObjectRepository } from '../outbound/SupabaseObjectRepository.js';
@@ -31,6 +32,9 @@ const controller = new ExpressAgronomyController(
   objectRepo,
   protocolService // ← nueva capa de dominio
 );
+
+// Autenticación obligatoria en producción; en desarrollo permite flujo sin token con advertencia
+router.use(requireAuth);
 
 // ─── CATÁLOGOS ────────────────────────────────────────────────────────────────
 

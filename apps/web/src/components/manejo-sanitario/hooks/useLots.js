@@ -73,12 +73,14 @@ export const useLots = () => {
     centroide_lng: null
   });
 
-  // Weather station values
+  // Estacion meteorologica: sin telemetria real conectada los valores son NULL
+  // (antes: 27.5/76/18.2/45 fijos + variacion pseudoaleatoria por codigo de lote,
+  // que se persistia como "condiciones_climaticas" inventadas en aplicaciones).
   const [weatherStation, setWeatherStation] = useState({
-    temp: 27.5,
-    humidity: 76,
-    wind: 18.2,
-    rain: 45
+    temp: null,
+    humidity: null,
+    wind: null,
+    rain: null
   });
 
   // Auto-select first lote
@@ -93,21 +95,11 @@ export const useLots = () => {
     localStorage.setItem('skycrop_lotes_cc', JSON.stringify(lotes));
   }, [lotes]);
 
-  // Dynamic Weather Telemetry variation per lot
+  // Sin fuente meteorologica real no se inventa telemetria: la estacion queda en
+  // NULL hasta conectar proveedor (ver modules/Climate). Ver useApplications:
+  // condiciones_climaticas solo se guarda si temp/viento son numeros reales.
   useEffect(() => {
-    if (!selectedLote) return;
-    const charSum = selectedLote.codigo_interno.charCodeAt(0) + (selectedLote.codigo_interno.charCodeAt(1) || 0);
-    const tempVar = (charSum % 5) - 2;
-    const humVar = (charSum % 15) - 7;
-    const windVar = (charSum % 12) - 6;
-    const rainVar = (charSum % 30) - 15;
-
-    setWeatherStation({
-      temp: parseFloat((27.5 + tempVar).toFixed(1)),
-      humidity: Math.max(30, Math.min(95, 75 + humVar)),
-      wind: parseFloat(Math.max(2.0, 14.5 + windVar).toFixed(1)),
-      rain: Math.max(5, Math.min(90, 40 + rainVar))
-    });
+    setWeatherStation({ temp: null, humidity: null, wind: null, rain: null });
   }, [selectedLote?.id]);
 
   // Load lotes from Supabase

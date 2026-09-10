@@ -21,6 +21,10 @@ const TENANT_TABLES = [
   'monitoreos', 'aplicaciones', 'bodegas', 'labores',
   'jornadas_maquinaria', 'nominas', 'cursos_formacion',
   'registros_formacion', 'cuadrillas', 'almacenamientos', 'audit_logs',
+  // Cosecha y Postcosecha — trazabilidad completa (RLS + proxy)
+  'lotes_producto', 'procesos_postcosecha', 'clientes', 'destinos',
+  'ventas', 'venta_detalles', 'despachos', 'facturas', 'factura_detalles',
+  'planificacion_cosechas', 'costos', 'predios',
   // Fertilización — multiempresa estricta (RLS + proxy)
   'fertilization_plans', 'fertilization_plan_items', 'fertilization_applications',
   'fertilization_observations', 'fertilization_observation_comments',
@@ -29,7 +33,9 @@ const TENANT_TABLES = [
   'fertilizacion_recomendaciones', 'fertilizacion_recomendacion_detalle',
   'fert_calc_soil_analyses', 'fert_calc_calculations', 'fert_calc_calculation_snapshots',
   // Análisis de Suelos — documental + analítico (RLS + proxy)
-  'analisis_suelos', 'resultados_analisis_suelo', 'laboratorios'
+  'analisis_suelos', 'resultados_analisis_suelo', 'laboratorios',
+  // Trazabilidad — evidencia productiva inmutable (solo INSERT/SELECT tenant)
+  'traceability_events'
 ];
 
 const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -111,8 +117,11 @@ export function setSupabaseToken(token, orgId = null) {
   activeOrgId = orgId;
   if (token) {
     try {
+      // Solo sessionStorage (no localStorage) reduce persistencia ante XSS y evita
+      // que el token sobreviva entre sesiones del navegador.
       sessionStorage.setItem('sb_access_token', token);
-      localStorage.setItem('sb_access_token', token);
+      // Limpiar posible token legado en localStorage
+      try { localStorage.removeItem('sb_access_token'); } catch {}
     } catch (_e) {
       /* almacenamiento no disponible: se continúa solo con el cliente */
     }

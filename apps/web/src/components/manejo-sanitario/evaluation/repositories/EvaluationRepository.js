@@ -5,6 +5,7 @@ const getBackendUrl = () => {
     : 'https://backend.skycrop.app/api';
 };
 
+function _auth() { try { const t = sessionStorage.getItem('sb_access_token') || localStorage.getItem('sb_access_token') || ''; return t ? { Authorization: `Bearer ${t}` } : {}; } catch { return {}; } }
 export const EvaluationRepository = {
   /**
    * Guarda o actualiza un borrador en el servidor.
@@ -13,7 +14,7 @@ export const EvaluationRepository = {
     const url = `${getBackendUrl()}/evaluaciones/draft`;
     const res = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ..._auth() },
       body: JSON.stringify(draftPayload)
     });
 
@@ -29,7 +30,7 @@ export const EvaluationRepository = {
    */
   async getDraft(loteId, userId, companyId) {
     const url = `${getBackendUrl()}/evaluaciones/draft/${loteId}?userId=${encodeURIComponent(userId)}&companyId=${encodeURIComponent(companyId)}`;
-    const res = await fetch(url);
+    const res = await fetch(url, { headers: { ..._auth() } });
     if (res.status === 404) {
       return null;
     }
@@ -47,7 +48,7 @@ export const EvaluationRepository = {
     const url = `${getBackendUrl()}/evaluaciones/geocode`;
     const res = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ..._auth() },
       body: JSON.stringify({ loteId })
     });
 
@@ -65,7 +66,7 @@ export const EvaluationRepository = {
     const url = `${getBackendUrl()}/evaluaciones`;
     const res = await fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', ..._auth() },
       body: JSON.stringify(payload)
     });
 

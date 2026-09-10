@@ -22,12 +22,16 @@ export class ExpressAgronomyController {
 
   /**
    * GET /api/v1/agronomia/lotes/:id/formulario-monitoreo
+   * Verificación multi-tenant: lote debe pertenecer a company del JWT
    */
   getFormularioMonitoreo = async (req, res, next) => {
     try {
       const { id } = req.params;
       if (!id) return res.status(400).json({ success: false, error: 'lote_id requerido' });
-      const result = await this.getFormularioUseCase.execute(id);
+      const companyId = req.tenant?.companyId || null;
+      // En producción la autenticación ya es obligatoria vía requireAuth;
+      // si companyId falta, el repositorio hará lookup sin filtro pero se deniega en el useCase si lote no pertenece
+      const result = await this.getFormularioUseCase.execute(id, companyId);
       if (!result.success) return res.status(404).json(result);
       return res.json(result);
     } catch (err) {
@@ -146,8 +150,12 @@ export class ExpressAgronomyController {
   saveProtocolo = async (req, res, next) => {
     try {
       const payload = req.body;
-      // Atribución de autoría desde el token verificado (fallback dev: body/'system')
-      const userId = req.tenant?.userId || payload.created_by || payload.user_id || 'system';
+      const userId = req.tenant?.userId || payload.created_by || payload.user_id || null;
+      if (!userId) {
+        return res
+          .status(401)
+          .json({ success: false, error: 'Autenticación requerida para crear protocolo' });
+      }
       const estado = payload.estado || 'borrador';
 
       if (!payload.objeto_evaluacion_id && !payload.objeto_nombre) {
@@ -175,7 +183,12 @@ export class ExpressAgronomyController {
     try {
       const { id } = req.params;
       const payload = req.body;
-      const userId = req.tenant?.userId || payload.updated_by || payload.user_id || 'system';
+      const userId = req.tenant?.userId || payload.updated_by || payload.user_id || null;
+      if (!userId) {
+        return res
+          .status(401)
+          .json({ success: false, error: 'Autenticación requerida para actualizar protocolo' });
+      }
 
       if (this.protocolSvc) {
         const { protocolo, nuevaVersion } = await this.protocolSvc.editar(id, payload, userId);
@@ -203,7 +216,9 @@ export class ExpressAgronomyController {
   publicarProtocolo = async (req, res, next) => {
     try {
       const { id } = req.params;
-      const userId = req.tenant?.userId || req.body?.user_id || req.query?.user_id || 'system';
+      const userId = req.tenant?.userId || req.body?.user_id || req.query?.user_id || null;
+      if (!userId)
+        return res.status(401).json({ success: false, error: 'Autenticación requerida' });
       const comentario = req.body?.comentario || null;
 
       const data = this.protocolSvc
@@ -222,7 +237,9 @@ export class ExpressAgronomyController {
   cloneProtocolo = async (req, res, next) => {
     try {
       const { id } = req.params;
-      const userId = req.tenant?.userId || req.body?.user_id || req.query?.user_id || 'system';
+      const userId = req.tenant?.userId || req.body?.user_id || req.query?.user_id || null;
+      if (!userId)
+        return res.status(401).json({ success: false, error: 'Autenticación requerida' });
       const data = this.protocolSvc
         ? await this.protocolSvc.clonar(id, userId)
         : await this.protocolRepo.listProtocolos({ objeto_id: id });
@@ -246,8 +263,11 @@ export class ExpressAgronomyController {
           error: 'Se requiere el objeto "protocolo" en el cuerpo de la petición'
         });
       }
+      const resolvedUser = req.tenant?.userId || user_id || null;
+      if (!resolvedUser)
+        return res.status(401).json({ success: false, error: 'Autenticación requerida' });
       const data = this.protocolSvc
-        ? await this.protocolSvc.importar(protocolo, req.tenant?.userId || user_id || 'system')
+        ? await this.protocolSvc.importar(protocolo, resolvedUser)
         : await this.protocolRepo.insertCabecera(protocolo);
       return res
         .status(201)

@@ -70,13 +70,16 @@ export async function optionalAuth(req, _res, next) {
     if (token) {
       let payload = null;
 
-      // 1. ¿JWT emitido por este backend?
+      // 1. ¿JWT emitido por este backend? (expiración estricta)
       payload = (() => {
         try {
-          // ignoreExpiration: el proxy/controlador refresca tokens vencidos
-          // re-derivándolos; una firma válida sigue siendo prueba de origen.
-          return jwt.verify(token, env.SUPABASE_JWT_SECRET, { ignoreExpiration: true });
-        } catch {
+          return jwt.verify(token, env.SUPABASE_JWT_SECRET);
+        } catch (err) {
+          // Token expirado o firma inválida → no se acepta como identidad válida.
+          // El cliente debe refrescar vía Clerk (/auth/me) con su sesión vigente.
+          if (err && err.name === 'TokenExpiredError') {
+            console.warn('[AUTH] Supabase JWT expirado rechazado; requiere refresh vía Clerk.');
+          }
           return null;
         }
       })();

@@ -33,7 +33,7 @@ export class ExpressCalculationController {
   // Prioriza la identidad verificada del token (req.tenant); los valores
   // enviados por el cliente solo aplican como fallback en desarrollo.
   _getAuth(req) {
-    return resolveTenant(req, { fallbackCompanyId: 'company_dev', fallbackUserId: null });
+    return resolveTenant(req, { fallbackCompanyId: null, fallbackUserId: null });
   }
 
   // ─── POST /calculo ─────────────────────────────────────────────────────────

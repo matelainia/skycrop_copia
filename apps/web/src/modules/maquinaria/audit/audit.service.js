@@ -23,8 +23,8 @@ class AuditService {
     description,
     previousValues = null,
     newValues = null,
-    user = 'Andrés Castro',
-    empresaId = 'Empresa Demo'
+    user = null,
+    empresaId = null
   }) {
     const auditEntry = {
       id: `aud-mach-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,

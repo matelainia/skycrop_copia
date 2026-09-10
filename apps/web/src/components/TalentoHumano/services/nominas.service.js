@@ -32,7 +32,11 @@ export const getNominas = async () => {
 };
 
 export const createNomina = async (nominaForm) => {
-  const valorHoraExtra = 15000;
+  // Valor hora extra: configuracion explicita del formulario, nunca default oculto.
+  const valorHoraExtra = Number(nominaForm.valorHoraExtra);
+  if (!Number.isFinite(valorHoraExtra) || valorHoraExtra < 0) {
+    throw new Error('valor_hora_extra requerido: indique el valor de la hora extra (COP).');
+  }
   const totNeto = Number(nominaForm.salarioNeto) + (Number(nominaForm.horasExtras) * valorHoraExtra) - Number(nominaForm.retenciones);
 
   const dbNomina = {
@@ -66,7 +70,10 @@ export const createNomina = async (nominaForm) => {
 };
 
 export const updateNomina = async (id, nominaForm) => {
-  const valorHoraExtra = 15000;
+  const valorHoraExtra = Number(nominaForm.valorHoraExtra);
+  if (!Number.isFinite(valorHoraExtra) || valorHoraExtra < 0) {
+    throw new Error('valor_hora_extra requerido: indique el valor de la hora extra (COP).');
+  }
   const totNeto = Number(nominaForm.salarioNeto) + (Number(nominaForm.horasExtras) * valorHoraExtra) - Number(nominaForm.retenciones);
 
   const dbNomina = {

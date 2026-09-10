@@ -22,6 +22,11 @@ export class ExpressWeatherController {
       if (isNaN(latVal) || isNaN(lonVal)) {
         throw new ValidationError('Coordenadas numéricas inválidas.');
       }
+      if (latVal < -90 || latVal > 90 || lonVal < -180 || lonVal > 180) {
+        throw new ValidationError(
+          'Coordenadas fuera de rango válido (lat -90..90, lon -180..180).'
+        );
+      }
 
       const forecast = await this.getWeatherForecastUseCase.execute(latVal, lonVal);
 

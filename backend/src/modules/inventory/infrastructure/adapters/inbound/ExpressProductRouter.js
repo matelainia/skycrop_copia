@@ -1,4 +1,5 @@
 import express from 'express';
+import { requireAuth } from '../../../../../shared/middleware/authenticate.js';
 import { SupabaseProductRepository } from '../outbound/SupabaseProductRepository.js';
 import { SearchProductsUseCase } from '../../../application/usecases/SearchProductsUseCase.js';
 import { GetProductDetailsUseCase } from '../../../application/usecases/GetProductDetailsUseCase.js';
@@ -13,6 +14,8 @@ const searchProductsUseCase = new SearchProductsUseCase(productRepository);
 const getProductDetailsUseCase = new GetProductDetailsUseCase(productRepository);
 
 const controller = new ExpressProductController(searchProductsUseCase, getProductDetailsUseCase);
+
+router.use(requireAuth);
 
 // 2. Definición de rutas
 // GET /api/v1/productos?q=term -> Búsqueda autocompletado

@@ -5,6 +5,7 @@
  */
 import { ValidationError, AuthenticationError } from '../../../../../shared/errors/AppErrors.js';
 import { resolveTenant } from '../../../../../shared/middleware/authenticate.js';
+import eventBus from '../../../../../shared/events/eventBus.js';
 
 export class ExpressFertilizationController {
   /**
@@ -55,9 +56,10 @@ export class ExpressFertilizationController {
     if (requireToken && (!authHeader || !authHeader.startsWith('Bearer '))) {
       throw new AuthenticationError('No autenticado. Token de autorización faltante.');
     }
+    // En producción requireAuth ya garantiza req.tenant; fallback solo para desarrollo
     return resolveTenant(req, {
-      fallbackCompanyId: 'company_dev',
-      fallbackUserId: authHeader ? 'user_dev' : null
+      fallbackCompanyId: null,
+      fallbackUserId: null
     });
   }
 
@@ -147,8 +149,21 @@ export class ExpressFertilizationController {
   async completeApplication(req, res, next) {
     try {
       const { applicationId } = req.params;
-      const { companyId, userId } = this._getAuth(req);
+      const { companyId, userId, userName } = this._getAuth(req);
       const result = await this.completeAppUC.execute(applicationId, companyId, userId, req.body);
+      // SkyCrop Core: evidencia inmutable de la aplicación completada.
+      try {
+        eventBus.emit('fertilization:completed', {
+          companyId,
+          userId,
+          userName,
+          application: { id: applicationId, ...req.body, ...result },
+          loteId: req.body?.lote_id || req.body?.loteId || result?.lote_id || null,
+          predioId: req.body?.predio_id || null
+        });
+      } catch {
+        /* best-effort */
+      }
       res.json({ success: true, data: result, error: null });
     } catch (err) {
       next(err);

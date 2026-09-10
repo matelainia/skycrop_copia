@@ -270,16 +270,18 @@ export class SupabaseEvaluationRepository {
   }
 
   /**
-   * Obtiene la geometría y coordenadas de un lote específico.
+   * Obtiene la geometría y coordenadas de un lote específico (aislado por tenant).
+   * @param {string} loteId
+   * @param {string|null} companyId - Si se provee, verifica pertenencia
    */
-  async getLoteGeom(loteId) {
+  async getLoteGeom(loteId, companyId = null) {
     try {
-      const { data, error } = await supabaseAdmin
+      let q = supabaseAdmin
         .from('lotes')
         .select('id, company_id, centroide_lat, centroide_lng, geom, area_ha')
-        .eq('id', loteId)
-        .single();
-
+        .eq('id', loteId);
+      if (companyId) q = q.eq('company_id', companyId);
+      const { data, error } = await q.single();
       if (error) throw error;
       return data;
     } catch (err) {

@@ -1,11 +1,12 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { Users, Package, Tractor, HeartPulse, Sprout, Sun, Moon, CloudSun, Calendar, LogOut, Settings } from 'lucide-react';
+import { Users, Package, Tractor, HeartPulse, Sprout, Sun, Moon, CloudSun, Calendar, LogOut, Settings, ShieldCheck } from 'lucide-react';
 import TalentoHumano from '../components/TalentoHumano';
 import InventarioBodegas from '../components/InventarioBodegas/InventarioBodegas';
 import Maquinaria from '../modules/maquinaria';
 import ManejoSanitario from '../components/manejo-sanitario/ManejoSanitarioModule';
 import CosechaPostcosecha from '../components/CosechaPostcosecha/CosechaPostcosecha';
 import Climate from '../modules/Climate';
+import TraceabilityModule from '../modules/traceability/TraceabilityModule';
 import { supabase } from '../lib/supabaseClient';
 import { useAuthContext } from '../context/AuthContext';
 
@@ -18,6 +19,7 @@ export default function App() {
     { id: 'maquinaria', label: 'Maquinaria', icon: <Tractor size={18} />, recurso: 'maquinaria' },
     { id: 'sanitario', label: 'Manejo Sanitario', icon: <HeartPulse size={18} />, recurso: 'aplicaciones' },
     { id: 'cosecha', label: 'Cosecha y Postcosecha', icon: <Sprout size={18} />, recurso: 'cosechas' },
+    { id: 'trazabilidad', label: 'Trazabilidad', icon: <ShieldCheck size={18} />, recurso: 'lotes' },
     { id: 'clima', label: 'Clima', icon: <Sun size={18} />, recurso: 'lotes' },
   ].filter(item => {
     const permitted = hasPermission(item.recurso, 'leer');
@@ -91,6 +93,8 @@ export default function App() {
         return <ManejoSanitario subTab={activeSubTab} setSubTab={setActiveSubTab} />;
       case 'cosecha':
         return <CosechaPostcosecha />;
+      case 'trazabilidad':
+        return <TraceabilityModule />;
       case 'clima':
         return <Climate />;
       default:
@@ -105,6 +109,7 @@ export default function App() {
       case 'maquinaria': return 'Flota de Maquinaria';
       case 'sanitario': return 'Manejo Sanitario';
       case 'cosecha': return 'Rendimiento Cosecha y Postcosecha';
+      case 'trazabilidad': return 'Trazabilidad — Bitácora oficial del predio';
       case 'clima': return 'Centro de Inteligencia ClimÃ¡tica';
       default: return 'Panel Principal';
     }

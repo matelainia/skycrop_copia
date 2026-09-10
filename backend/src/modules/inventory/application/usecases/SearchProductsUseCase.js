@@ -3,9 +3,9 @@ export class SearchProductsUseCase {
     this.productRepository = productRepository;
   }
 
-  async execute(query, limit = 15) {
+  async execute(query, limit = 15, companyId = null) {
     const term = (query || '').trim();
-    const data = await this.productRepository.searchProducts(term, limit);
+    const data = await this.productRepository.searchProducts(term, limit, companyId);
 
     // Mapear los datos de base de datos a DTOs legibles por el cliente frontend
     return data.map((p) => ({
