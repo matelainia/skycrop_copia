@@ -135,7 +135,7 @@ export default function App() {
               src={empresa.logo}
               alt={empresa.nombre || 'Logo'}
               onError={() => setLogoOk(false)}
-              style={{ height: 36, width: 'auto', maxWidth: 150, objectFit: 'contain', display: 'block' }}
+              style={{ height: 46, width: 'auto', maxWidth: 170, objectFit: 'contain', display: 'block' }}
             />
           ) : (
             <>
