@@ -33,6 +33,13 @@
 - eslint archivos tocados: 24 errores **preexistentes**, 0 nuevos.
 - Comportamiento DB post-055: pendiente de apply + re-sondeo (C-04 debe fallar 42501; bulk nómina debe insertar; `En Progreso`/`Archivada`/`Procesando` deben pasar CHECK).
 
+## Re-sondeo post-055 (2026-09-15, solo lectura): 12/12 PASS
+
+Columnas nuevas visibles vía REST (schema recargado): `nominas.valor_hora_extra`,
+actor en 8/8 tablas. 2 trabajadores intactos (`Activa`). `anon` ciego.
+Pendiente verificación conductual (requiere escrituras controladas): CHECKs nuevos,
+trigger triangular (C-04 → 42501), recompute nómina, RBAC nóminas.
+
 ## Deuda explícita → Fase 2
 
 Salarios presuntos por rol (bulk), reactivación UI admin, paginación, storage documentos, RPC/service-layer, resolución por nombre, `user_id` (diseño), alcance predial TH, E2E + `--live` + certificación.
