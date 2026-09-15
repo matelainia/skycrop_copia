@@ -2,6 +2,7 @@ import { machineryRepository } from '../repository/machinery.repository';
 import { validateMachine } from '../validators/machinery.validator';
 import { canCreateMachine } from '../permissions/canCreateMachine';
 import { canDeleteMachine } from '../permissions/canDeleteMachine';
+import { translateRpcError } from './rpcErrors';
 import { audit } from '../audit/audit.service';
 import { emit } from '../events/machinery.events';
 
@@ -10,7 +11,11 @@ class MachineryService {
    * Fetch all fleet machinery
    */
   async getFleet() {
-    return await machineryRepository.getAll();
+    try {
+      return await machineryRepository.getAll();
+    } catch (err) {
+      throw new Error(translateRpcError(err, 'No se pudo cargar la flota.'), { cause: err });
+    }
   }
 
   /**
@@ -29,8 +34,13 @@ class MachineryService {
       throw new Error(firstError);
     }
 
-    // 3. Database insert
-    const registered = await machineryRepository.create(machineData);
+    // 3. Database insert (RPC contrato §8 + maestros suplementarios)
+    let registered;
+    try {
+      registered = await machineryRepository.create(machineData);
+    } catch (err) {
+      throw new Error(translateRpcError(err, 'La base de datos rechazó el registro de maquinaria.'), { cause: err });
+    }
 
     // 4. Audit Log
     audit.log({
@@ -58,8 +68,13 @@ class MachineryService {
 
     const previousRecord = existingFleet.find(m => m.id === id);
 
-    // 2. Database update
-    const updated = await machineryRepository.update(id, machineData);
+    // 2. Database update (maestros; lo operativo es propiedad de las RPC)
+    let updated;
+    try {
+      updated = await machineryRepository.update(id, machineData);
+    } catch (err) {
+      throw new Error(translateRpcError(err, 'La base de datos rechazó la actualización.'), { cause: err });
+    }
 
     // 3. Audit Log
     audit.log({
@@ -84,8 +99,13 @@ class MachineryService {
       throw new Error('No tiene permisos para eliminar maquinaria.');
     }
 
-    // 2. Database deletion
-    const deletedId = await machineryRepository.delete(id);
+    // 2. Database deletion (RLS admin; con historial la base lo rechaza)
+    let deletedId;
+    try {
+      deletedId = await machineryRepository.delete(id);
+    } catch (err) {
+      throw new Error(translateRpcError(err, 'No se pudo eliminar el equipo.'), { cause: err });
+    }
 
     // 3. Audit Log
     audit.log({

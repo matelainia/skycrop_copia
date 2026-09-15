@@ -2,6 +2,7 @@
 import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { machineryService } from '../services/machinery.service';
 import { operationService } from '../services/operation.service';
+import { isAuthenticated, subscribeAuthChange } from '../../../lib/supabaseClient';
 import { audit } from '../audit/audit.service';
 import { subscribe } from '../events/machinery.events';
 
@@ -22,18 +23,33 @@ export const MachineryProvider = ({ children }) => {
   const [activeMachineId, setActiveMachineId] = useState(null);
   const [audits, setAudits] = useState(() => audit.getLogs());
 
-  // Fetch all module data
+  // Fetch all module data. Flota e historial cargan por separado: si uno
+  // falla (p.ej. permiso), el otro igual se muestra en lugar de vaciar todo.
   const fetchData = useCallback(async () => {
+    // Evitar pedir anónimo: sin token, RLS niega y el módulo pintaría vacío.
+    if (!isAuthenticated()) return;
     // Avoid synchronous state changes in render effects
     try {
-      const fleet = await machineryService.getFleet();
-      const ops = await operationService.getHistory();
+      const [fleetResult, opsResult] = await Promise.allSettled([
+        machineryService.getFleet(),
+        operationService.getHistory()
+      ]);
 
-      setMachinery(fleet);
-      setJornadas(ops);
+      let fleet = null;
+      if (fleetResult.status === 'fulfilled') {
+        fleet = fleetResult.value;
+        setMachinery(fleet);
+      } else {
+        console.error('Error cargando flota de maquinaria:', fleetResult.reason?.message || fleetResult.reason);
+      }
+      if (opsResult.status === 'fulfilled') {
+        setJornadas(opsResult.value);
+      } else {
+        console.error('Error cargando operaciones de maquinaria:', opsResult.reason?.message || opsResult.reason);
+      }
 
       // Set default active machine on first load
-      if (fleet.length > 0) {
+      if (fleet && fleet.length > 0) {
         const operating = fleet.find(m => m.status === 'Operando');
         if (operating) {
           setActiveMachineId(operating.id);
@@ -75,9 +91,17 @@ export const MachineryProvider = ({ children }) => {
     };
   }, [fetchData]);
 
-  // Initial load
+  // Initial load: espera al token de sesión en lugar de pedir anónimo.
+  // (Los efectos hijo corren antes de que AuthContext complete loadProfile.)
   useEffect(() => {
-    fetchData();
+    if (isAuthenticated()) {
+      fetchData();
+      return undefined;
+    }
+    const unsubscribe = subscribeAuthChange((authed) => {
+      if (authed) fetchData();
+    });
+    return unsubscribe;
   }, []);
 
   const value = {

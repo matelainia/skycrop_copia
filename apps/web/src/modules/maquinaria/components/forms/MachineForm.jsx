@@ -1,7 +1,7 @@
 
 import { Plus, Tractor } from 'lucide-react';
 import { MACHINERY_TYPES_LIST } from '../../constants/machineryTypes';
-import { MACHINERY_STATUS_LIST } from '../../constants/machineryStatus';
+import { MACHINERY_STATUS_LIST, getMachineryStatusLabel, normalizeMachineryStatus } from '../../constants/machineryStatus';
 
 export const MachineForm = ({
   formData,
@@ -195,11 +195,11 @@ export const MachineForm = ({
         <select
           className="input-glass select-glass"
           style={{ width: '100%' }}
-          value={formData.status}
+          value={normalizeMachineryStatus(formData.status)}
           onChange={e => setFormData(prev => ({ ...prev, status: e.target.value }))}
         >
           {MACHINERY_STATUS_LIST.map(st => (
-            <option key={st} value={st}>{st === 'En mantenimiento' ? 'En mantenimiento' : st}</option>
+            <option key={st} value={st}>{getMachineryStatusLabel(st)}</option>
           ))}
         </select>
       </div>

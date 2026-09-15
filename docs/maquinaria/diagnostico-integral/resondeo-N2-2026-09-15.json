@@ -1,0 +1,144 @@
+{
+  "ts": "2026-09-15T17:06:20.520Z",
+  "nivel": 2,
+  "hallazgos": {
+    "H-01(N1)": "CLOSED",
+    "H-02(N1)": "PENDING-DASHBOARD(registrar_costo_lote)",
+    "H-01(N2)": "CLOSED"
+  },
+  "n1_existencia": {
+    "registrar_maquinaria": "403:ROUTED",
+    "iniciar_jornada_maquinaria": "400:ROUTED",
+    "finalizar_jornada_maquinaria": "400:ROUTED",
+    "registrar_combustible_maquinaria": "400:ROUTED",
+    "programar_mantenimiento_maquinaria": "403:ROUTED",
+    "registrar_mantenimiento_maquinaria_v2": "400:ROUTED",
+    "actualizar_horometro_maquinaria": "400:ROUTED",
+    "registrar_incidencia_maquinaria": "400:ROUTED",
+    "registrar_costo_lote": 404,
+    "tiene_acceso_predio": 404,
+    "alcance_operativo": 404,
+    "registrar_evento_trazabilidad": 404,
+    "e2e_verify_evidence_chain": 404,
+    "e2e_cleanup_test_run": 404
+  },
+  "n2_anon_sin_resolucion": {
+    "registrar": 401,
+    "iniciar": 404,
+    "combustible": 401
+  },
+  "before_after": [
+    {
+      "id": "EXISTS tabla.maquinaria_operaciones",
+      "before": 200
+    },
+    {
+      "id": "EXISTS tabla.maquinaria_mantenimientos",
+      "before": 200
+    },
+    {
+      "id": "EXISTS tabla.maquinaria_combustible",
+      "before": 200
+    },
+    {
+      "id": "EXISTS tabla.maquinaria_eventos",
+      "before": 200
+    },
+    {
+      "id": "EXISTS tabla.ventas",
+      "before": 404
+    },
+    {
+      "id": "EXISTS tabla.analisis_suelos",
+      "before": 404
+    },
+    {
+      "id": "EXISTS tabla.user_predios",
+      "before": 200
+    },
+    {
+      "id": "EXISTS rpc.registrar_costo_lote",
+      "before": 404
+    },
+    {
+      "id": "EXISTS rpc.process_audit_log",
+      "before": 404
+    },
+    {
+      "id": "EXISTS rpc.process_secure_company_id",
+      "before": 404
+    },
+    {
+      "id": "EXISTS rpc.registrar_maquinaria",
+      "before": 404
+    },
+    {
+      "id": "EXISTS rpc.iniciar_jornada_maquinaria",
+      "before": 404
+    },
+    {
+      "id": "EXISTS rpc.finalizar_jornada_maquinaria",
+      "before": 404
+    },
+    {
+      "id": "EXISTS rpc.registrar_combustible_maquinaria",
+      "before": 404
+    },
+    {
+      "id": "EXISTS rpc.programar_mantenimiento_maquinaria",
+      "before": 404
+    },
+    {
+      "id": "EXISTS rpc.registrar_mantenimiento_maquinaria_v2",
+      "before": 404
+    },
+    {
+      "id": "EXISTS rpc.actualizar_horometro_maquinaria",
+      "before": 404
+    },
+    {
+      "id": "EXISTS rpc.registrar_incidencia_maquinaria",
+      "before": 404
+    },
+    {
+      "id": "EXISTS rpc.tiene_acceso_predio",
+      "before": 404
+    },
+    {
+      "id": "EXISTS rpc.alcance_operativo",
+      "before": 404
+    },
+    {
+      "id": "EXISTS rpc.registrar_evento_trazabilidad",
+      "before": 404
+    },
+    {
+      "id": "EXISTS rpc.e2e_verify_evidence_chain",
+      "before": 404
+    },
+    {
+      "id": "EXISTS rpc.e2e_cleanup_test_run",
+      "before": 404
+    },
+    {
+      "id": "SEC-01 A lee propio",
+      "before": 200
+    },
+    {
+      "id": "SEC-09 A fuerza company_id=B",
+      "before": 200
+    },
+    {
+      "id": "SEC-10 A lee maquina B por id",
+      "before": 200
+    },
+    {
+      "id": "SEC-01 B tablas nuevas",
+      "before": 200
+    },
+    {
+      "id": "SEC-11 RPC anon sin body",
+      "before": 404
+    }
+  ]
+}

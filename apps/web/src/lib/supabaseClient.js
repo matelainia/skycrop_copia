@@ -16,10 +16,40 @@ const defaultClient = createClient(backendUrl, 'dummy-key');
 let activeClient = null;
 let activeOrgId = null; // Guardará el org_id de Clerk de forma activa
 
+// Suscriptores de cambio de sesión (p.ej. módulos que deben esperar al token
+// antes del primer fetch en lugar de pedir anónimo al montar).
+const authListeners = new Set();
+
+/** true cuando hay token de usuario (nunca asumir autenticado sin esto). */
+export function isAuthenticated() {
+  return activeClient !== null;
+}
+
+/** Suscribe cb(autenticado:boolean). Devuelve unsubscribe. */
+export function subscribeAuthChange(cb) {
+  authListeners.add(cb);
+  return () => {
+    authListeners.delete(cb);
+  };
+}
+
+function notifyAuthChange() {
+  authListeners.forEach((cb) => {
+    try {
+      cb(activeClient !== null);
+    } catch (err) {
+      console.warn('Auth listener falló:', err?.message || err);
+    }
+  });
+}
+
 const TENANT_TABLES = [
   'lotes', 'maquinaria', 'inventario', 'trabajadores', 'cosechas',
   'monitoreos', 'aplicaciones', 'bodegas', 'labores',
   'jornadas_maquinaria', 'nominas', 'cursos_formacion',
+  // Maquinaria canónica 052 (flota + operaciones + mantenimiento + combustible + eventos)
+  'maquinaria_operaciones', 'maquinaria_mantenimientos',
+  'maquinaria_combustible', 'maquinaria_eventos',
   'registros_formacion', 'cuadrillas', 'almacenamientos', 'audit_logs',
   // Cosecha y Postcosecha — trazabilidad completa (RLS + proxy)
   'lotes_producto', 'procesos_postcosecha', 'clientes', 'destinos',
@@ -115,8 +145,7 @@ export const supabase = new Proxy({}, {
  */
 export function setSupabaseToken(token, orgId = null) {
   activeOrgId = orgId;
-  if (token) {
-    try {
+  if (token) {    try {
       // Solo sessionStorage (no localStorage) reduce persistencia ante XSS y evita
       // que el token sobreviva entre sesiones del navegador.
       sessionStorage.setItem('sb_access_token', token);
@@ -126,6 +155,7 @@ export function setSupabaseToken(token, orgId = null) {
       /* almacenamiento no disponible: se continúa solo con el cliente */
     }
     activeClient = createClient(backendUrl, token);
+    notifyAuthChange();
   } else {
     try {
       sessionStorage.removeItem('sb_access_token');
@@ -135,5 +165,6 @@ export function setSupabaseToken(token, orgId = null) {
     }
     // Sin token: canal por defecto (dummy-key) hacia el proxy del backend
     activeClient = null;
+    notifyAuthChange();
   }
 }

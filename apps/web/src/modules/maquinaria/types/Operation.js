@@ -49,40 +49,45 @@ export class Operation {
   }
 
   /**
-   * Factory method to parse database rows to Operation object instances
+   * Factory method to parse database rows to Operation object instances.
+   * Soporta tabla canónica maquinaria_operaciones (052) y legacy
+   * jornadas_maquinaria para compatibilidad de lectura.
    */
   static fromDatabase(row) {
     if (!row) return null;
     return new Operation({
       id: row.id,
       maquinariaId: row.maquinaria_id,
-      maquinariaName: row.maquinaria?.name || '',
-      maquinariaCodigo: row.maquinaria?.codigo_id || '',
-      maquinariaPhoto: row.maquinaria?.photo_url || '',
-      maquinariaType: row.maquinaria?.type || '',
-      operator: row.operator,
-      lot: row.lot,
-      activity: row.activity,
-      startTime: row.start_time,
-      endTime: row.end_time,
-      startHorometro: row.start_horometro,
-      endHorometro: row.end_horometro,
+      maquinariaName: row.maquinaria?.nombre || row.maquinaria?.name || '',
+      maquinariaCodigo: row.maquinaria?.codigo || row.maquinaria?.codigo_id || '',
+      maquinariaPhoto: row.maquinaria?.image_url || row.maquinaria?.photo_url || '',
+      maquinariaType: row.maquinaria?.tipo || row.maquinaria?.type || '',
+      operator: row.operador_nombre ?? row.operator,
+      lot: row.lote_nombre ?? row.lot,
+      activity: row.labor ?? row.activity,
+      startTime: row.inicio ?? row.start_time,
+      endTime: row.fin ?? row.end_time,
+      startHorometro: row.horometro_inicio ?? row.start_horometro,
+      endHorometro: row.horometro_fin ?? row.end_horometro,
       startFuel: row.start_fuel,
       endFuel: row.end_fuel,
-      calculatedHours: row.calculated_hours,
-      calculatedFuelConsumption: row.calculated_fuel_consumption,
-      calculatedCost: row.calculated_cost,
-      notes: row.notes || '',
-      status: row.status,
-      empresaId: row.empresa_id
+      calculatedHours: row.horas ?? row.calculated_hours,
+      calculatedFuelConsumption: row.combustible_l ?? row.calculated_fuel_consumption,
+      calculatedCost: row.costo_total ?? row.calculated_cost,
+      notes: row.notas ?? row.notes ?? '',
+      status: row.estado ?? row.status,
+      empresaId: row.company_id ?? row.empresa_id ?? null
     });
   }
 
   /**
-   * Helper to convert client-side model instance to Supabase database formatting
+   * Helper to convert client-side model instance to Supabase database formatting.
+   * Corrige bug histórico: la tabla exige company_id, no empresa_id.
+   * (Las escrituras críticas van por RPC; esto queda para compatibilidad.)
    */
   static toDatabase(operation) {
     return {
+      company_id: operation.empresaId,
       maquinaria_id: operation.maquinariaId,
       operator: operation.operator?.trim(),
       lot: operation.lot?.trim(),
@@ -97,8 +102,7 @@ export class Operation {
       calculated_fuel_consumption: Number(operation.calculatedFuelConsumption) || 0,
       calculated_cost: Number(operation.calculatedCost) || 0,
       notes: operation.notes?.trim() || '',
-      status: operation.status,
-      empresa_id: operation.empresaId
+      status: operation.status
     };
   }
 }

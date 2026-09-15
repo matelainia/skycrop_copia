@@ -31,4 +31,21 @@ export class FuelRecord {
     this.date = date || new Date().toISOString().split('T')[0];
     this.empresaId = empresaId;
   }
+
+  /**
+   * Factory para filas de maquinaria_combustible (contrato 052 §2.4).
+   * No rompe el uso actual in-memory (derivado de flota/jornadas).
+   */
+  static fromDatabase(row) {
+    if (!row) return null;
+    return new FuelRecord({
+      id: row.id,
+      maquinariaId: row.maquinaria_id,
+      fuelConsumed: row.cantidad,
+      cost: row.costo_total,
+      date: row.fecha ? String(row.fecha).substring(0, 10) : null,
+      operatorName: row.observacion || '',
+      empresaId: row.company_id || null
+    });
+  }
 }

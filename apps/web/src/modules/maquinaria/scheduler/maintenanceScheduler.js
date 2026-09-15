@@ -1,6 +1,7 @@
 /**
  * Maintenance Scheduler for preventive fleet servicing alerts
  */
+import { MACHINERY_STATUS, isMachineStatus } from '../constants/machineryStatus';
 export class MaintenanceScheduler {
   /**
    * Evaluate a list of machines and return active warnings
@@ -14,7 +15,7 @@ export class MaintenanceScheduler {
     machinery.forEach(m => {
       const hoursLeft = Number(m.nextMaintenanceHours) || 0;
       
-      if (m.status === 'Fuera de servicio') {
+      if (isMachineStatus(m.status, MACHINERY_STATUS.FUERA_DE_SERVICIO)) {
         outOfService.push({
           machine: m,
           reason: 'Inspección técnica o reparación correctiva requerida.'
@@ -49,7 +50,7 @@ export class MaintenanceScheduler {
    */
   needsImmediateService(machine) {
     if (!machine) return false;
-    return machine.status === 'Fuera de servicio' || (Number(machine.nextMaintenanceHours) || 0) <= 20;
+    return isMachineStatus(machine.status, MACHINERY_STATUS.FUERA_DE_SERVICIO) || (Number(machine.nextMaintenanceHours) || 0) <= 20;
   }
 }
 
