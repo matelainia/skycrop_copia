@@ -15,7 +15,7 @@ try {
   const { default: dotenv } = await import('dotenv');
   dotenv.config({ path: path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..', 'backend', '.env') });
 } catch { /* dotenv opcional */ }
-import { parseRealArgs, realConfig, mintTestJwt, rest } from './real-env.js';
+import { parseRealArgs, realConfig, mintTestJwt, rest, rpc } from './real-env.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const args = parseRealArgs();
@@ -193,6 +193,21 @@ try {
   const auditOk = audit.status === 200 && (audit.body || []).length >= 1;
   const actorOk = actorRow.status === 200 && actorRow.body?.[0]?.created_by === ctx.subAdmin;
   rec('TH-015', 'P1', 'ALLOW', auditOk && actorOk ? 'PASS' : 'FAIL', `audit=${audit.body?.length} created_by=${actorRow.body?.[0]?.created_by}`);
+
+  // TH-RPC: capa 056 vía JWT (camino real del frontend Fase 2)
+  const R1 = await rpc(cfg, { fn: 'th_crear_cuadrilla', jwt: ctx.jwtAdmin, body: { p_nombre: `E2E-TH rpc ${TAG}` } });
+  if (R1.status >= 200 && R1.status < 300) E2E.rpcCua = R1.body.id;
+  const R2 = await rpc(cfg, { fn: 'th_registrar_labor', jwt: ctx.jwtAdmin, body: { p_titulo: `E2E-TH rpc lab ${TAG}`, p_tipo: 'Riego', p_estado: 'Pendiente', p_asignacion: 'individual', p_jornal: 0.5, p_trabajadores: [E2E.w1] } });
+  if (R2.status >= 200 && R2.status < 300) E2E.rpcLab = R2.body.id;
+  const rpcBridge = E2E.rpcLab ? await S('labor_trabajadores', { method: 'GET', query: `?labor_id=eq.${E2E.rpcLab}&select=trabajador_id` }) : { body: [] };
+  const atomicOk = (rpcBridge.body || []).length === 1 && rpcBridge.body[0].trabajador_id === E2E.w1;
+  rec('TH-RPC-01', 'P0', 'ALLOW', R1.status < 300 && R2.status < 300 && atomicOk ? 'PASS' : 'FAIL', `cua=${R1.status} lab=${R2.status} atomica=${atomicOk}`);
+  const R3 = await rpc(cfg, { fn: 'th_registrar_nomina', jwt: ctx.jwtAdmin, body: { p_trabajador_id: E2E.w1, p_periodo: `E2E-TH-RPC-${TAG.slice(-3)}`, p_salario_neto: 1500000, p_horas_extras: 2, p_valor_hora_extra: 40000, p_retenciones: 0, p_estado: 'Procesando' } });
+  if (R3.status >= 200 && R3.status < 300) E2E.rpcNom = R3.body.id;
+  rec('TH-RPC-02', 'P0', 'ALLOW', R3.status < 300 && Number(R3.body?.total_neto) === 1580000 ? 'PASS' : 'FAIL', `rpc=${R3.status} total=${R3.body?.total_neto}`);
+  const R4 = await rpc(cfg, { fn: 'th_retirar_trabajador', jwt: ctx.jwtOp, body: { p_trabajador_id: E2E.w1 } });
+  const R5 = await rpc(cfg, { fn: 'th_crear_cuadrilla', jwt: null, body: { p_nombre: 'anon' } });
+  rec('TH-RPC-03', 'P0', 'DENY', R4.status >= 400 && R5.status >= 400 ? 'PASS' : 'FAIL', `oper-retirar=${R4.status} anon=${R5.status}`);
 } catch (e) {
   rec('TH-RUN', 'P0', 'ALLOW', 'FAIL', `excepción: ${e.message}`);
 }
@@ -209,6 +224,9 @@ try {
     if (E2E.labNL) await S('labores', { method: 'DELETE', query: `?id=eq.${E2E.labNL}` });
     if (E2E.cua) { await S('cuadrilla_miembros', { method: 'DELETE', query: `?cuadrilla_id=eq.${E2E.cua}` }); await S('cuadrillas', { method: 'DELETE', query: `?id=eq.${E2E.cua}` }); }
     if (E2E.w1) await S('trabajadores', { method: 'DELETE', query: `?id=eq.${E2E.w1}` });
+    if (E2E.rpcNom) await S('nominas', { method: 'DELETE', query: `?id=eq.${E2E.rpcNom}` });
+    if (E2E.rpcLab) { await S('labor_trabajadores', { method: 'DELETE', query: `?labor_id=eq.${E2E.rpcLab}` }); await S('labores', { method: 'DELETE', query: `?id=eq.${E2E.rpcLab}` }); }
+    if (E2E.rpcCua) await S('cuadrillas', { method: 'DELETE', query: `?id=eq.${E2E.rpcCua}` });
     // Sin empresa B (044): solo filas propias + membresías + perfiles + lote A.
     await S('company_users', { method: 'DELETE', query: `?clerk_user_id=in.(${ctx.subAdmin},${ctx.subSup})` });
     await S('lotes', { method: 'DELETE', query: `?codigo_interno=eq.E2E-TH-${TAG.slice(-3)}` });

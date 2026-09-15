@@ -36,5 +36,9 @@
 
 ## Verificación pendiente
 
-1. Aplicar 056 → 2. re-sondeo lectura → 3. `runner-th.js --seq=N` regresión →
-4. smoke UI (crear trabajador/labor/nómina) → 5. veredicto.
+1. ~~Aplicar 056~~ ✓ aplicada 2026-09-15 (2 fixes previos: header fusionado 42601,
+   RAISE sin parámetro) → 2. re-sondeo lectura ✓ (RPCs ejecutan asserts, `user_id` live)
+   → 3. regresión E2E ✓ **20/20 PASS, 0 P0/P1** (`SKYCROP_E2E_TALENTO_HUMANO_2026-09-15-003`,
+   incluye TH-RPC-01/02/03: cuadrilla+labor atómica vía JWT, nómina server 1580000,
+   operario/anon denegados en RPC) → 4. smoke UI pendiente (usuario) →
+5. **FASE 2 VERIFICADA E2E** (certificación global pendiente de Fase 3).
