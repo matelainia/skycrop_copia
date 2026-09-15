@@ -33,12 +33,21 @@
 - eslint archivos tocados: 24 errores **preexistentes**, 0 nuevos.
 - Comportamiento DB post-055: pendiente de apply + re-sondeo (C-04 debe fallar 42501; bulk nómina debe insertar; `En Progreso`/`Archivada`/`Procesando` deben pasar CHECK).
 
-## Re-sondeo post-055 (2026-09-15, solo lectura): 12/12 PASS
+## Verificación conductual (2026-09-15, sondas E2E-TH + limpieza, autorizada)
 
-Columnas nuevas visibles vía REST (schema recargado): `nominas.valor_hora_extra`,
-actor en 8/8 tablas. 2 trabajadores intactos (`Activa`). `anon` ciego.
-Pendiente verificación conductual (requiere escrituras controladas): CHECKs nuevos,
-trigger triangular (C-04 → 42501), recompute nómina, RBAC nóminas.
+| Sonda | Resultado |
+| --- | --- |
+| `labores` acepta `En Progreso` y `Archivada` | PASS |
+| `nominas` acepta `Procesando`; recompute server `1000000` exacto | PASS |
+| Doble nómina mismo periodo → `23505 uq_nominas_company_trabajador_periodo` | PASS |
+| `registros` acepta `Completada` | PASS |
+| `cursos` rechaza `Técnica` (`cursos_formacion_tipo_check`) | PASS |
+| Puente con labor fantasma → bloqueado con mensaje triangular (código 42501 no propagado por PostgREST, mensaje exacto) | PASS |
+| Puente coherente mismo tenant | PASS |
+| `created_by=null` con service_role → confirma versión viva `043` (`current_user_id()` NULL fail-closed; con JWT real se llena) | INFO |
+| Limpieza: 7/7 tablas en conteo pre-sonda (2 trabajadores intactos) | PASS |
+
+Pendiente (requiere sesión autenticada, va a E2E): RBAC `nominas` por rol + C-04 cross-tenant real entre 2 empresas.
 
 ## Deuda explícita → Fase 2
 
