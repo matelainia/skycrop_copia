@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import * as trabajadoresService from '../services/trabajadores.service';
 import { TRABAJADOR_ESTADOS_UI } from '../constants/taxonomia';
+import { isAuthenticated, subscribeAuthChange } from '../../../lib/supabaseClient';
 
 export function useTrabajadores() {
   const [workers, setWorkers] = useState([]);
@@ -63,8 +64,10 @@ export function useTrabajadores() {
     }
   }, [workers]);
 
+  // Esperar al token RLS antes del primer fetch (evita lectura anónima vacía al recargar).
   useEffect(() => {
-    refresh();
+    if (isAuthenticated()) { refresh(); return undefined; }
+    return subscribeAuthChange((ok) => { if (ok) refresh(); });
   }, [refresh]);
 
   return {

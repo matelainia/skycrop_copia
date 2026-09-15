@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import * as nominasService from '../services/nominas.service';
+import { isAuthenticated, subscribeAuthChange } from '../../../lib/supabaseClient';
 
 export function useNominas() {
   const [nominas, setNominas] = useState([]);
@@ -123,8 +124,10 @@ export function useNominas() {
     }
   }, [nominas]);
 
+  // Esperar al token RLS antes del primer fetch (evita lectura anónima vacía al recargar).
   useEffect(() => {
-    refresh();
+    if (isAuthenticated()) { refresh(); return undefined; }
+    return subscribeAuthChange((ok) => { if (ok) refresh(); });
   }, [refresh]);
 
   return {

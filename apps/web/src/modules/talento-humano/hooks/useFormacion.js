@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import * as formacionService from '../services/formacion.service';
+import { isAuthenticated, subscribeAuthChange } from '../../../lib/supabaseClient';
 
 export function useFormacion(workersList = []) {
   const [cursos, setCursos] = useState([]);
@@ -69,8 +70,10 @@ export function useFormacion(workersList = []) {
     }
   }, []);
 
+  // Esperar al token RLS antes del primer fetch (evita lectura anónima vacía al recargar).
   useEffect(() => {
-    refresh();
+    if (isAuthenticated()) { refresh(); return undefined; }
+    return subscribeAuthChange((ok) => { if (ok) refresh(); });
   }, []);
 
   return {

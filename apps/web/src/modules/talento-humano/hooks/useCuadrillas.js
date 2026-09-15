@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import * as cuadrillasService from '../services/cuadrillas.service';
+import { isAuthenticated, subscribeAuthChange } from '../../../lib/supabaseClient';
 
 export function useCuadrillas() {
   const [cuadrillas, setCuadrillas] = useState([]);
@@ -77,8 +78,10 @@ export function useCuadrillas() {
     }
   }, []);
 
+  // Esperar al token RLS antes del primer fetch (evita lectura anónima vacía al recargar).
   useEffect(() => {
-    refresh();
+    if (isAuthenticated()) { refresh(); return undefined; }
+    return subscribeAuthChange((ok) => { if (ok) refresh(); });
   }, [refresh]);
 
   return {
