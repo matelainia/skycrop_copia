@@ -116,7 +116,7 @@ BEGIN
   RETURNING id INTO v_id;
   FOREACH v_t IN ARRAY COALESCE(p_trabajadores, '{}') LOOP
     IF NOT EXISTS (SELECT 1 FROM public.trabajadores WHERE id = v_t AND company_id = v_c AND deleted_at IS NULL) THEN
-      RAISE EXCEPTION 'Trabajador % ajeno o retirado.' USING ERRCODE='42501'; END IF;
+      RAISE EXCEPTION 'Trabajador % ajeno o retirado.', v_t USING ERRCODE='42501'; END IF;
     INSERT INTO public.labor_trabajadores (labor_id, trabajador_id, company_id)
     VALUES (v_id, v_t, v_c) ON CONFLICT DO NOTHING;
   END LOOP;
