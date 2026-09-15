@@ -1,6 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { Users, Package, Tractor, HeartPulse, Sprout, Sun, Moon, CloudSun, Calendar, LogOut, Settings, ShieldCheck } from 'lucide-react';
-import TalentoHumano from '../components/TalentoHumano';
+import TalentoHumano from '../modules/talento-humano';
 import InventarioBodegas from '../components/InventarioBodegas/InventarioBodegas';
 import Maquinaria from '../modules/maquinaria';
 import ManejoSanitario from '../components/manejo-sanitario/ManejoSanitarioModule';

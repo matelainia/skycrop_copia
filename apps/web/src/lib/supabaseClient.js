@@ -20,6 +20,11 @@ let activeOrgId = null; // Guardará el org_id de Clerk de forma activa
 // antes del primer fetch en lugar de pedir anónimo al montar).
 const authListeners = new Set();
 
+/** Org/tenant activo (inyectado en company_id y rutas storage). Null sin sesión. */
+export function getActiveOrgId() {
+  return activeOrgId;
+}
+
 /** true cuando hay token de usuario (nunca asumir autenticado sin esto). */
 export function isAuthenticated() {
   return activeClient !== null;
