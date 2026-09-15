@@ -1,0 +1,136 @@
+{
+  "runId": "E2E-REAL-2026-09-15-002",
+  "env": "test",
+  "summary": {
+    "total": 17,
+    "passed": 17,
+    "failed": 0,
+    "P0": 0,
+    "P1": 0,
+    "passRate": "100.0"
+  },
+  "results": [
+    {
+      "id": "TH-SETUP",
+      "severity": "P3",
+      "expect": "ALLOW",
+      "status": "PASS",
+      "detail": "A=6ffd13b6-e541-406f-9808-7b3283752ee1 B=11111111-1111-4111-8111-111111111111 snapshot={\"trabajadores\":2,\"labores\":0,\"nominas\":0,\"cursos_formacion\":0,\"registros_formacion\":0,\"cuadrillas\":0,\"labor_trabajadores\":0,\"cuadrilla_miembros\":0}"
+    },
+    {
+      "id": "TH-001",
+      "severity": "P0",
+      "expect": "DENY",
+      "status": "PASS",
+      "detail": "anon=200/0 exp=401 bad=401"
+    },
+    {
+      "id": "TH-002",
+      "severity": "P1",
+      "expect": "ALLOW+DENY",
+      "status": "PASS",
+      "detail": "create=201 bad-estado=400"
+    },
+    {
+      "id": "TH-003",
+      "severity": "P1",
+      "expect": "ALLOW",
+      "status": "PASS",
+      "detail": "create=201 archive=204"
+    },
+    {
+      "id": "TH-004",
+      "severity": "P2",
+      "expect": "ALLOW",
+      "status": "PASS",
+      "detail": "toggle=204"
+    },
+    {
+      "id": "TH-005",
+      "severity": "P1",
+      "expect": "ALLOW",
+      "status": "PASS",
+      "detail": "del=204 op-ve=0 admin-ve=1 reac=204"
+    },
+    {
+      "id": "TH-006",
+      "severity": "P0",
+      "expect": "ALLOW+DENY",
+      "status": "PASS",
+      "detail": "cua=201 ok=201 cross=403"
+    },
+    {
+      "id": "TH-007",
+      "severity": "P0",
+      "expect": "DENY",
+      "status": "PASS",
+      "detail": "lote-ajeno=403"
+    },
+    {
+      "id": "TH-008",
+      "severity": "P0",
+      "expect": "ALLOW+DENY",
+      "status": "PASS",
+      "detail": "ok=201 cross=403 {\"code\":\"42501\",\"details\":null,\"hint\":null,\"message\":\"Labor 33333333-3333-4333-8333-333333333333 no pertenece a la empre"
+    },
+    {
+      "id": "TH-009",
+      "severity": "P0",
+      "expect": "DENY",
+      "status": "PASS",
+      "detail": "ext-trab=0 ext-labA=0"
+    },
+    {
+      "id": "TH-010",
+      "severity": "P0",
+      "expect": "ALLOW+DENY",
+      "status": "PASS",
+      "detail": "admin=201/2010000 doble=409 oper=403 sup=201"
+    },
+    {
+      "id": "TH-011",
+      "severity": "P1",
+      "expect": "ALLOW+DENY",
+      "status": "PASS",
+      "detail": "cur=201 reg=201 bad=400"
+    },
+    {
+      "id": "TH-012",
+      "severity": "P2",
+      "expect": "ALLOW",
+      "status": "PASS",
+      "detail": "create=201 op-ve=1"
+    },
+    {
+      "id": "TH-013",
+      "severity": "P0",
+      "expect": "ALLOW+DENY",
+      "status": "PASS",
+      "detail": "sup-edit=204 op-del=200/[] intacto=true"
+    },
+    {
+      "id": "TH-014",
+      "severity": "P0",
+      "expect": "DENY",
+      "status": "PASS",
+      "detail": "anon=401 forgery=400"
+    },
+    {
+      "id": "TH-015",
+      "severity": "P1",
+      "expect": "ALLOW",
+      "status": "PASS",
+      "detail": "audit=3 created_by=e2e_th_admin_002"
+    },
+    {
+      "id": "TH-016",
+      "severity": "P0",
+      "expect": "ALLOW",
+      "status": "PASS",
+      "detail": "trabajadores:2 labores:0 nominas:0 cursos_formacion:0 registros_formacion:0 cuadrillas:0 labor_trabajadores:0 cuadrilla_miembros:0 lotes-gone=true"
+    }
+  ],
+  "ctx": {
+    "coA": "6ffd13b6-e541-406f-9808-7b3283752ee1"
+  }
+}

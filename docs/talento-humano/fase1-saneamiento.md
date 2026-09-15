@@ -33,7 +33,17 @@
 - eslint archivos tocados: 24 errores **preexistentes**, 0 nuevos.
 - Comportamiento DB post-055: pendiente de apply + re-sondeo (C-04 debe fallar 42501; bulk nómina debe insertar; `En Progreso`/`Archivada`/`Procesando` deben pasar CHECK).
 
-## Verificación conductual (2026-09-15, sondas E2E-TH + limpieza, autorizada)
+## E2E TH-001…016 (2026-09-15, `tests/e2e/real/runner-th.js`)
+
+- Run 001: 15/17 — reveló 2 cosas: (a) `DELETE` RLS-denegado devuelve 204-con-0-filas
+  (harness corregido a exigir `return=representation` vacío); (b) `companies` con
+  historial no puede borrarse (`044` inmutable → CASCADE 25001): el E2E ya no crea
+  empresa B (usa UUID ajeno + triangular); quedó 1 shell `RETIRED-E2E-TH-B` inactiva
+  y vacía como evidencia documentada.
+- Run 002 (`--seq=2`): **17/17 PASS, 0 P0/P1** — `SKYCROP_E2E_TALENTO_HUMANO_2026-09-15-002`.
+  Limpieza total verificada (baseline 2 trabajadores intacto).
+- **Veredicto: FASE 1 VERIFICADA E2E.** Certificación global pendiente de Fase 2
+  (RPC/service-layer, storage, `user_id`, E2E de regresión).
 
 | Sonda | Resultado |
 | --- | --- |
