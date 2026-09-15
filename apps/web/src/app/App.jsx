@@ -50,6 +50,10 @@ export default function App() {
     }
   }, [permissions]);
 
+  // Logo de la organización (Clerk → companies.logo). Si la URL muere, fallback a marca.
+  const [logoOk, setLogoOk] = useState(true);
+  useEffect(() => { setLogoOk(true); }, [empresa?.logo]);
+
   useEffect(() => {
     localStorage.setItem('skycrop_active_subtab', activeSubTab);
   }, [activeSubTab]);
@@ -125,16 +129,20 @@ export default function App() {
       {/* Sidebar Navigation */}
       <aside className="sidebar-container">
         <div className="sidebar-brand">
-          {empresa?.logo ? (
+          {empresa?.logo && logoOk ? (
             <img
+              key={empresa.logo}
               src={empresa.logo}
-              alt={`Logo de ${empresa.nombre || 'la empresa'}`}
-              style={{ width: 34, height: 34, borderRadius: 10, objectFit: 'cover', background: 'transparent' }}
+              alt={empresa.nombre || 'Logo'}
+              onError={() => setLogoOk(false)}
+              style={{ height: 36, width: 'auto', maxWidth: 150, objectFit: 'contain', display: 'block' }}
             />
           ) : (
-            <div className="logo-icon"><Sprout size={20} /></div>
+            <>
+              <div className="logo-icon"><Sprout size={20} /></div>
+              <span className="brand-name">{empresa?.nombre || 'SkyCrop'}</span>
+            </>
           )}
-          <span className="brand-name">{empresa?.nombre || 'SkyCrop'}</span>
         </div>
         
         <ul className="sidebar-menu">
