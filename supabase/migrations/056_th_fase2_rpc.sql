@@ -172,7 +172,8 @@ BEGIN
   RETURN jsonb_build_object('id', p_nomina_id, 'total_neto', v_total);
 END; $$;
 
--- ── 5. Formación ──────────────────────────────────────────────────────────────CREATE OR REPLACE FUNCTION public.th_crear_curso(p_nombre TEXT, p_tipo TEXT, p_horas NUMERIC DEFAULT 8)
+-- ── 5. Formación ──────────────────────────────────────────────────────────────
+CREATE OR REPLACE FUNCTION public.th_crear_curso(p_nombre TEXT, p_tipo TEXT, p_horas NUMERIC DEFAULT 8)
 RETURNS JSONB LANGUAGE plpgsql SECURITY INVOKER SET search_path = public, pg_temp AS $$
 DECLARE v_c UUID; v_id UUID;
 BEGIN
