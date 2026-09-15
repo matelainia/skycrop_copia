@@ -1,5 +1,15 @@
 import { supabase } from '../../../lib/supabaseClient';
 
+export const getLotes = async () => {
+  const { data, error } = await supabase
+    .from('lotes')
+    .select('id,nombre,codigo_interno')
+    .order('nombre');
+
+  if (error) throw error;
+  return data || [];
+};
+
 export const getLabores = async () => {
   const { data, error } = await supabase
     .from('labores')
@@ -14,6 +24,7 @@ export const getLabores = async () => {
     tipo: l.tipo,
     descripcion: l.descripcion,
     lote: l.lote,
+    loteId: l.lote_id || null,
     fecha: l.fecha,
     estado: l.estado,
     asignacion: l.asignacion,
@@ -29,6 +40,8 @@ export const createLabor = async (laborForm) => {
     tipo: laborForm.tipo,
     descripcion: laborForm.descripcion,
     lote: laborForm.lote,
+    // F1.3: lote_id formal (selector). NULL = alcance empresa (051 §9).
+    lote_id: laborForm.loteId || null,
     fecha: laborForm.fecha || new Date().toISOString().split('T')[0],
     estado: laborForm.estado || 'Pendiente',
     asignacion: laborForm.asignacion,
@@ -62,6 +75,7 @@ export const createLabor = async (laborForm) => {
     tipo: laborResult[0].tipo,
     descripcion: laborResult[0].descripcion,
     lote: laborResult[0].lote,
+    loteId: laborResult[0].lote_id || null,
     fecha: laborResult[0].fecha,
     estado: laborResult[0].estado,
     asignacion: laborResult[0].asignacion,

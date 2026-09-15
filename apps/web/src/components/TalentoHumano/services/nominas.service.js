@@ -44,6 +44,8 @@ export const createNomina = async (nominaForm) => {
     periodo: nominaForm.periodo,
     salario_neto: Number(nominaForm.salarioNeto),
     horas_extras: Number(nominaForm.horasExtras),
+    // F1.5: tasa persistida (antes efímera). El servidor recomputa total_neto (055).
+    valor_hora_extra: Number(nominaForm.valorHoraExtra),
     retenciones: Number(nominaForm.retenciones),
     total_neto: totNeto,
     estado: nominaForm.estado,
@@ -79,6 +81,7 @@ export const updateNomina = async (id, nominaForm) => {
   const dbNomina = {
     salario_neto: Number(nominaForm.salarioNeto),
     horas_extras: Number(nominaForm.horasExtras),
+    valor_hora_extra: Number(nominaForm.valorHoraExtra),
     retenciones: Number(nominaForm.retenciones),
     total_neto: totNeto,
     estado: nominaForm.estado,

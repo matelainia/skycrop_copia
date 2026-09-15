@@ -13,6 +13,7 @@ import EmptyState from '../components/common/EmptyState';
 export default function Labores() {
   const {
     labores,
+    lotes,
     loading: lLoading,
     error: lError,
     createLabor,
@@ -44,7 +45,7 @@ export default function Labores() {
   }, [createLabor]);
 
   const handleArchive = useCallback(async () => {
-    const activeLabores = labores.filter(l => ['Pendiente', 'En Curso', 'Completada'].includes(l.estado));
+    const activeLabores = labores.filter(l => ['Pendiente', 'En Progreso', 'Completada'].includes(l.estado));
     if (activeLabores.length === 0) {
       alert("No hay labores activas para archivar en este momento.");
       return;
@@ -85,7 +86,7 @@ export default function Labores() {
     setHistoryDateEnd('');
   }, []);
 
-  const hasActiveLabores = labores.some(l => ['Pendiente', 'En Curso', 'Completada'].includes(l.estado));
+  const hasActiveLabores = labores.some(l => ['Pendiente', 'En Progreso', 'Completada'].includes(l.estado));
 
   return (
     <>
@@ -229,6 +230,7 @@ export default function Labores() {
         <LaborModal 
           workers={workers}
           cuadrillas={cuadrillas}
+          lotes={lotes}
           onSubmit={handleCreateLabor}
           onClose={() => setShowAddLabor(false)}
         />

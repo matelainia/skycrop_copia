@@ -94,6 +94,7 @@ export function useNominas() {
         periodo,
         salarioNeto: basePay,
         horasExtras: 0,
+        valorHoraExtra: 0,
         retenciones: 0,
         estado: 'Procesando',
         fechaPago: null,

@@ -16,7 +16,7 @@
  * @property {string} [foto] - Base64 encoded avatar image
  * @property {string} [copiaContratoName] - Filename of the uploaded contract copy
  * @property {string} rol - Cargo/Role name
- * @property {string} estado - 'Activa' | 'On Leave' | 'Inactivo'
+ * @property {string} estado - canónico taxonomia.js: 'Activa' | 'On Leave' | 'Inactivo' (+ 'Vacaciones' | 'Licencia' en DB)
  */
 
 /**
@@ -34,7 +34,7 @@
  * @property {string} [descripcion] - Text details
  * @property {string} [lote] - Lot identifier
  * @property {string} fecha - Task execution date (YYYY-MM-DD)
- * @property {string} estado - 'Pendiente' | 'En Curso' | 'Completada' | 'Archivada'
+ * @property {string} estado - canónico taxonomia.js: 'Pendiente' | 'En Progreso' | 'Completada' | 'Archivada' (+ 'Cancelada' en DB)
  * @property {string} asignacion - 'cuadrilla' | 'individual'
  * @property {string} [cuadrillaId] - Assigned squad ID if asignacion = 'cuadrilla'
  * @property {string[]} trabajadoresIds - Assigned worker IDs if asignacion = 'individual'
@@ -45,7 +45,7 @@
  * @typedef {Object} Curso
  * @property {string} id - Unique identifier
  * @property {string} nombre - Course title
- * @property {string} tipo - Course type ('Seguridad y Salud', 'Técnica', 'Operación')
+ * @property {string} tipo - canónico taxonomia.js CURSO_TIPOS (5 valores fitosanitarios DB)
  * @property {number} total_horas - Total duration of course in hours
  */
 

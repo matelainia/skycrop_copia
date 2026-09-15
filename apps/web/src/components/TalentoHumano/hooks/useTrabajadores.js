@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from 'react';
 import * as trabajadoresService from '../services/trabajadores.service';
+import { TRABAJADOR_ESTADOS_UI } from '../constants/taxonomia';
 
 export function useTrabajadores() {
   const [workers, setWorkers] = useState([]);
@@ -49,7 +50,7 @@ export function useTrabajadores() {
     setError(null);
     const worker = workers.find(w => w.id === id);
     if (!worker) return;
-    const states = ['Activa', 'On Leave', 'Inactivo'];
+    const states = TRABAJADOR_ESTADOS_UI;
     const nextStatus = states[(states.indexOf(worker.estado) + 1) % states.length];
     
     try {

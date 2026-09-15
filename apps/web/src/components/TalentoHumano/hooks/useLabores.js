@@ -3,6 +3,7 @@ import * as laboresService from '../services/labores.service';
 
 export function useLabores() {
   const [labores, setLabores] = useState([]);
+  const [lotes, setLotes] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -15,6 +16,11 @@ export function useLabores() {
     } catch (err) {
       console.error('Error fetching labores:', err);
       setError(err);
+    }
+    try {
+      setLotes(await laboresService.getLotes());
+    } catch (err) {
+      console.error('Error fetching lotes:', err);
     } finally {
       setLoading(false);
     }
@@ -87,6 +93,7 @@ export function useLabores() {
 
   return {
     labores,
+    lotes,
     loading,
     error,
     createWorker: createLabor, // match naming if used by other hooks, but createLabor is fine

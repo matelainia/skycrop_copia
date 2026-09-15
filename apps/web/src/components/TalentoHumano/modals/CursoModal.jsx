@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
+import { CURSO_TIPOS } from '../constants/taxonomia';
 
 export default function CursoModal({ onSubmit, onClose }) {
   const [newCursoForm, setNewCursoForm] = useState({ 
@@ -46,9 +47,7 @@ export default function CursoModal({ onSubmit, onClose }) {
                 value={newCursoForm.tipo} 
                 onChange={e => setNewCursoForm(p => ({ ...p, tipo: e.target.value }))}
               >
-                <option value="Seguridad y Salud">Seguridad y Salud</option>
-                <option value="Técnica">Técnica</option>
-                <option value="Operación">Operación</option>
+                {CURSO_TIPOS.map(t => <option key={t} value={t}>{t}</option>)}
               </select>
             </div>
 

@@ -8,6 +8,7 @@ import RegistroTable from './components/RegistroTable';
 import CursoModal from '../modals/CursoModal';
 import RegistroModal from '../modals/RegistroModal';
 import DashboardDrawer from '../modals/DashboardDrawer';
+import { CURSO_TIPOS } from '../constants/taxonomia';
 import SearchBar from '../components/common/SearchBar';
 import FilterBar from '../components/common/FilterBar';
 import Avatar from '../components/common/Avatar';
@@ -133,9 +134,7 @@ export default function Formacion() {
             onChange={e => setFormacionTipo(e.target.value)}
           >
             <option value="Todos">Todos</option>
-            <option value="Seguridad y Salud">Seguridad y Salud</option>
-            <option value="Técnica">Técnica</option>
-            <option value="Operación">Operación</option>
+            {CURSO_TIPOS.map(t => <option key={t} value={t}>{t}</option>)}
           </select>
         </div>
 

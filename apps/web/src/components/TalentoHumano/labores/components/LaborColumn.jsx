@@ -9,8 +9,8 @@ export const LaborColumn = React.memo(function LaborColumn({
   onDeleteLabor,
   onChangeEstado
 }) {
-  const dotClass = estado === 'Pendiente' ? 'pendiente' : estado === 'En Curso' ? 'en-curso' : 'completada';
-  const colColor = estado === 'Pendiente' ? 'var(--accent-gold)' : estado === 'En Curso' ? 'var(--accent-blue)' : 'var(--primary)';
+  const dotClass = estado === 'Pendiente' ? 'pendiente' : estado === 'En Progreso' ? 'en-curso' : 'completada';
+  const colColor = estado === 'Pendiente' ? 'var(--accent-gold)' : estado === 'En Progreso' ? 'var(--accent-blue)' : 'var(--primary)';
 
   return (
     <div className="labor-column">

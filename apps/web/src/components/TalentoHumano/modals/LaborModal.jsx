@@ -5,7 +5,7 @@ import Avatar from '../components/common/Avatar';
 
 const EMPTY_LABOR_FORM = {
   titulo: '', tipo: 'Cosecha', descripcion: '',
-  lote: '', fecha: new Date().toISOString().split('T')[0],
+  lote: '', loteId: '', fecha: new Date().toISOString().split('T')[0],
   estado: 'Pendiente',
   asignacion: 'cuadrilla',   // 'cuadrilla' | 'individual'
   cuadrillaId: '',
@@ -16,6 +16,7 @@ const EMPTY_LABOR_FORM = {
 export default function LaborModal({ 
   workers = [], 
   cuadrillas = [], 
+  lotes = [],
   onSubmit, 
   onClose 
 }) {
@@ -78,18 +79,25 @@ export default function LaborModal({
               </div>
             </div>
 
-            {/* Lote + Fecha */}
+            {/* Lote + Fecha — F1.3: selector formal (lote_id) + texto legacy */}
             <div className="form-group-container">
               <div>
-                <label className="form-label">Lote / Sector</label>
-                <input 
-                  type="text" 
-                  className="input-glass" 
+                <label className="form-label">Lote / Sector (formal)</label>
+                <select
+                  className="input-glass select-glass"
                   style={{ width: '100%' }}
-                  placeholder="Ej. Lote A" 
-                  value={laborForm.lote} 
-                  onChange={e => lfChange('lote', e.target.value)} 
-                />
+                  value={laborForm.loteId}
+                  onChange={e => {
+                    const id = e.target.value;
+                    const lote = lotes.find(l => l.id === id);
+                    setLaborForm(p => ({ ...p, loteId: id, lote: lote ? (lote.nombre || lote.codigo_interno || '') : p.lote }));
+                  }}
+                >
+                  <option value="">— Sin lote (alcance empresa) —</option>
+                  {lotes.map(l => (
+                    <option key={l.id} value={l.id}>{l.nombre || l.codigo_interno}</option>
+                  ))}
+                </select>
               </div>
               <div>
                 <label className="form-label">Fecha</label>

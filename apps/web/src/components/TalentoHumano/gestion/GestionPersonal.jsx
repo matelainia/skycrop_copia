@@ -48,7 +48,7 @@ export default function GestionPersonal() {
   }, [toggleEstado]);
 
   const handleDeleteWorker = useCallback(async (id) => {
-    if (!window.confirm('¿Eliminar este trabajador?')) return;
+    if (!window.confirm('¿Retirar este trabajador? (retiro lógico: conserva historial y podrá reactivarse)')) return;
     try {
       await deleteWorker(id);
     } catch (err) {

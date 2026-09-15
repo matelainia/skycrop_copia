@@ -102,7 +102,7 @@ export default function RegistroModal({
                   type="text" 
                   className="input-glass" 
                   style={{ width: '100%' }}
-                  placeholder="Ej. 10/10 o En Curso" 
+                   placeholder="Ej. 10/10 o En Progreso" 
                   required
                   value={newRegistroForm.resultado} 
                   onChange={e => setNewRegistroForm(p => ({ ...p, resultado: e.target.value }))} 

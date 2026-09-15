@@ -51,6 +51,8 @@ const TENANT_TABLES = [
   'maquinaria_operaciones', 'maquinaria_mantenimientos',
   'maquinaria_combustible', 'maquinaria_eventos',
   'registros_formacion', 'cuadrillas', 'almacenamientos', 'audit_logs',
+  // TH Fase 1 (F1.7): puentes con company_id propio también filtrados por tenant
+  'labor_trabajadores', 'cuadrilla_miembros',
   // Cosecha y Postcosecha — trazabilidad completa (RLS + proxy)
   'lotes_producto', 'procesos_postcosecha', 'clientes', 'destinos',
   'ventas', 'venta_detalles', 'despachos', 'facturas', 'factura_detalles',

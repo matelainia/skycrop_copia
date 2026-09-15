@@ -10,7 +10,7 @@ export default function StatusBadge({ status, className, style }) {
         badgeClass = 'badge-green';
         break;
       case 'On Leave':
-      case 'En Curso':
+      case 'En Progreso':
       case 'Procesando':
         badgeClass = 'badge-yellow';
         break;

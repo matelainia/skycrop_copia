@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
+import { CURSO_TIPOS } from '../constants/taxonomia';
 
 export default function DashboardDrawer({ 
   workers = [], 
@@ -31,7 +32,7 @@ export default function DashboardDrawer({
       const type = c ? c.tipo : 'Otros';
       acc[type] = (acc[type] || 0) + 1;
       return acc;
-    }, { 'Seguridad y Salud': 0, 'Técnica': 0, 'Operación': 0 });
+    }, Object.fromEntries(CURSO_TIPOS.map(t => [t, 0])));
 
   const maxVal = Math.max(1, ...Object.values(completedByType));
 

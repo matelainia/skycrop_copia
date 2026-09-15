@@ -90,9 +90,21 @@ export const updateEstadoTrabajador = async (id, nextStatus) => {
 };
 
 export const deleteTrabajador = async (id) => {
+  // F1.6: retiro lógico (soft-delete). RLS oculta deleted a no-admin (021).
+  // Reactivación: Fase 2 UI admin. Nunca borrado físico desde TH.
   const { error } = await supabase
     .from('trabajadores')
-    .delete()
+    .update({ estado: 'Inactivo', deleted_at: new Date().toISOString() })
+    .eq('id', id);
+
+  if (error) throw error;
+  return id;
+};
+
+export const reactivateTrabajador = async (id) => {
+  const { error } = await supabase
+    .from('trabajadores')
+    .update({ estado: 'Activa', deleted_at: null, deleted_by: null })
     .eq('id', id);
 
   if (error) throw error;
