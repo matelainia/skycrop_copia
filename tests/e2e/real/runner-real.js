@@ -20,6 +20,8 @@ try { await import('dotenv/config'); } catch { /* opcional */ }
 import { parseRealArgs, realConfig, mintTestJwt, verifyTestJwt } from './real-env.js';
 import { assertMatrixComplete } from './role-matrix.js';
 import { assertContract } from './schema-contract.js';
+import { runPreflight, PreflightFail } from './preflight.js';
+import { runProtocol, seedPhase8Data, PROTOCOL } from './protocol.js';
 import { setupRealContext, cleanupRealContext, TEST_USERS } from './setup.js';
 import { suiteAuth, suitePermissions, suiteRlsDirect, suiteTraceability, suiteStorage, suiteConcurrency, suiteSabotage } from './suites-real.js';
 import { reconcile } from './reconcile.js';
@@ -40,6 +42,20 @@ async function selfCheck(cfg) {
   const { token: exp } = mintTestJwt('secreto-local', { sub: 'x', org_id: 'y', expired: true });
   try { verifyTestJwt('secreto-local', exp); throw new Error('debió expirar'); }
   catch (e) { if (e.message === 'debió expirar') throw e; out.push('expiración detectada OK'); }
+  // Protocolo declarativo: unicidad de IDs + forma válida (sin red).
+  {
+    const seen = new Set();
+    for (const c of PROTOCOL) {
+      if (seen.has(c.id)) throw new Error(`protocolo: id duplicado ${c.id}`);
+      seen.add(c.id);
+      for (const k of ['id', 'module', 'action', 'severity', 'do', 'expect']) {
+        if (!c[k]) throw new Error(`protocolo: ${c.id} sin ${k}`);
+      }
+      if (!['ALLOW', 'DENY', 'SCOPED', 'DENY-SEMANTIC'].includes(c.expect)) throw new Error(`protocolo: ${c.id} expect inválido`);
+      if (!['rest', 'rpc', 'storage'].includes(c.do.kind)) throw new Error(`protocolo: ${c.id} do.kind inválido`);
+    }
+    out.push(`protocolo declarativo: ${PROTOCOL.length} casos únicos y bien formados`);
+  }
   return out;
 }
 
@@ -52,6 +68,34 @@ function summarize(results) {
   }
   s.passRate = s.total ? (s.passed / s.total) * 100 : 0;
   return s;
+}
+
+const SECTIONS = [
+  'PREFLIGHT', 'AUTHENTICATION', 'TENANT ISOLATION', 'PREDIO ISOLATION', 'AUTHORIZATION',
+  'RLS', 'RPC', 'AGRICULTURAL FLOW', 'GPS / SPATIAL', 'HARVEST', 'SALES / INVOICING',
+  'TRACEABILITY', 'STORAGE', 'AUDIT / IMMUTABILITY', 'CONCURRENCY', 'NEGATIVE TESTS',
+  'RECONCILIATION', 'HARNESS'
+];
+
+function sectionOf(id) {
+  if (/^PRE-/.test(id)) return 'PREFLIGHT';
+  if (/^AUTH-/.test(id)) return 'AUTHENTICATION';
+  if (/^REAL-AUTH-05$|^PD-|^NULLP-/.test(id)) return 'PREDIO ISOLATION';
+  if (/^REAL-AUTH-/.test(id)) return 'TENANT ISOLATION';
+  if (/^REAL-PERM-|^GER-/.test(id)) return 'AUTHORIZATION';
+  if (/^REAL-RLS-20$|^REAL-RLS-21$|^REAL-RLS-22$/.test(id)) return 'AUDIT / IMMUTABILITY';
+  if (/^REAL-RLS-/.test(id)) return 'RLS';
+  if (/^RPC-/.test(id)) return 'RPC';
+  if (/^AGR-/.test(id)) return 'AGRICULTURAL FLOW';
+  if (/^GPS-/.test(id)) return 'GPS / SPATIAL';
+  if (/^HARV-/.test(id)) return 'HARVEST';
+  if (/^SALE-/.test(id)) return 'SALES / INVOICING';
+  if (/^REAL-TRZ-/.test(id)) return 'TRACEABILITY';
+  if (/^REAL-STO-/.test(id)) return 'STORAGE';
+  if (/^REAL-CON-/.test(id)) return 'CONCURRENCY';
+  if (/^REAL-SAB-|^NEG-/.test(id)) return 'NEGATIVE TESTS';
+  if (/^REAL-REC-/.test(id)) return 'RECONCILIATION';
+  return 'HARNESS';
 }
 
 function renderMd({ runId, cfg, summary, results, counts, selfCheckOut }) {
@@ -71,7 +115,24 @@ function renderMd({ runId, cfg, summary, results, counts, selfCheckOut }) {
   L.push(`LOW (P3)                ${summary.P3}`);
   L.push('```', '');
   if (selfCheckOut) { L.push('## Self-checks locales', ''); for (const s of selfCheckOut) L.push(`- ${s}`); L.push(''); }
-  if (counts) { L.push('## Reconciliación (§11)', '', '```text', JSON.stringify(counts, null, 2), '```', ''); }
+  // Secciones §27 con veredicto agregado
+  const ARCH_DECISIONS = [
+    'ventas/facturas/clientes/maquinaria/jornadas: alcance EMPRESA + ROL (sin vínculo predio fiable en el modelo; NO presentar como aislamiento por predio).',
+    'lotes con predio_id NULL: visibles a nivel empresa (decisión 050/051 documentada).',
+    'AUTH-03 usuario inactivo: la baja debe propagarse en Clerk/backend con sesión revocada; RLS company-level no distingue activo (hallazgo P1 si ALLOW en vivo).',
+    'Overload DEFINER registrar_evento_trazabilidad_empresa: bypass RLS por diseño; solo el backend tras autorizar (RPC-04 es observación, no puerta).',
+    'GPS: rango CHECK enforced; sin geocerca contra el polígono del predio (concierne a backend/app).'
+  ];
+  L.push('## Decisiones arquitectónicas explícitas', '');
+  for (const d of ARCH_DECISIONS) L.push(`- ${d}`);
+  L.push('');  for (const sec of SECTIONS) {
+    const rows = results.filter((r) => sectionOf(r.test_case_id) === sec);
+    if (!rows.length) continue;
+    const ok = rows.filter((r) => r.status === 'PASS').length;
+    const bad = rows.filter((r) => r.status !== 'PASS').map((r) => r.test_case_id).join(', ');
+    L.push(`## ${sec}`, '', ok === rows.length ? 'PASS' : `FAIL (${ok}/${rows.length})${bad ? ` — ${bad}` : ''}`, '');
+  }
+  if (counts) { L.push('## Reconciliación (§24)', '', '```text', JSON.stringify(counts, null, 2), '```', ''); }
   L.push('## Detalle por caso', '', '| Caso | Módulo | Acción | Estado | Sev | HTTP | Auth | Audit | Traz | Detalle |');
   L.push('| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |');
   for (const r of results) {
@@ -109,6 +170,18 @@ async function main() {
   }
 
   try {
+    console.log('✓ Fase 0 preflight (§5)…');
+    try {
+      await runPreflight(ctx, cfg);
+    } catch (e) {
+      if (e instanceof PreflightFail || e.name === 'PreflightFail') {
+        console.error(`[preflight] FAIL estructural — se detiene lo funcional: ${e.message}`);
+        finish(ctx, cfg, null, args);
+        process.exitCode = 2;
+        return;
+      }
+      throw e;
+    }
     console.log('✓ setup: creando contexto sintético (companies, profiles, members, predios, lotes, cliente)…');
     S = await setupRealContext(cfg);
     ctx.S = S;
@@ -118,7 +191,7 @@ async function main() {
       const company_id = S.users[u.key].company_id;
       ctx.tokens[u.key] = mintTestJwt(cfg.secret, { sub, org_id: company_id }).token;
     }
-    console.log('✓ 6 usuarios sintéticos con JWT firmados (admin/supervisor/operario/limitado/externo/sin_predio)');
+    console.log('✓ 8 usuarios sintéticos con JWT firmados (admin/gerente/supervisor/operario/limitado/externo/sin_predio/inactivo)');
 
     await suiteAuth(ctx, cfg); console.log('✓ §4 autenticación y entrada');
     await suitePermissions(ctx, cfg); console.log('✓ §5 permisos por módulo');
@@ -127,9 +200,13 @@ async function main() {
     await suiteStorage(ctx, cfg); console.log('✓ §8 storage');
     await suiteConcurrency(ctx, cfg); console.log('✓ §9 concurrencia');
     await suiteSabotage(ctx, cfg); console.log('✓ §10 sabotaje controlado');
+    const seed = await seedPhase8Data(ctx, cfg);
+    console.log(`✓ siembra A2/B1 por dominio (${seed.seeded.length} ok${seed.missing.length ? `, faltan: ${seed.missing.join(',')}` : ''})`);
+    const n = await runProtocol(ctx, cfg);
+    console.log(`✓ protocolo ejecutable §6–§23 (${n} casos: payload→llamada→esperado→verificación)`);
     const rec = await reconcile(ctx, cfg);
     counts = rec.counts;
-    console.log('✓ §11 reconciliación final');
+    console.log('✓ §11 reconciliación final (§24)');
   } finally {
     if (S) {
       console.log('✓ cleanup controlado (audit_logs + reporte retenidos)…');

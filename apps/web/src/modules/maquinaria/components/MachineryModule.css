@@ -1,0 +1,177 @@
+/* Maquinaria — shell del módulo (app interna con pestañas).
+   Transiciones sutiles premium: 150-200ms hovers/tabs, 200-300ms drawers.
+   Respeta prefers-reduced-motion. */
+
+.machinery-module {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  animation: machineryTabIn 220ms ease-out;
+}
+
+.machinery-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 16px;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 16px;
+}
+
+.machinery-header-title {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+}
+
+.machinery-header-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: var(--glow-shadow);
+  flex-shrink: 0;
+}
+
+.machinery-header-h {
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.machinery-header-sub {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+.machinery-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+/* Tabs internas: scroll horizontal en móvil, sin romper layout */
+.machinery-tabs {
+  display: flex;
+  gap: 4px;
+  border-bottom: 2px solid var(--border-color);
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+.machinery-tab {
+  padding: 10px 18px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  white-space: nowrap;
+  transition: color 150ms ease, background-color 150ms ease, border-color 150ms ease;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 8px 8px 0 0;
+}
+
+.machinery-tab:hover {
+  color: var(--text-primary);
+  background: var(--primary-light);
+}
+
+.machinery-tab:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.machinery-tab.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+
+.machinery-tab-badge {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: var(--accent-red);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Transición sutil de contenido al cambiar de pestaña */
+@keyframes machineryTabIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.machinery-tabpanel {
+  animation: machineryTabIn 220ms ease-out;
+}
+
+/* Skeletons (KPIs, tablas, drawer, gráficos) */
+.machinery-skeleton {
+  border-radius: 12px;
+  background: linear-gradient(90deg, var(--border-color) 25%, var(--bg-card-hover) 50%, var(--border-color) 75%);
+  background-size: 200% 100%;
+  animation: machineryShimmer 1.2s ease-in-out infinite;
+  min-height: 14px;
+}
+
+@keyframes machineryShimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+/* Cards del módulo: hover premium mínimo */
+.machinery-module .glass-card:hover {
+  transform: translateY(-1px);
+}
+
+@media (max-width: 768px) {
+  .machinery-header-h {
+    font-size: 20px;
+  }
+  .machinery-header-actions {
+    width: 100%;
+  }
+  .machinery-header-actions .btn {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .machinery-module,
+  .machinery-tabpanel,
+  .machinery-tab,
+  .machinery-skeleton {
+    animation: none;
+    transition: none;
+  }
+}

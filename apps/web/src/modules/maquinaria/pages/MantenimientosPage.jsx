@@ -3,6 +3,7 @@ import { Plus } from 'lucide-react';
 import MaintenanceTable from '../components/tables/MaintenanceTable';
 import MaintenanceModal from '../components/dialogs/MaintenanceModal';
 import MachineStatusBadge from '../components/machinery/MachineStatusBadge';
+import { MACHINERY_STATUS, isMachineStatus } from '../constants/machineryStatus';
 import { formatDateShort } from '../utils/formatters';
 
 export const MantenimientosPage = ({
@@ -35,7 +36,7 @@ export const MantenimientosPage = ({
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px', marginBottom: '24px' }}>
         {machinery
-          .filter(m => m.nextMaintenanceHours <= 100 || m.status === 'En mantenimiento')
+          .filter(m => m.nextMaintenanceHours <= 100 || isMachineStatus(m.status, MACHINERY_STATUS.MANTENIMIENTO))
           .map(m => (
             <div key={m.id} className="glass-card danger-edge" style={{ borderLeftWidth: m.nextMaintenanceHours <= 20 ? '4px' : '2px', padding: '16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '10px' }}>

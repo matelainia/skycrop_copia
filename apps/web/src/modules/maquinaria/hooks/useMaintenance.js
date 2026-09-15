@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { useMachineryContext } from '../context/MachineryProvider';
 import { maintenanceService } from '../services/maintenance.service';
 import { maintenanceScheduler } from '../scheduler/maintenanceScheduler';
+import { MACHINERY_STATUS, isMachineStatus } from '../constants/machineryStatus';
 
 export const useMaintenance = () => {
   const { machinery } = useMachineryContext();
@@ -32,7 +33,7 @@ export const useMaintenance = () => {
   }, [maintForm, machinery]);
 
   const openMaintenanceForm = useCallback((machineId = '') => {
-    const defaultId = machineId || (machinery.find(m => m.status === 'Disponible' || m.status === 'En mantenimiento')?.id) || '';
+    const defaultId = machineId || (machinery.find(m => isMachineStatus(m.status, MACHINERY_STATUS.DISPONIBLE) || isMachineStatus(m.status, MACHINERY_STATUS.MANTENIMIENTO))?.id) || '';
     const target = machinery.find(m => m.id === defaultId);
 
     setMaintForm({

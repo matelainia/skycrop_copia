@@ -64,11 +64,28 @@ Hallazgo documentado por diseño: el RLS aísla por **empresa**, no por predio (
 - `tests/e2e/real/schema-contract.js` — contrato de columnas obligatorias reales
   (`cosechas.lote` TEXT, `cliente_id` en ventas/facturas, `company_users`→`profiles`,
   enums 048, rangos GPS). Corre en el self-check local, falla antes de tocar Supabase.
-- `setup.js` genera los UUIDs y asigna `user_predios` (operario/limitado→A, externo→B,
-  sin_predio→ninguno); si la 050 no está aplicada, avisa y `REAL-AUTH-05` falla P1 como detector.
+- `setup.js` genera los UUIDs y asigna `user_predios` (operario/limitado/gerente→A, externo→B,
+  sin_predio e inactivo→ninguno); si la 050 no está aplicada, avisa y `REAL-AUTH-05` falla P1 como detector.
 - Aplicación: correr la 050 en el proyecto TEST/STAGING **antes** del `--live`
   (probar rollback: DROP POLICY … + restore 021, DELETE FROM user_predios).
   Tras aplicarla, `REAL-AUTH-05` debe pasar de FAIL P1 a PASS.
+
+### Alcance operativo + protocolo ejecutable (051, plan de aceptación §1–§28)
+
+- `supabase/migrations/051_predio_scope_operativo.sql` — extiende el alcance por predio a
+  aplicaciones, monitoreos, labores, historial, cosechas, suelos y trazabilidad vía
+  `lote → predio` (`alcance_operativo()`), con backfill propio. Ventas/facturas/maquinaria
+  quedan en alcance empresa + rol (sin vínculo predio fiable, documentado).
+- `real/preflight.js` — Fase 0: conexión, migraciones por objeto testigo, tablas/columnas,
+  RPCs, buckets y contrato. Un FAIL estructural aborta lo funcional (exit 2).
+- `real/protocol.js` — 40 casos declarativos `payload → llamada → esperado → verificación`:
+  AUTH-03/04, gerente, aislamiento por predio por dominio (A1 visible, A2/B1 invisibles,
+  sin_predio en cero), labores/maquinaria, GPS (rango sí, geocerca no — observación),
+  cosecha sin lote, beneficio (lote_producto→proceso→detalle→factura), RPC INVOKER/DEFINER,
+  lote con predio NULL (decisión 050) y batería negativa §22.
+- Usuarios: admin/gerente/supervisor/operario/limitado/externo/sin_predio/**inactivo**
+  (AUTH-03: la baja debe propagarse en Clerk/backend; RLS company-level no distingue activo).
+- El informe agrupa veredictos por las secciones del §27 (PREFLIGHT … RECONCILIATION).
 
 El guard bloquea (`ENV-GUARD`) si: `--env` no es local/test/staging, `NODE_ENV=production`,
 o la URL apunta a dominio productivo conocido.

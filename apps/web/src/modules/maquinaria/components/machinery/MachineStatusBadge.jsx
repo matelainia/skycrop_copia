@@ -1,5 +1,6 @@
 
 import { getStatusBadgeStyle } from '../../utils/statusHelpers';
+import { getMachineryStatusLabel } from '../../constants/machineryStatus';
 
 export const MachineStatusBadge = ({ status }) => {
   const { className, dotColor } = getStatusBadgeStyle(status);
@@ -21,7 +22,7 @@ export const MachineStatusBadge = ({ status }) => {
         background: dotColor, 
         display: 'inline-block' 
       }} />
-      {status === 'En mantenimiento' ? 'Mantenimiento' : status}
+      {getMachineryStatusLabel(status)}
     </span>
   );
 };

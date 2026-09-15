@@ -7,9 +7,11 @@
   ],
   "scripts": {
     "dev:web": "npm run dev --workspace=apps/web",
+    "dev:landing": "npm run dev --workspace=apps/landing",
     "dev:auth": "npm run dev --workspace=apps/auth",
     "dev:backend": "npm run dev --prefix backend",
     "build:web": "npm run build --workspace=apps/web",
+    "build:landing": "npm run build --workspace=apps/landing",
     "build:auth": "npm run build --workspace=apps/auth",
     "build:all": "npm run build --workspaces",
     "test:e2e:skycrop": "node tests/e2e/runner.js",

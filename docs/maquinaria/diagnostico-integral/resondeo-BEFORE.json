@@ -1,0 +1,126 @@
+{
+  "ts": "2026-09-15T16:07:39.914Z",
+  "project_ref": "gynttnymneanbziywqqr",
+  "cases": [
+    {
+      "id": "EXISTS tabla.maquinaria_operaciones",
+      "http": 200
+    },
+    {
+      "id": "EXISTS tabla.maquinaria_mantenimientos",
+      "http": 200
+    },
+    {
+      "id": "EXISTS tabla.maquinaria_combustible",
+      "http": 200
+    },
+    {
+      "id": "EXISTS tabla.maquinaria_eventos",
+      "http": 200
+    },
+    {
+      "id": "EXISTS tabla.ventas",
+      "http": 404
+    },
+    {
+      "id": "EXISTS tabla.analisis_suelos",
+      "http": 404
+    },
+    {
+      "id": "EXISTS tabla.user_predios",
+      "http": 200
+    },
+    {
+      "id": "EXISTS rpc.registrar_costo_lote",
+      "http": 404
+    },
+    {
+      "id": "EXISTS rpc.process_audit_log",
+      "http": 404
+    },
+    {
+      "id": "EXISTS rpc.process_secure_company_id",
+      "http": 404
+    },
+    {
+      "id": "EXISTS rpc.registrar_maquinaria",
+      "http": 404
+    },
+    {
+      "id": "EXISTS rpc.iniciar_jornada_maquinaria",
+      "http": 404
+    },
+    {
+      "id": "EXISTS rpc.finalizar_jornada_maquinaria",
+      "http": 404
+    },
+    {
+      "id": "EXISTS rpc.registrar_combustible_maquinaria",
+      "http": 404
+    },
+    {
+      "id": "EXISTS rpc.programar_mantenimiento_maquinaria",
+      "http": 404
+    },
+    {
+      "id": "EXISTS rpc.registrar_mantenimiento_maquinaria_v2",
+      "http": 404
+    },
+    {
+      "id": "EXISTS rpc.actualizar_horometro_maquinaria",
+      "http": 404
+    },
+    {
+      "id": "EXISTS rpc.registrar_incidencia_maquinaria",
+      "http": 404
+    },
+    {
+      "id": "EXISTS rpc.tiene_acceso_predio",
+      "http": 404
+    },
+    {
+      "id": "EXISTS rpc.alcance_operativo",
+      "http": 404
+    },
+    {
+      "id": "EXISTS rpc.registrar_evento_trazabilidad",
+      "http": 404
+    },
+    {
+      "id": "EXISTS rpc.e2e_verify_evidence_chain",
+      "http": 404
+    },
+    {
+      "id": "EXISTS rpc.e2e_cleanup_test_run",
+      "http": 404
+    },
+    {
+      "id": "SEC-01 A lee propio",
+      "http": 200,
+      "rows": 3,
+      "leak": false
+    },
+    {
+      "id": "SEC-09 A fuerza company_id=B",
+      "http": 200,
+      "rows": 0,
+      "leak": false
+    },
+    {
+      "id": "SEC-10 A lee maquina B por id",
+      "http": 200,
+      "rows": 0,
+      "leak": false
+    },
+    {
+      "id": "SEC-01 B tablas nuevas",
+      "http": 200,
+      "rows": 1,
+      "leak": false
+    },
+    {
+      "id": "SEC-11 RPC anon sin body",
+      "http": 404
+    }
+  ]
+}

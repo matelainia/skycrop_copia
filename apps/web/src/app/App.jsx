@@ -36,7 +36,11 @@ export default function App() {
   });
 
   const [activeSubTab, setActiveSubTab] = useState(() => {
-    return localStorage.getItem('skycrop_active_subtab') || 'flota';
+    const saved = localStorage.getItem('skycrop_active_subtab') || 'flota';
+    // Normalizar ids legacy del sidebar antiguo (operaciones/mantenimientos)
+    if (saved === 'operaciones') return 'jornadas';
+    if (saved === 'mantenimientos') return 'mantenimiento';
+    return saved;
   });
 
   // Si la pestaÃ±a activa no estÃ¡ permitida por el rol, cambiar a la primera permitida
@@ -106,7 +110,7 @@ export default function App() {
     switch (activeTab) {
       case 'talento': return 'GestiÃ³n de Talento Humano';
       case 'inventario': return 'Control de Inventario y Bodegas';
-      case 'maquinaria': return 'Flota de Maquinaria';
+      case 'maquinaria': return 'Maquinaria';
       case 'sanitario': return 'Manejo Sanitario';
       case 'cosecha': return 'Rendimiento Cosecha y Postcosecha';
       case 'trazabilidad': return 'Trazabilidad — Bitácora oficial del predio';
@@ -132,8 +136,13 @@ export default function App() {
                 className={`menu-item-btn ${activeTab === item.id ? 'active' : ''}`}
                 onClick={() => {
                   setActiveTab(item.id);
+                  // Maquinaria es ahora una app interna con pestañas propias:
+                  // el sidebar no lista submenús. Solo se inicializa a 'flota'
+                  // si venimos de otro módulo (p.ej. subtab de sanitario).
                   if (item.id === 'maquinaria') {
-                    setActiveSubTab('flota');
+                    if (['lotes','aplicaciones','monitoreos','historial_traz','protocolos_eval','fertilizacion'].includes(activeSubTab)) {
+                      setActiveSubTab('flota');
+                    }
                   } else if (item.id === 'sanitario') {
                     // Solo resetear si no estamos ya en una vista de sanitario
                     if (!['lotes','aplicaciones','monitoreos','historial_traz','protocolos_eval','fertilizacion'].includes(activeSubTab)) {
@@ -146,51 +155,9 @@ export default function App() {
                 <span>{item.label}</span>
               </button>
               
-              {/* Nested hierarchical menu for Maquinaria */}
-              {item.id === 'maquinaria' && activeTab === 'maquinaria' && (
-                <ul style={{ listStyle: 'none', paddingLeft: '28px', marginTop: '6px', display: 'flex', flexDirection: 'column', gap: '2px' }}>
-                  {[
-                    { id: 'flota', label: 'Flota de Maquinaria' },
-                    { id: 'operaciones', label: 'Operaciones / Jornadas' },
-                    { id: 'mantenimientos', label: 'Mantenimientos' },
-                    { id: 'combustible', label: 'Combustible' },
-                    { id: 'historial', label: 'Historial' },
-                    { id: 'costos', label: 'Costos' },
-                    { id: 'alertas', label: 'Alertas' },
-                    { id: 'reportes', label: 'Reportes' }
-                  ].map(sub => (
-                    <li key={sub.id}>
-                      <button
-                        onClick={() => setActiveSubTab(sub.id)}
-                        style={{
-                          background: 'transparent',
-                          border: 'none',
-                          color: activeSubTab === sub.id ? 'var(--primary)' : 'var(--text-secondary)',
-                          fontSize: '13px',
-                          padding: '6px 8px',
-                          width: '100%',
-                          textAlign: 'left',
-                          cursor: 'pointer',
-                          fontWeight: activeSubTab === sub.id ? '600' : '400',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '6px',
-                          transition: 'color 0.2s'
-                        }}
-                      >
-                        <span style={{ 
-                          width: '5px', 
-                          height: '5px', 
-                          borderRadius: '50%', 
-                          background: activeSubTab === sub.id ? 'var(--primary)' : 'transparent',
-                          display: 'inline-block' 
-                        }} />
-                        {sub.label}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
+              {/* Maquinaria: sin submenús en el sidebar. La navegación vive en
+                  pestañas internas del módulo (Flota, Jornadas, Mantenimiento,
+                  Combustible, Historial, Costos, Alertas, Reportes). */}
 
               {/* Nested hierarchical menu for Manejo Sanitario */}
               {item.id === 'sanitario' && activeTab === 'sanitario' && (

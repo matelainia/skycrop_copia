@@ -7,10 +7,6 @@ import FleetPagination from '../components/dashboard/FleetPagination';
 import ActiveOperationPanel from '../components/dashboard/ActiveOperationPanel';
 import RecentActivity from '../components/dashboard/RecentActivity';
 import UpcomingMaintenance from '../components/dashboard/UpcomingMaintenance';
-import HoursChart from '../components/charts/HoursChart';
-import DistributionChart from '../components/charts/DistributionChart';
-import FuelChart from '../components/charts/FuelChart';
-import FleetEfficiencyChart from '../components/charts/FleetEfficiencyChart';
 import AddMachineDrawer from '../components/dialogs/AddMachineDrawer';
 import EditMachineDrawer from '../components/dialogs/EditMachineDrawer';
 import DetailDrawer from '../components/dialogs/DetailDrawer';
@@ -181,14 +177,6 @@ export const FlotaPage = ({
           />
         </div>
 
-      </div>
-
-      {/* SVG Charts Grid */}
-      <div className="metrics-grid" style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))' }}>
-        <HoursChart />
-        <DistributionChart />
-        <FuelChart />
-        <FleetEfficiencyChart />
       </div>
 
       {/* Dialogs and Modals */}

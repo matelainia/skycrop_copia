@@ -1,6 +1,7 @@
 /**
  * Model class for Machinery Fleet Equipments (Maquinaria)
  */
+import { normalizeMachineryStatus } from '../constants/machineryStatus';
 export class Machine {
   constructor({
     id = null,
@@ -49,30 +50,33 @@ export class Machine {
   }
 
   /**
-   * Factory method to parse database rows to Machine object instances
+   * Factory method to parse database rows to Machine object instances.
+   * Tolera columnas canónicas (052) y legacy: prefiere canónico.
    */
   static fromDatabase(row) {
     if (!row) return null;
     return new Machine({
       id: row.id,
-      codigoId: row.codigo_id,
-      name: row.name,
-      type: row.type,
-      status: row.status,
+      codigoId: row.codigo || row.codigo_id,
+      name: row.nombre || row.name,
+      type: row.tipo || row.type,
+      // H-04: normalizar en el choke point — toda instancia sale canónica
+      // (contrato 052), aunque la fila traiga alias legacy.
+      status: normalizeMachineryStatus(row.estado || row.status || 'Disponible'),
       operatorName: row.operator_name,
       currentTask: row.current_task,
       currentLot: row.current_lot,
       lastMaintenance: row.last_maintenance,
       nextMaintenance: row.next_maintenance,
       nextMaintenanceHours: row.next_maintenance_hours,
-      hoursOfOperation: row.hours_of_operation,
+      hoursOfOperation: row.horometro_actual ?? row.hours_of_operation,
       hoursToday: row.hours_today,
       fuelConsumption: row.fuel_consumption,
-      costOperator: row.cost_operator,
-      costFuel: row.cost_fuel,
-      costMaintenance: row.cost_maintenance,
-      costDepreciation: row.cost_depreciation,
-      photoUrl: row.photo_url || null,
+      costOperator: row.costo_operador_hora ?? row.cost_operator,
+      costFuel: row.costo_combustible_hora ?? row.cost_fuel,
+      costMaintenance: row.costo_mantenimiento_hora ?? row.cost_maintenance,
+      costDepreciation: row.costo_depreciacion_hora ?? row.cost_depreciation,
+      photoUrl: row.image_url || row.photo_url || null,
       empresaId: row.company_id || null,
       activo: row.deleted_at ? false : true
     });

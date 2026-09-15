@@ -14,11 +14,13 @@ import { rest } from './real-env.js';
 
 export const TEST_USERS = [
   { key: 'administrador', role: 'administrador', company: 'A' },
+  { key: 'gerente', role: 'gerente', company: 'A' },
   { key: 'supervisor', role: 'supervisor', company: 'A' },
   { key: 'operario', role: 'operario', company: 'A' },
   { key: 'limitado', role: 'consulta', company: 'A', predioLimitado: true },
   { key: 'externo', role: 'operario', company: 'B' },
-  { key: 'sin_predio', role: 'operario', company: 'A' }
+  { key: 'sin_predio', role: 'operario', company: 'A' },
+  { key: 'inactivo', role: 'operario', company: 'A', inactive: true }
 ];
 
 /** IDs del contexto (inyectables para el contrato de schema). */
@@ -55,12 +57,15 @@ export function buildSetupBodies(tag, ids, runId) {
       table: 'company_users',
       body: {
         company_id: u.company === 'A' ? ids.companyA : ids.companyB,
-        clerk_user_id: subFor(u.key, tag), role_id: u.role, activo: true, status: 'active'
+        clerk_user_id: subFor(u.key, tag), role_id: u.role,
+        activo: !u.inactive, status: u.inactive ? 'inactive' : 'active'
       }
     })),
-    // Alcance por predio (migración 050): operario/limitado→A; externo→B; sin_predio→ninguno.
+    // Alcance por predio (migración 050): operario/limitado/gerente→A; externo→B;
+    // sin_predio e inactivo → ninguno (el inactivo además tiene activo=false).
     { table: 'user_predios', body: { company_id: ids.companyA, predio_id: ids.farmA, clerk_user_id: subFor('operario', tag), alcance: 'lectura_escritura' } },
     { table: 'user_predios', body: { company_id: ids.companyA, predio_id: ids.farmA, clerk_user_id: subFor('limitado', tag), alcance: 'lectura' } },
+    { table: 'user_predios', body: { company_id: ids.companyA, predio_id: ids.farmA, clerk_user_id: subFor('gerente', tag), alcance: 'lectura_escritura' } },
     { table: 'user_predios', body: { company_id: ids.companyB, predio_id: ids.farmB, clerk_user_id: subFor('externo', tag), alcance: 'lectura_escritura' } }
   ];
 }
@@ -131,6 +136,12 @@ export async function cleanupRealContext(cfg, S, { keepData = false } = {}) {
   out.lotesB = await del(cfg, 'lotes', `?company_id=eq.${S.companyB.id}`);
   out.prediosB = await del(cfg, 'predios', `?company_id=eq.${S.companyB.id}`);
   out.clientes = await del(cfg, 'clientes', `?company_id=eq.${S.companyA.id}`);
+  out.labores = await del(cfg, 'labores', `?company_id=eq.${S.companyA.id}`);
+  out.analisis = await del(cfg, 'analisis_suelos', `?company_id=eq.${S.companyA.id}`);
+  out.jornadas = await del(cfg, 'jornadas_maquinaria', `?company_id=eq.${S.companyA.id}`);
+  out.maquinaria = await del(cfg, 'maquinaria', `?company_id=eq.${S.companyA.id}`);
+  out.lotes_producto = await del(cfg, 'lotes_producto', `?company_id=eq.${S.companyA.id}`);
+  out.postcosecha = await del(cfg, 'procesos_postcosecha', `?company_id=eq.${S.companyA.id}`);
   out.lotesA = await del(cfg, 'lotes', `?company_id=eq.${S.companyA.id}`);
   out.prediosA = await del(cfg, 'predios', `?company_id=eq.${S.companyA.id}`);
   out.company_users = await del(cfg, 'company_users', `?company_id=in.(${S.companyA.id},${S.companyB.id})`);

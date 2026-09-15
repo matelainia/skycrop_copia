@@ -47,7 +47,10 @@ export const renderMachineIcon = (type, size = 16) => {
 };
 
 export const getStatusBadgeStyle = (status) => {
-  switch (status) {
+  // H-04: normalizar antes de matchear (acepta legacy 'En mantenimiento').
+  const s = String(status || '').trim().toLowerCase() === 'en mantenimiento'
+    ? 'Mantenimiento' : status;
+  switch (s) {
     case 'Operando':
       return {
         className: 'badge badge-green',
@@ -58,7 +61,7 @@ export const getStatusBadgeStyle = (status) => {
         className: 'badge badge-blue',
         dotColor: '#2563eb'
       };
-    case 'En mantenimiento':
+    case 'Mantenimiento':
       return {
         className: 'badge badge-yellow',
         dotColor: '#ea580c'

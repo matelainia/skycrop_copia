@@ -1,5 +1,6 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useMachineryContext } from '../context/MachineryProvider';
+import { MACHINERY_STATUS, isMachineStatus } from '../constants/machineryStatus';
 import { machineryService } from '../services/machinery.service';
 import { machineryStorage } from '../storage/machinery.storage';
 import { calculateFuelBurnToday, calculateHoursWorkedToday } from '../utils/calculations';
@@ -139,10 +140,12 @@ export const useMachinery = () => {
         m.type.toLowerCase().includes(searchQuery.toLowerCase());
 
       if (statusFilter === 'Todos') return matchesSearch;
-      if (statusFilter === 'Disponibles') return matchesSearch && m.status === 'Disponible';
-      if (statusFilter === 'Operando') return matchesSearch && m.status === 'Operando';
-      if (statusFilter === 'En Mantenimiento') return matchesSearch && m.status === 'En mantenimiento';
-      if (statusFilter === 'Fuera de Servicio') return matchesSearch && m.status === 'Fuera de servicio';
+      // H-04: comparar por valor canónico (las instancias ya salen normalizadas
+      // de Machine.fromDatabase; isMachineStatus tolera alias legacy).
+      if (statusFilter === 'Disponibles') return matchesSearch && isMachineStatus(m.status, MACHINERY_STATUS.DISPONIBLE);
+      if (statusFilter === 'Operando') return matchesSearch && isMachineStatus(m.status, MACHINERY_STATUS.OPERANDO);
+      if (statusFilter === 'En Mantenimiento') return matchesSearch && isMachineStatus(m.status, MACHINERY_STATUS.MANTENIMIENTO);
+      if (statusFilter === 'Fuera de Servicio') return matchesSearch && isMachineStatus(m.status, MACHINERY_STATUS.FUERA_DE_SERVICIO);
       return matchesSearch;
     });
   }, [machinery, searchQuery, statusFilter]);
@@ -158,10 +161,10 @@ export const useMachinery = () => {
   // Memoized Metrics Calculations
   const metrics = useMemo(() => {
     const totalCount = machinery.length;
-    const operatingCount = machinery.filter(m => m.status === 'Operando').length;
-    const maintenanceCount = machinery.filter(m => m.status === 'En mantenimiento').length;
-    const criticalCount = machinery.filter(m => m.status === 'Fuera de servicio').length;
-    const availableCount = machinery.filter(m => m.status === 'Disponible').length;
+    const operatingCount = machinery.filter(m => isMachineStatus(m.status, MACHINERY_STATUS.OPERANDO)).length;
+    const maintenanceCount = machinery.filter(m => isMachineStatus(m.status, MACHINERY_STATUS.MANTENIMIENTO)).length;
+    const criticalCount = machinery.filter(m => isMachineStatus(m.status, MACHINERY_STATUS.FUERA_DE_SERVICIO)).length;
+    const availableCount = machinery.filter(m => isMachineStatus(m.status, MACHINERY_STATUS.DISPONIBLE)).length;
 
     const totalHoursWorkedToday = calculateHoursWorkedToday(machinery);
     const totalFuelConsumedToday = calculateFuelBurnToday(machinery);
