@@ -1,5 +1,5 @@
-// INTERINO D3: la DB manda (CHECKs de 011/013). Cuando el negocio valide el
-// catálogo oficial, este archivo se genera desde ese único origen.
+// D3 firmado 2026-09-17 (docs/inventario/catalogo-d3.md, migración 062).
+// Único origen hasta tener endpoint/generador.
 export const CATEGORIES = [
   'Fungicida',
   'Insecticida',
@@ -7,7 +7,12 @@ export const CATEGORIES = [
   'Fertilizante',
   'Semilla',
   'Herramienta',
-  'EPP'
+  'EPP',
+  'Biológico',
+  'Embalaje',
+  'Repuesto',
+  'Combustible',
+  'Agroquímico'
 ];
 
 export const WAREHOUSE_CATEGORIES = [
@@ -16,7 +21,9 @@ export const WAREHOUSE_CATEGORIES = [
   'Fertilizantes',
   'Semillas',
   'EPP',
-  'Cosecha'
+  'Cosecha',
+  'General',
+  'Combustible'
 ];
 
 export const UNITS = [
