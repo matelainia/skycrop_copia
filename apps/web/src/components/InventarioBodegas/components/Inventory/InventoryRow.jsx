@@ -1,16 +1,19 @@
 import React from 'react';
-import { Eye, Edit3, Trash2 } from 'lucide-react';
+import { Eye, ArrowLeftRight, Pencil, Trash2 } from 'lucide-react';
 import ItemIcon from '../Shared/ItemIcon';
 import ItemStatusBadge from '../Shared/ItemStatusBadge';
 
 export default function InventoryRow({
   item,
   warehouse,
+  status = 'opt',
+  permissions = {},
   onView,
-  onAdjust,
+  onMove,
+  onEdit,
   onDelete
 }) {
-  const isLow = item.quantity < item.minQuantity;
+  const { canMove = true, canEdit = true, canDelete = true } = permissions;
 
   return (
     <tr>
@@ -19,11 +22,12 @@ export default function InventoryRow({
           <ItemIcon category={item.category} name={item.name} />
           <div>
             <div>{item.name}</div>
-            {(item.lote || item.registroIca) && (
-              <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 'normal', marginTop: '2px' }}>
-                {item.lote && `Lote: ${item.lote}`} {item.lote && item.registroIca && ' | '} {item.registroIca && `ICA: ${item.registroIca}`}
-              </div>
-            )}
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 'normal', marginTop: '2px' }}>
+              {item.sku || 'sin SKU'}
+              {(item.lote || item.registroIca) && (
+                <> · {item.lote && `Lote: ${item.lote}`} {item.lote && item.registroIca && '| '} {item.registroIca && `ICA: ${item.registroIca}`}</>
+              )}
+            </div>
           </div>
         </div>
       </td>
@@ -32,9 +36,11 @@ export default function InventoryRow({
         {item.quantity} {item.unit}
       </td>
       <td>{warehouse ? warehouse.nombre : 'Sin asignar'}</td>
-      <td style={{ color: 'var(--text-secondary)' }}>Min: {item.minQuantity}</td>
+      <td style={{ color: 'var(--text-secondary)' }}>
+        Min: {item.minQuantity}{item.maxQuantity !== null && item.maxQuantity !== undefined && item.maxQuantity !== '' ? ` · Máx: ${item.maxQuantity}` : ''}
+      </td>
       <td>
-        <ItemStatusBadge isLow={isLow} />
+        <ItemStatusBadge status={status} />
       </td>
       <td style={{ textAlign: 'right' }}>
         <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
@@ -48,17 +54,28 @@ export default function InventoryRow({
           </button>
           <button
             className="btn btn-secondary"
-            onClick={() => onAdjust(item)}
+            onClick={() => canMove && onMove(item)}
+            disabled={!canMove}
             style={{ padding: '6px 8px', fontSize: '12px' }}
-            title="Ajustar Inventario"
+            title={canMove ? 'Registrar movimiento' : 'Sin permiso para movimientos'}
           >
-            <Edit3 size={14} />
+            <ArrowLeftRight size={14} />
+          </button>
+          <button
+            className="btn btn-secondary"
+            onClick={() => canEdit && onEdit(item)}
+            disabled={!canEdit}
+            style={{ padding: '6px 8px', fontSize: '12px' }}
+            title={canEdit ? 'Editar artículo' : 'Sin permiso para editar'}
+          >
+            <Pencil size={14} />
           </button>
           <button
             className="btn btn-danger"
-            onClick={() => onDelete(item.id)}
+            onClick={() => canDelete && onDelete(item.id)}
+            disabled={!canDelete}
             style={{ padding: '6px 8px', fontSize: '12px' }}
-            title="Eliminar"
+            title={canDelete ? 'Eliminar' : 'Sin permiso para eliminar'}
           >
             <Trash2 size={14} />
           </button>
