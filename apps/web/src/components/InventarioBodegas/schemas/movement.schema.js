@@ -12,8 +12,12 @@ export const validateInventoryMovement = (data) => {
     }
   }
 
-  if (!data.tipo || (data.tipo !== 'entrada' && data.tipo !== 'salida')) {
-    errors.tipo = "El tipo de movimiento debe ser 'entrada' o 'salida'.";
+  if (!data.tipo || !['entrada', 'salida', 'ajuste', 'transferencia'].includes(data.tipo)) {
+    errors.tipo = "El tipo de movimiento debe ser 'entrada', 'salida', 'ajuste' o 'transferencia'.";
+  }
+
+  if (data.tipo === 'transferencia' && !data.destWarehouseId) {
+    errors.destWarehouseId = "La transferencia requiere bodega destino.";
   }
 
   return {

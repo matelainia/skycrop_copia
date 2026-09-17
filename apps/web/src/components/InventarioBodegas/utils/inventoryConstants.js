@@ -1,11 +1,22 @@
+// INTERINO D3: la DB manda (CHECKs de 011/013). Cuando el negocio valide el
+// catálogo oficial, este archivo se genera desde ese único origen.
 export const CATEGORIES = [
-  'Semillas',
+  'Fungicida',
+  'Insecticida',
+  'Herbicida',
+  'Fertilizante',
+  'Semilla',
+  'Herramienta',
+  'EPP'
+];
+
+export const WAREHOUSE_CATEGORIES = [
+  'Herramientas',
+  'Insumos Fitosanitarios',
   'Fertilizantes',
-  'Herbicidas',
-  'Pesticidas',
-  'Mantenimiento',
-  'Seguridad',
-  'Herramientas'
+  'Semillas',
+  'EPP',
+  'Cosecha'
 ];
 
 export const UNITS = [
@@ -15,14 +26,18 @@ export const UNITS = [
   { value: 'sacos', label: 'Sacos' }
 ];
 
-export const ITEMS_PER_PAGE = 7;
+export const ITEMS_PER_PAGE = 8;
+
+export const MOVEMENT_TYPES = ['entrada', 'salida', 'ajuste', 'transferencia'];
 
 export const DEFAULT_NEW_ITEM = {
   name: '',
-  category: 'Semillas',
+  category: 'Fertilizante',
+  sku: '',
   quantity: '',
   unit: 'kg',
   minQuantity: '',
+  maxQuantity: '',
   warehouseId: '',
   lote: '',
   registroIca: '',

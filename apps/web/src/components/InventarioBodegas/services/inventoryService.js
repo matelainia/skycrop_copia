@@ -1,12 +1,25 @@
 import { supabase } from '../../../lib/supabaseClient';
 import { inventoryToClient, inventoryToDatabase } from '../adapters/inventory.adapter';
 
-export const fetchInventory = async () => {
-  const { data, error } = await supabase
-    .from('inventario')
-    .select('*')
-    .order('created_at', { ascending: false });
+const SORT_COLUMNS = { name: 'name', category: 'category', stock: 'quantity' };
 
+const sanitizeLike = (s) => String(s || '').replace(/[%_,\\]/g, '').slice(0, 60);
+
+export const fetchInventory = async ({ search = '', sortKey = 'name', sortDir = 1 } = {}) => {
+  let query = supabase.from('inventario').select('*');
+
+  const q = sanitizeLike(search.trim());
+  if (q) {
+    query = query.or(`name.ilike.%${q}%,sku.ilike.%${q}%`);
+  }
+
+  const column = SORT_COLUMNS[sortKey] || 'name';
+  query = query.order(column, { ascending: sortDir !== -1 });
+  if (column !== 'created_at') {
+    query = query.order('created_at', { ascending: false });
+  }
+
+  const { data, error } = await query;
   if (error) throw error;
   return (data || []).map(inventoryToClient);
 };

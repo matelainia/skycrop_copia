@@ -17,6 +17,14 @@ export const validateInventoryItem = (data) => {
     errors.minQuantity = "El stock mínimo no puede ser negativo.";
   }
 
+  if (data.maxQuantity !== undefined && data.maxQuantity !== null && data.maxQuantity !== '') {
+    if (Number(data.maxQuantity) < 0) {
+      errors.maxQuantity = "El stock máximo no puede ser negativo.";
+    } else if (Number(data.minQuantity) >= 0 && Number(data.maxQuantity) < Number(data.minQuantity)) {
+      errors.maxQuantity = "El stock máximo no puede ser menor que el mínimo.";
+    }
+  }
+
   if (!data.warehouseId) {
     errors.warehouseId = "Debe asignar una bodega.";
   }
