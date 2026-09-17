@@ -8,6 +8,8 @@ export const warehouseToClient = (wh) => {
     coordenadaY: wh.coordenada_y,
     categoria: wh.categoria,
     responsableId: wh.responsable_id,
+    capacidad: wh.capacidad_posiciones ?? null,
+    ocupacion: wh.ocupacion_usada ?? 0,
     createdAt: wh.created_at,
   };
 };
@@ -25,5 +27,8 @@ export const warehouseToDatabase = (wh) => {
     coordenada_y: wh.coordenadaY !== '' && wh.coordenadaY !== null ? Number(wh.coordenadaY) : null,
     categoria: selectedCategory || '',
     responsable_id: wh.responsableId !== '' ? wh.responsableId : null,
+    capacidad_posiciones: wh.capacidad === '' || wh.capacidad === null || wh.capacidad === undefined
+      ? null
+      : Number(wh.capacidad),
   };
 };
