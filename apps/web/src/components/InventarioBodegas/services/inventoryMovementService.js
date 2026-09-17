@@ -5,13 +5,28 @@ export const adjustStock = async (itemId, quantity, type, reason, warehouseId = 
   const { data, error } = await supabase.rpc('registrar_movimiento_inventario', {
     p_item_id: itemId,
     p_cantidad: Number(quantity),
-    p_tipo: type, // 'entrada' or 'salida'
+    p_tipo: type, // 'entrada' | 'salida' | 'ajuste' (conteo absoluto)
     p_motivo: reason || '',
     p_warehouse_id: warehouseId || null
   });
 
   if (error) {
     console.error('Error in RPC adjustStock:', error.message);
+    throw error;
+  }
+  return data;
+};
+
+export const transferStock = async (itemId, quantity, destWarehouseId, reason) => {
+  const { data, error } = await supabase.rpc('inventory_transfer', {
+    p_item_id: itemId,
+    p_cantidad: Number(quantity),
+    p_dest_warehouse: destWarehouseId,
+    p_motivo: reason || ''
+  });
+
+  if (error) {
+    console.error('Error in RPC transferStock:', error.message);
     throw error;
   }
   return data;

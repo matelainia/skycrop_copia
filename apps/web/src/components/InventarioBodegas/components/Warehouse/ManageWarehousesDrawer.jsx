@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { X, Trash2 } from 'lucide-react';
 import { getResponsableName } from '../../utils/inventoryHelpers';
-import { DEFAULT_NEW_WAREHOUSE } from '../../utils/inventoryConstants';
+import { DEFAULT_NEW_WAREHOUSE, WAREHOUSE_CATEGORIES } from '../../utils/inventoryConstants';
 
 export default function ManageWarehousesDrawer({
   isOpen,
@@ -136,9 +136,9 @@ export default function ManageWarehousesDrawer({
                 value={newWh.categoria}
                 onChange={e => setNewWh(prev => ({ ...prev, categoria: e.target.value }))}
               >
-                <option value="Agroquímicos">Agroquímicos</option>
-                <option value="Fertilizantes">Fertilizantes</option>
-                <option value="Herramientas">Herramientas</option>
+                {WAREHOUSE_CATEGORIES.map(c => (
+                  <option key={c} value={c}>{c}</option>
+                ))}
                 <option value="Otro">Otro</option>
               </select>
             </div>
@@ -158,8 +158,21 @@ export default function ManageWarehousesDrawer({
               </div>
             )}
 
-            <div>
-              <label className="form-label">Responsable de la Bodega</label>
+            <div className="form-group-container">
+              <div>
+                <label className="form-label">Capacidad (posiciones, opcional)</label>
+                <input
+                  type="number"
+                  min="1"
+                  className="input-glass"
+                  style={{ width: '100%' }}
+                  placeholder="Ej. 500"
+                  value={newWh.capacidad || ''}
+                  onChange={e => setNewWh(prev => ({ ...prev, capacidad: e.target.value }))}
+                />
+              </div>
+              <div>
+                <label className="form-label">Responsable de la Bodega</label>
               <select
                 className="input-glass select-glass"
                 style={{ width: '100%' }}
@@ -182,6 +195,7 @@ export default function ManageWarehousesDrawer({
               <button type="submit" className="btn btn-primary" style={{ flexGrow: 1 }}>
                 Guardar Bodega
               </button>
+            </div>
             </div>
           </form>
         </div>

@@ -8,6 +8,26 @@ import { validateInventoryMovement } from '../schemas/movement.schema';
 export function useInventoryMutations(onSuccess) {
   const { withFeedback, showError } = useInventoryModule();
 
+  // Mapea el contrato de errores del backend ([VALIDATION] [PERMISSION]
+  // [NOT_FOUND] [CONFLICT]) a mensajes accionables. PERMISSION y CONFLICT
+  // son estados diferenciados, no errores genéricos (contrato-v2 §6).
+  const mapRpcError = useCallback((err) => {
+    const raw = err?.message || 'Ha ocurrido un error inesperado.';
+    if (raw.includes('[CONFLICT]')) {
+      return '⚠️ Conflicto de stock: ' + raw.replace('[CONFLICT]', '').trim() + ' Recarga y reintenta.';
+    }
+    if (raw.includes('[PERMISSION]')) {
+      return '⛔ Sin permiso: ' + raw.replace('[PERMISSION]', '').trim();
+    }
+    if (raw.includes('[VALIDATION]')) {
+      return raw.replace('[VALIDATION]', '').trim();
+    }
+    if (raw.includes('[NOT_FOUND]')) {
+      return raw.replace('[NOT_FOUND]', '').trim();
+    }
+    return raw;
+  }, []);
+
   const createItem = useCallback(async (itemForm) => {
     const validation = validateInventoryItem(itemForm);
     if (!validation.success) {
@@ -29,9 +49,8 @@ export function useInventoryMutations(onSuccess) {
     }
   }, [withFeedback, showError, onSuccess]);
 
+  // La confirmación la pide ConfirmDialog en la UI; aquí solo se ejecuta.
   const deleteItem = useCallback(async (id) => {
-    if (!window.confirm('¿Está seguro de que desea eliminar este artículo del inventario?')) return false;
-
     try {
       await withFeedback(
         () => inventoryService.deleteItem(id),
@@ -55,10 +74,52 @@ export function useInventoryMutations(onSuccess) {
     try {
       const result = await withFeedback(
         () => inventoryMovementService.adjustStock(itemId, quantity, type, reason, warehouseId),
-        'Ajuste de inventario realizado con éxito.'
+        type === 'salida' ? 'Salida registrada.' : type === 'ajuste' ? 'Conteo físico aplicado.' : 'Entrada registrada.'
       );
       if (onSuccess) onSuccess();
       return result;
+    } catch (err) {
+      showError(mapRpcError(err));
+      return null;
+    }
+  }, [withFeedback, showError, onSuccess, mapRpcError]);
+
+  const transferStock = useCallback(async (itemId, quantity, destWarehouseId, reason) => {
+    const validation = validateInventoryMovement({ cantidad: quantity, tipo: 'transferencia', destWarehouseId });
+    if (!validation.success) {
+      const errorMsg = Object.values(validation.errors).join(' ');
+      showError(errorMsg);
+      return null;
+    }
+
+    try {
+      const result = await withFeedback(
+        () => inventoryMovementService.transferStock(itemId, quantity, destWarehouseId, reason),
+        'Transferencia registrada.'
+      );
+      if (onSuccess) onSuccess();
+      return result;
+    } catch (err) {
+      showError(mapRpcError(err));
+      return null;
+    }
+  }, [withFeedback, showError, onSuccess, mapRpcError]);
+
+  const updateItem = useCallback(async (id, itemForm) => {
+    const validation = validateInventoryItem(itemForm);
+    if (!validation.success) {
+      const errorMsg = Object.values(validation.errors).join(' ');
+      showError(errorMsg);
+      return null;
+    }
+
+    try {
+      const updated = await withFeedback(
+        () => inventoryService.updateItem(id, itemForm),
+        'Artículo actualizado.'
+      );
+      if (onSuccess) onSuccess();
+      return updated;
     } catch (err) {
       return null;
     }
@@ -66,7 +127,9 @@ export function useInventoryMutations(onSuccess) {
 
   return {
     createItem,
+    updateItem,
     deleteItem,
-    adjustStock
+    adjustStock,
+    transferStock
   };
 }

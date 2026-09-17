@@ -1,0 +1,106 @@
+# manifest-A0 — conjunto exacto inspeccionado (2026-09-15, commit e83d8d96f5c821859b79c06a541d5ea04a2f4258, rama diagnostico/talento-humano-integral)
+
+## Git
+branch=diagnostico/talento-humano-integral (nueva desde e83d8d9)
+base_commit=e83d8d96f5c821859b79c06a541d5ea04a2f4258
+upstream_previo=origin/diagnostico/maquinaria-integral
+working_tree=limpio salvo ?? apps/landing/
+
+## Frontend TalentoHumano (59 archivos)
+apps/web/src/components/TalentoHumano/index.jsx
+apps/web/src/components/TalentoHumano/TalentoHumano.jsx
+apps/web/src/components/TalentoHumano/components/common/Avatar.jsx
+apps/web/src/components/TalentoHumano/components/common/EmptyState.jsx
+apps/web/src/components/TalentoHumano/components/common/FilterBar.jsx
+apps/web/src/components/TalentoHumano/components/common/SearchBar.jsx
+apps/web/src/components/TalentoHumano/components/common/SectionHeader.jsx
+apps/web/src/components/TalentoHumano/components/common/StatusBadge.jsx
+apps/web/src/components/TalentoHumano/constants/arl.js
+apps/web/src/components/TalentoHumano/constants/contratos.js
+apps/web/src/components/TalentoHumano/constants/eps.js
+apps/web/src/components/TalentoHumano/constants/labores.js
+apps/web/src/components/TalentoHumano/constants/rh.js
+apps/web/src/components/TalentoHumano/constants/roles.js
+apps/web/src/components/TalentoHumano/constants/ui.js
+apps/web/src/components/TalentoHumano/cuadrillas/Cuadrillas.jsx
+apps/web/src/components/TalentoHumano/cuadrillas/components/CuadrillaCard.jsx
+apps/web/src/components/TalentoHumano/cuadrillas/components/MemberList.jsx
+apps/web/src/components/TalentoHumano/formacion/Formacion.jsx
+apps/web/src/components/TalentoHumano/formacion/components/CursosTable.jsx
+apps/web/src/components/TalentoHumano/formacion/components/RegistroTable.jsx
+apps/web/src/components/TalentoHumano/gestion/GestionPersonal.jsx
+apps/web/src/components/TalentoHumano/gestion/components/WorkerCard.jsx
+apps/web/src/components/TalentoHumano/gestion/components/WorkerTable.jsx
+apps/web/src/components/TalentoHumano/gestion/forms/WorkerForm.jsx
+apps/web/src/components/TalentoHumano/hooks/useCuadrillas.js
+apps/web/src/components/TalentoHumano/hooks/useFormacion.js
+apps/web/src/components/TalentoHumano/hooks/useLabores.js
+apps/web/src/components/TalentoHumano/hooks/useNominas.js
+apps/web/src/components/TalentoHumano/hooks/useTrabajadores.js
+apps/web/src/components/TalentoHumano/labores/Labores.jsx
+apps/web/src/components/TalentoHumano/labores/components/HistorialTable.jsx
+apps/web/src/components/TalentoHumano/labores/components/KanbanBoard.jsx
+apps/web/src/components/TalentoHumano/labores/components/LaborCard.jsx
+apps/web/src/components/TalentoHumano/labores/components/LaborColumn.jsx
+apps/web/src/components/TalentoHumano/modals/AddMemberModal.jsx
+apps/web/src/components/TalentoHumano/modals/CursoModal.jsx
+apps/web/src/components/TalentoHumano/modals/DashboardDrawer.jsx
+apps/web/src/components/TalentoHumano/modals/LaborModal.jsx
+apps/web/src/components/TalentoHumano/modals/NominaModal.jsx
+apps/web/src/components/TalentoHumano/modals/RegistroModal.jsx
+apps/web/src/components/TalentoHumano/modals/WorkerModal.jsx
+apps/web/src/components/TalentoHumano/nominas/Nominas.jsx
+apps/web/src/components/TalentoHumano/nominas/components/NominasTable.jsx
+apps/web/src/components/TalentoHumano/services/cuadrillas.service.js
+apps/web/src/components/TalentoHumano/services/formacion.service.js
+apps/web/src/components/TalentoHumano/services/labores.service.js
+apps/web/src/components/TalentoHumano/services/nominas.service.js
+apps/web/src/components/TalentoHumano/services/trabajadores.service.js
+apps/web/src/components/TalentoHumano/styles/common.css
+apps/web/src/components/TalentoHumano/styles/cuadrillas.css
+apps/web/src/components/TalentoHumano/styles/formacion.css
+apps/web/src/components/TalentoHumano/styles/gestion.css
+apps/web/src/components/TalentoHumano/styles/labores.css
+apps/web/src/components/TalentoHumano/styles/nominas.css
+apps/web/src/components/TalentoHumano/types/talento.types.js
+apps/web/src/components/TalentoHumano/utils/laborHelpers.js
+apps/web/src/components/TalentoHumano/utils/nominaHelpers.js
+apps/web/src/components/TalentoHumano/utils/workerHelpers.js
+
+## Cross-refs frontend (leídos)
+apps/web/src/lib/supabaseClient.js
+apps/web/src/modules/harvest/services/harvestService.js (líneas 236-238)
+apps/web/src/modules/maquinaria/repository/operation.repository.js (líneas 64-72)
+apps/web/src/modules/traceability/types/traceability.types.js
+
+## Backend (estructura + ausencia TH)
+backend/src/app.js (pendiente)
+backend/src/server.js (pendiente)
+backend/src/modules/ (10: agronomy, application, auth, evaluation, fertilization, gee, harvest, inventory, traceability, weather — ninguno TH)
+backend/api/legacy.js (pendiente lectura profunda fase A-backend)
+
+## Supabase (archivos)
+supabase/migrations/010_trabajadores.sql
+supabase/migrations/011_bodegas.sql (línea 15)
+supabase/migrations/014_programaciones.sql
+supabase/migrations/016_evaluaciones.sql
+supabase/migrations/017_costos.sql
+supabase/migrations/018_storage.sql (línea 14)
+supabase/migrations/020_indexes.sql
+supabase/migrations/021_rls.sql
+supabase/migrations/022_functions.sql (líneas 55-60, 311)
+supabase/migrations/026_adjust_trabajadores_constraints.sql
+supabase/migrations/042_cosecha_postcosecha_trazabilidad.sql (línea 23)
+supabase/migrations/048_traceability_events.sql (líneas 40, 50)
+supabase/migrations/052_maquinaria_contrato.sql (líneas 32, 104, 156, 295, 489, 503, 594)
+supabase/migrations/054_maquinaria_operador_snapshot.sql (líneas 9, 35, 49)
+
+## Docs plantilla Maquinaria
+docs/maquinaria/diagnostico-integral/00-plan.md
+docs/maquinaria/diagnostico-integral/01-inventario.md
+docs/maquinaria/diagnostico-integral/05-hallazgos.md
+docs/maquinaria/diagnostico-integral/06-certificacion.md
+
+## Tests
+tests/e2e/helpers/db.js (línea 48)
+tests/e2e/real/schema-contract.js (línea 17)

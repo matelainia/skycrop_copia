@@ -26,9 +26,8 @@ export function useWarehouseMutations(onSuccess) {
     }
   }, [withFeedback, showError, onSuccess]);
 
+  // La confirmación la pide ConfirmDialog en la UI; aquí solo se ejecuta.
   const deleteWarehouse = useCallback(async (id) => {
-    if (!window.confirm('¿Está seguro de que desea eliminar esta bodega? Los artículos asociados no se borrarán, pero quedarán sin bodega asignada.')) return false;
-
     try {
       await withFeedback(
         () => warehouseService.deleteWarehouse(id),
