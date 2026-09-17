@@ -233,7 +233,7 @@ export const harvestService = {
     return data||[];
   },
   async listTrabajadores() {
-    const { data, error } = await supabase.from('trabajadores').select('id,nombres,apellidos').eq('estado','Activo').limit(50);
+    const { data, error } = await supabase.from('trabajadores').select('id,nombres,apellidos').eq('estado','Activa').limit(50);
     if (error) {
       const { data:d2 } = await supabase.from('trabajadores').select('id,nombres,apellidos').limit(50);
       return d2||[];

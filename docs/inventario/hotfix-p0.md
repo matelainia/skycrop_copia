@@ -15,7 +15,8 @@ Proyecto staging, DB vacía (D1: `inv=0, bod=0, mov=0`). Orgs de prueba `org_tes
 | B7 bodega de otra org | `23503 fk_inventario_bodega_tenant` ✅ |
 | B9 salida 999999 vs stock 10 | `[CONFLICT]`, stock intacto ✅ |
 | Feliz +10 / −5 | `antes/despues` 10→20→15 encadenan ✅ |
-| Concurrencia paralela real | ⏳ pendiente reintento limpio tras `063` (ver §0.2) |
+<<<<<<< HEAD
+| Concurrencia paralela real | ⏳ pendiente reintento limpio tras `063` (ver §0.2) → ✅ VERDE 2026-09-17: reset 999→10, salida 10→0 OK, 2.ª salida `[CONFLICT]`, stock intacto |
 | Casos 1–3, 5, 6, 8, 10–12 | ⏳ pendientes de JWTs reales de 2 orgs (vía app); la simulación con `SET ROLE` cubrió el núcleo S1/S2/S3 |
 | Regresión app (§3) | ⏳ pendiente: abrir Inventario y Bodegas contra staging y probar un ajuste |
 
@@ -40,6 +41,14 @@ debía existir. Remedio: migración `063` (trigger `trg_inventario_guard_quantit
 + flag `app.inventory_rpc` en las 3 RPCs) y `updateItem` ya no envía `quantity`;
 servicio `updateStock` (bypass sin uso) eliminado.
 
+## 0.3 Gate de concurrencia VERDE + guard `063` verificado (2026-09-17)
+
+Secuencia: ajuste reset a 10 (`antes:999` confirmó que el paso 0 previo había
+escrito sin `063`) → salida 10 OK (`10→0`) → 2.ª salida `[CONFLICT]`, stock
+intacto en 0. Tras aplicar `063`, el UPDATE directo se rechaza con
+`[PERMISSION] El stock solo cambia vía movimientos (RPC)`.
+
+>>>>>>> origin/main
 ## 1. Matriz de aislamiento (100% verde para merge)
 
 | # | Actor | Operación | Esperado |
@@ -104,11 +113,19 @@ Esperado: **una OK** (`despues: 0`), **una `[CONFLICT]`**. Verificar después: `
 - `transferencia` parcial real (upsert destino + doble lock) → Fase 4 (`contrato-v2.md` D5).
 - Función SQL `has_permission(recurso, acción)` sobre `permisos` → Fase 3.
 
-## 6. Limpieza de datos de prueba (tras el merge)
+## 6. Limpieza de datos de prueba ✅ 2026-09-17
+
+Empresas `test-org-a/b` + perfil `user_test_p0_a` eliminados; `inventario` de
+prueba en 0; `audit_logs_immutable_trg` reactivado (`tgenabled=O`).
+Hallazgo de proceso: el `DELETE CASCADE` de `companies` choca con el trigger de
+auditoría (borra padre antes que hijos y el log huérfano viola la FK). La
+limpieza debió hacerse hijos→padre (§6 actualizado). Lección para prod: nunca
+borrar empresas en cascada; usar borrado suave.
 
 ```sql
-DELETE FROM public.companies WHERE slug IN ('test-org-a','test-org-b');
--- cascada: bodegas, inventario y movimientos de TEST-ORG-A/B.
+-- orden que funciona (inmutable desactivado solo durante la ventana):
+-- movimientos → inventario → bodegas → company_users → purga audit_logs →
+-- companies → profiles → reactivar trigger.
 ```
 
 ## 7. Certificación E2E en app (staging) ✅ 2026-09-17

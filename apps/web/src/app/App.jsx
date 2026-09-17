@@ -1,6 +1,6 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { Users, Package, Tractor, HeartPulse, Sprout, Sun, Moon, CloudSun, Calendar, LogOut, Settings, ShieldCheck } from 'lucide-react';
-import TalentoHumano from '../components/TalentoHumano';
+import TalentoHumano from '../modules/talento-humano';
 import InventarioBodegas from '../components/InventarioBodegas/InventarioBodegas';
 import Maquinaria from '../modules/maquinaria';
 import ManejoSanitario from '../components/manejo-sanitario/ManejoSanitarioModule';
@@ -49,6 +49,10 @@ export default function App() {
       setActiveTab(menuItems[0].id);
     }
   }, [permissions]);
+
+  // Logo de la organización (Clerk → companies.logo). Si la URL muere, fallback a marca.
+  const [logoOk, setLogoOk] = useState(true);
+  useEffect(() => { setLogoOk(true); }, [empresa?.logo]);
 
   useEffect(() => {
     localStorage.setItem('skycrop_active_subtab', activeSubTab);
@@ -125,8 +129,20 @@ export default function App() {
       {/* Sidebar Navigation */}
       <aside className="sidebar-container">
         <div className="sidebar-brand">
-          <div className="logo-icon"><Sprout size={20} /></div>
-          <span className="brand-name">SkyCrop</span>
+          {empresa?.logo && logoOk ? (
+            <img
+              key={empresa.logo}
+              src={empresa.logo}
+              alt={empresa.nombre || 'Logo'}
+              onError={() => setLogoOk(false)}
+              style={{ width: '100%', height: 'auto', maxHeight: 64, objectFit: 'contain', display: 'block' }}
+            />
+          ) : (
+            <>
+              <div className="logo-icon"><Sprout size={20} /></div>
+              <span className="brand-name">{empresa?.nombre || 'SkyCrop'}</span>
+            </>
+          )}
         </div>
         
         <ul className="sidebar-menu">
