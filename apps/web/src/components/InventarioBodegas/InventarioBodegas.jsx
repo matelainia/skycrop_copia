@@ -112,7 +112,16 @@ function InventarioBodegasContent() {
 
   // Derived metrics and stats
   const metrics = calculateMetrics(items, warehouses);
-  const warehouseStats = getWarehouseStats(items, warehouses);
+
+  // Mantener el ítem seleccionado fresco ante refresh (evita modales con
+  // stock obsoleto si los datos cambian con el modal abierto).
+  useEffect(() => {
+    if (selectedItem) {
+      const fresh = items.find((i) => i.id === selectedItem.id);
+      if (fresh && fresh !== selectedItem) setSelectedItem(fresh);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items]);  const warehouseStats = getWarehouseStats(items, warehouses);
   const warehouseNameOf = (id) => warehouses.find((w) => w.id === id)?.nombre || 'Sin asignar';
   const itemNameOf = (id) => items.find((i) => i.id === id)?.name || 'Artículo';
 
