@@ -63,13 +63,13 @@ export default function MovementModal({
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!canSubmit) return;
-    let result = null;
+    let ok = false;
     if (movType === 'transferencia') {
-      result = await onTransfer(item.id, qty, destWarehouseId, reason.trim());
+      ok = !!(await onTransfer(item.id, qty, destWarehouseId, reason.trim()));
     } else {
-      result = await onAdjust(item.id, qty, movType, reason.trim(), item.warehouseId);
+      ok = !!(await onAdjust(item.id, qty, movType, reason.trim(), item.warehouseId));
     }
-    if (result) resetAndClose();
+    if (ok) resetAndClose();
     // Si la RPC falla (incluido [CONFLICT]), el toast ya lo informó y el
     // modal queda abierto con los datos para corregir y reintentar.
   };

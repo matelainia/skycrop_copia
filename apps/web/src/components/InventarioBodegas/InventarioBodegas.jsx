@@ -282,8 +282,9 @@ function InventarioBodegasContent() {
         )}
       </div>
 
-      {/* Add/Edit Item Modal */}
+      {/* Add/Edit Item Modal (key reinicia el form sin efectos) */}
       <ItemModal
+        key={editingItem?.id || 'new'}
         isOpen={isItemModalOpen}
         onClose={() => {
           setIsItemModalOpen(false);

@@ -1,16 +1,6 @@
 import React from 'react';
 import { Search, X, Download } from 'lucide-react';
-import { CATEGORIES } from '../../utils/inventoryConstants';
-
-export const STATUS_OPTIONS = [
-  { value: 'todos', label: 'Todos los Estados' },
-  { value: 'alertas', label: 'Con alerta' },
-  { value: 'opt', label: 'Óptimo' },
-  { value: 'bajo', label: 'Bajo' },
-  { value: 'crit', label: 'Crítico' },
-  { value: 'agot', label: 'Agotado' },
-  { value: 'sobre', label: 'Sobrestock' },
-];
+import { CATEGORIES, STATUS_OPTIONS } from '../../utils/inventoryConstants';
 
 export default function InventoryToolbar({
   search,

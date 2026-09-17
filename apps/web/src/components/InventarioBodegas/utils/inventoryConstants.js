@@ -30,6 +30,16 @@ export const ITEMS_PER_PAGE = 8;
 
 export const MOVEMENT_TYPES = ['entrada', 'salida', 'ajuste', 'transferencia'];
 
+export const STATUS_OPTIONS = [
+  { value: 'todos', label: 'Todos los Estados' },
+  { value: 'alertas', label: 'Con alerta' },
+  { value: 'opt', label: 'Óptimo' },
+  { value: 'bajo', label: 'Bajo' },
+  { value: 'crit', label: 'Crítico' },
+  { value: 'agot', label: 'Agotado' },
+  { value: 'sobre', label: 'Sobrestock' },
+];
+
 export const DEFAULT_NEW_ITEM = {
   name: '',
   category: 'Fertilizante',
