@@ -125,3 +125,14 @@ borrar empresas en cascada; usar borrado suave.
 -- movimientos → inventario → bodegas → company_users → purga audit_logs →
 -- companies → profiles → reactivar trigger.
 ```
+
+## 7. Certificación E2E en app (staging) ✅ 2026-09-17
+
+Flujo de 11 pasos reportado sin fallas: alta con SKU, validación máx≥mín,
+entrada/salida/ajuste con Kardex encadenado, conflicto con stock intacto,
+transferencia, campana + filtro de alertas, filtros/URL/orden/paginación/CSV,
+tab Bodegas, supervisor con acciones deshabilitadas + `[PERMISSION]`,
+limpieza `E2E-*` completa. Hallazgos del ciclo ya corregidos: `062` (= ANY),
+guard `063`, modal con stock fresco (`518065a`).
+Estado del módulo: **CERTIFICADO para merge** en orden
+`refactor/*` → `fix/*` → `feat/*`.
