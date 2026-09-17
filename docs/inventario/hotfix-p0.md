@@ -15,8 +15,7 @@ Proyecto staging, DB vacía (D1: `inv=0, bod=0, mov=0`). Orgs de prueba `org_tes
 | B7 bodega de otra org | `23503 fk_inventario_bodega_tenant` ✅ |
 | B9 salida 999999 vs stock 10 | `[CONFLICT]`, stock intacto ✅ |
 | Feliz +10 / −5 | `antes/despues` 10→20→15 encadenan ✅ |
-| Concurrencia paralela real | ⏳ pendiente (requiere 2 sesiones simultáneas; ejecutar antes del merge a main) |
-| Concurrencia paralela real | ⏳ pendiente (requiere 2 sesiones simultáneas; ejecutar antes del merge a main) |
+| Concurrencia paralela real | ⏳ pendiente reintento limpio tras `063` (ver §0.2) |
 | Casos 1–3, 5, 6, 8, 10–12 | ⏳ pendientes de JWTs reales de 2 orgs (vía app); la simulación con `SET ROLE` cubrió el núcleo S1/S2/S3 |
 | Regresión app (§3) | ⏳ pendiente: abrir Inventario y Bodegas contra staging y probar un ajuste |
 
@@ -31,6 +30,15 @@ Veredicto: hotfix funcionalmente validado; merge a main bloqueado hasta concurre
 | Transfer cross-tenant (A→bodega B) | `[VALIDATION]` ✅ |
 | Transfer parcial 10/15 A→A2 (`061`) | origen 15→5, destino nuevo 10 con `sku NULL`, 2 movimientos `[transferencia]` encadenados ✅ |
 | Trigger ocupación | A=1, A2=1, B=0 ✅ |
+
+## 0.2 Bypass UPDATE directo detectado y cerrado (2026-09-17)
+
+`audit_logs` mostró un `UPDATE quantity 10→0` a las 02:19:34 sin fila de kardex,
+proveniente de fuera de las RPC (edición/guardado con cantidad obsoleta). La RPC
+posterior leyó 0 y respondió `[CONFLICT]`: la RPC operó bien, pero el bypass no
+debía existir. Remedio: migración `063` (trigger `trg_inventario_guard_quantity`
++ flag `app.inventory_rpc` en las 3 RPCs) y `updateItem` ya no envía `quantity`;
+servicio `updateStock` (bypass sin uso) eliminado.
 
 ## 1. Matriz de aislamiento (100% verde para merge)
 
