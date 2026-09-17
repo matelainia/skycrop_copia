@@ -110,3 +110,14 @@ Esperado: **una OK** (`despues: 0`), **una `[CONFLICT]`**. Verificar después: `
 DELETE FROM public.companies WHERE slug IN ('test-org-a','test-org-b');
 -- cascada: bodegas, inventario y movimientos de TEST-ORG-A/B.
 ```
+
+## 7. Certificación E2E en app (staging) ✅ 2026-09-17
+
+Flujo de 11 pasos reportado sin fallas: alta con SKU, validación máx≥mín,
+entrada/salida/ajuste con Kardex encadenado, conflicto con stock intacto,
+transferencia, campana + filtro de alertas, filtros/URL/orden/paginación/CSV,
+tab Bodegas, supervisor con acciones deshabilitadas + `[PERMISSION]`,
+limpieza `E2E-*` completa. Hallazgos del ciclo ya corregidos: `062` (= ANY),
+guard `063`, modal con stock fresco (`518065a`).
+Estado del módulo: **CERTIFICADO para merge** en orden
+`refactor/*` → `fix/*` → `feat/*`.
