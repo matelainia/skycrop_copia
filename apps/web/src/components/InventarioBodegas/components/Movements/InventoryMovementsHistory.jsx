@@ -1,12 +1,13 @@
 import React from 'react';
 import { ArrowUpRight, ArrowDownRight, Clock } from 'lucide-react';
+import LeafLoader from '../../../LeafLoader.jsx';
 
 export default function InventoryMovementsHistory({
   movements = [],
   loading = false
 }) {
   if (loading) {
-    return <div style={{ padding: '20px', textAlign: 'center', color: 'var(--text-muted)' }}>Cargando historial...</div>;
+    return <LeafLoader size={64} text="Cargando historial..." />;
   }
 
   return (
