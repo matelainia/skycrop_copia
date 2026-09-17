@@ -16,10 +16,21 @@ Proyecto staging, DB vacía (D1: `inv=0, bod=0, mov=0`). Orgs de prueba `org_tes
 | B9 salida 999999 vs stock 10 | `[CONFLICT]`, stock intacto ✅ |
 | Feliz +10 / −5 | `antes/despues` 10→20→15 encadenan ✅ |
 | Concurrencia paralela real | ⏳ pendiente (requiere 2 sesiones simultáneas; ejecutar antes del merge a main) |
+| Concurrencia paralela real | ⏳ pendiente (requiere 2 sesiones simultáneas; ejecutar antes del merge a main) |
 | Casos 1–3, 5, 6, 8, 10–12 | ⏳ pendientes de JWTs reales de 2 orgs (vía app); la simulación con `SET ROLE` cubrió el núcleo S1/S2/S3 |
 | Regresión app (§3) | ⏳ pendiente: abrir Inventario y Bodegas contra staging y probar un ajuste |
 
 Veredicto: hotfix funcionalmente validado; merge a main bloqueado hasta concurrencia + regresión app + limpieza §6.
+
+## 0.1 Validación 059/060/061 (2026-09-17, staging) ✅
+
+| Evidencia | Resultado |
+|---|---|
+| Backfill SKU (`059`) | origen con `CAT-974C-0001` ✅ |
+| Seeds `060` | `ingeniero` con crear; `test-a` sin membresía → `[PERMISSION]` en transfer ✅ (defensa en profundidad opera) |
+| Transfer cross-tenant (A→bodega B) | `[VALIDATION]` ✅ |
+| Transfer parcial 10/15 A→A2 (`061`) | origen 15→5, destino nuevo 10 con `sku NULL`, 2 movimientos `[transferencia]` encadenados ✅ |
+| Trigger ocupación | A=1, A2=1, B=0 ✅ |
 
 ## 1. Matriz de aislamiento (100% verde para merge)
 
