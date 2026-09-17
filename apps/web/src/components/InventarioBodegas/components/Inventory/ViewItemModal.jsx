@@ -2,6 +2,7 @@ import React from 'react';
 import { X } from 'lucide-react';
 import ItemIcon from '../Shared/ItemIcon';
 import ItemStatusBadge from '../Shared/ItemStatusBadge';
+import { getStockStatus } from '../../utils/inventoryStatus';
 import InventoryMovementsHistory from '../../components/Movements/InventoryMovementsHistory';
 
 export default function ViewItemModal({
@@ -14,7 +15,7 @@ export default function ViewItemModal({
 }) {
   if (!isOpen || !item) return null;
 
-  const isLow = item.quantity < item.minQuantity;
+  const status = getStockStatus(item);
 
   return (
     <div className="drawer-backdrop" onClick={onClose}>
@@ -33,6 +34,9 @@ export default function ViewItemModal({
               <h4 style={{ fontSize: '18px', color: 'var(--text-primary)', fontWeight: '700' }}>{item.name}</h4>
               <span style={{ fontSize: '11px', background: 'var(--primary-light)', color: 'var(--primary)', padding: '2px 8px', borderRadius: '10px', fontWeight: 'bold', textTransform: 'uppercase' }}>
                 {item.category}
+              </span>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)', marginLeft: '8px' }}>
+                SKU: {item.sku || '—'}
               </span>
             </div>
           </div>
@@ -53,6 +57,15 @@ export default function ViewItemModal({
               </div>
             </div>
           </div>
+
+          {item.maxQuantity !== null && item.maxQuantity !== undefined && item.maxQuantity !== '' && (
+            <div>
+              <span style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '600' }}>Máximo (sobrestock):</span>
+              <div style={{ fontSize: '14px', fontWeight: '600', color: 'var(--text-primary)', marginTop: '2px' }}>
+                Máx: {item.maxQuantity} {item.unit}
+              </div>
+            </div>
+          )}
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
             <div>
@@ -79,7 +92,7 @@ export default function ViewItemModal({
           <div>
             <span style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: '600' }}>Estado del Inventario:</span>
             <div style={{ marginTop: '6px' }}>
-              <ItemStatusBadge isLow={isLow} type="badge" />
+              <ItemStatusBadge status={status} type="badge" />
             </div>
           </div>
 
