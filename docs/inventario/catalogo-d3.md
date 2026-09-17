@@ -1,7 +1,7 @@
 # D3 — Catálogo oficial propuesto (pendiente firma del negocio)
 
-**Estado:** Propuesto. Nada de este documento está aplicado: la UI actual usa los
-valores DB vigentes (interino documentado en `inventoryConstants.js`).
+**Estado:** ✅ FIRMADO 2026-09-17. Aplicado en migración `062` + constantes UI.
+Opción elegida: las 5 propuestas de artículo + General + Combustible en bodegas.
 
 ## 1. Fuentes en conflicto
 
