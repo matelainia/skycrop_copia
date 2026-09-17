@@ -49,7 +49,8 @@ export const DEFAULT_NEW_WAREHOUSE = {
   sector: '',
   coordenadaX: '',
   coordenadaY: '',
-  categoria: 'Agroquímicos',
+  categoria: 'Insumos Fitosanitarios',
   categoriaOtro: '',
-  responsableId: ''
+  responsableId: '',
+  capacidad: ''
 };

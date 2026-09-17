@@ -49,9 +49,8 @@ export function useInventoryMutations(onSuccess) {
     }
   }, [withFeedback, showError, onSuccess]);
 
+  // La confirmación la pide ConfirmDialog en la UI; aquí solo se ejecuta.
   const deleteItem = useCallback(async (id) => {
-    if (!window.confirm('¿Está seguro de que desea eliminar este artículo del inventario?')) return false;
-
     try {
       await withFeedback(
         () => inventoryService.deleteItem(id),
