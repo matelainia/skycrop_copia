@@ -5,21 +5,21 @@
 -- Rama: feat/inventario-ux-v2. Sin backfill (solo amplía dominios).
 -- ==============================================================================
 
--- Drop robusto del CHECK previo (nombre auto-generado por Postgres).
+-- Drop robusto del CHECK previo (Postgres lo guarda como = ANY, no como IN).
 DO $$
 DECLARE r RECORD;
 BEGIN
   FOR r IN
     SELECT conname FROM pg_constraint
     WHERE conrelid = 'public.inventario'::regclass AND contype = 'c'
-      AND pg_get_constraintdef(oid) LIKE '%category%IN%'
+      AND pg_get_constraintdef(oid) LIKE '%category%'
   LOOP
     EXECUTE format('ALTER TABLE public.inventario DROP CONSTRAINT %I', r.conname);
   END LOOP;
   FOR r IN
     SELECT conname FROM pg_constraint
     WHERE conrelid = 'public.bodegas'::regclass AND contype = 'c'
-      AND pg_get_constraintdef(oid) LIKE '%categoria%IN%'
+      AND pg_get_constraintdef(oid) LIKE '%categoria%'
   LOOP
     EXECUTE format('ALTER TABLE public.bodegas DROP CONSTRAINT %I', r.conname);
   END LOOP;
