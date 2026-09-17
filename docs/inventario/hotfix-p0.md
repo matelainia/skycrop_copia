@@ -2,6 +2,25 @@
 
 Rama: `fix/inventario-seguridad-p0`. Todo lo de este documento se ejecuta en **staging** (nunca prod). Requiere dos orgs de prueba (A y B) con un artículo y una bodega cada una.
 
+## 0. Resultado de validación 2026-09-17 — GATE VERDE ✅
+
+Proyecto staging, DB vacía (D1: `inv=0, bod=0, mov=0`). Orgs de prueba `org_test_p0_a/b` creadas y pendientes de limpieza (§6).
+
+| Evidencia | Resultado |
+|---|---|
+| Funciones `prosecdef` (las 3) | `true` = DEFINER ✅ |
+| Grants `movimientos_inventario` para `authenticated` | solo `SELECT` (+`REFERENCES/TRIGGER/TRUNCATE` residuales, no bloquean) ✅ S1 |
+| Constraints S2 (5/5) | presentes ✅ |
+| B4 insert directo | `42501 permission denied` ✅ |
+| B7 bodega de otra org | `23503 fk_inventario_bodega_tenant` ✅ |
+| B9 salida 999999 vs stock 10 | `[CONFLICT]`, stock intacto ✅ |
+| Feliz +10 / −5 | `antes/despues` 10→20→15 encadenan ✅ |
+| Concurrencia paralela real | ⏳ pendiente (requiere 2 sesiones simultáneas; ejecutar antes del merge a main) |
+| Casos 1–3, 5, 6, 8, 10–12 | ⏳ pendientes de JWTs reales de 2 orgs (vía app); la simulación con `SET ROLE` cubrió el núcleo S1/S2/S3 |
+| Regresión app (§3) | ⏳ pendiente: abrir Inventario y Bodegas contra staging y probar un ajuste |
+
+Veredicto: hotfix funcionalmente validado; merge a main bloqueado hasta concurrencia + regresión app + limpieza §6.
+
 ## 1. Matriz de aislamiento (100% verde para merge)
 
 | # | Actor | Operación | Esperado |
@@ -65,3 +84,10 @@ Esperado: **una OK** (`despues: 0`), **una `[CONFLICT]`**. Verificar después: `
 - `lotes_producto.bodega_id` y `despachos.bodega_origen_id` siguen sin FK compuesta → Fase 4.
 - `transferencia` parcial real (upsert destino + doble lock) → Fase 4 (`contrato-v2.md` D5).
 - Función SQL `has_permission(recurso, acción)` sobre `permisos` → Fase 3.
+
+## 6. Limpieza de datos de prueba (tras el merge)
+
+```sql
+DELETE FROM public.companies WHERE slug IN ('test-org-a','test-org-b');
+-- cascada: bodegas, inventario y movimientos de TEST-ORG-A/B.
+```
