@@ -1,10 +1,30 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { DEFAULT_NEW_ITEM, CATEGORIES } from '../../utils/inventoryConstants';
 import WarehouseSelector from '../Shared/WarehouseSelector';
 
+function buildForm(initialItem, warehouses) {
+  if (initialItem) {
+    return {
+      name: initialItem.name || '',
+      category: initialItem.category || CATEGORIES[0],
+      sku: initialItem.sku || '',
+      quantity: initialItem.quantity ?? '',
+      unit: initialItem.unit || 'kg',
+      minQuantity: initialItem.minQuantity ?? '',
+      maxQuantity: initialItem.maxQuantity ?? '',
+      warehouseId: initialItem.warehouseId || '',
+      lote: initialItem.lote || '',
+      registroIca: initialItem.registroIca || '',
+      comentarios: initialItem.comentarios || ''
+    };
+  }
+  return { ...DEFAULT_NEW_ITEM, warehouseId: warehouses[0]?.id || '' };
+}
+
 // Modal agregar/editar (contrato-v2 §2). En edición el stock es de solo
 // lectura: solo cambia vía movimientos (RPC), nunca por UPDATE directo.
+// El padre lo monta con key por artículo para reiniciar el form sin efectos.
 export default function ItemModal({
   isOpen,
   onClose,
@@ -13,35 +33,7 @@ export default function ItemModal({
   onSave
 }) {
   const isEdit = !!initialItem;
-  const [form, setForm] = useState(DEFAULT_NEW_ITEM);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    if (initialItem) {
-      setForm({
-        name: initialItem.name || '',
-        category: initialItem.category || CATEGORIES[0],
-        sku: initialItem.sku || '',
-        quantity: initialItem.quantity ?? '',
-        unit: initialItem.unit || 'kg',
-        minQuantity: initialItem.minQuantity ?? '',
-        maxQuantity: initialItem.maxQuantity ?? '',
-        warehouseId: initialItem.warehouseId || '',
-        lote: initialItem.lote || '',
-        registroIca: initialItem.registroIca || '',
-        comentarios: initialItem.comentarios || ''
-      });
-    } else {
-      setForm({ ...DEFAULT_NEW_ITEM, warehouseId: warehouses[0]?.id || '' });
-    }
-  }, [isOpen, initialItem, warehouses]);
-
-  // Autoseleccionar bodega cuando cargan (solo alta).
-  useEffect(() => {
-    if (isOpen && !isEdit && warehouses.length > 0 && !form.warehouseId) {
-      setForm((prev) => ({ ...prev, warehouseId: warehouses[0].id }));
-    }
-  }, [isOpen, isEdit, warehouses, form.warehouseId]);
+  const [form, setForm] = useState(() => buildForm(initialItem, warehouses));
 
   if (!isOpen) return null;
 
@@ -49,7 +41,9 @@ export default function ItemModal({
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const saved = await onSave(form, isEdit ? initialItem.id : null);
+    // Fallback si las bodegas cargaron después del montaje.
+    const payload = form.warehouseId ? form : { ...form, warehouseId: warehouses[0]?.id || '' };
+    const saved = await onSave(payload, isEdit ? initialItem.id : null);
     if (saved) onClose();
   };
 
