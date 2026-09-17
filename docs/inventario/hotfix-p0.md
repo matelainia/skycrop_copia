@@ -111,9 +111,17 @@ Esperado: **una OK** (`despues: 0`), **una `[CONFLICT]`**. Verificar después: `
 - `transferencia` parcial real (upsert destino + doble lock) → Fase 4 (`contrato-v2.md` D5).
 - Función SQL `has_permission(recurso, acción)` sobre `permisos` → Fase 3.
 
-## 6. Limpieza de datos de prueba (tras el merge)
+## 6. Limpieza de datos de prueba ✅ 2026-09-17
+
+Empresas `test-org-a/b` + perfil `user_test_p0_a` eliminados; `inventario` de
+prueba en 0; `audit_logs_immutable_trg` reactivado (`tgenabled=O`).
+Hallazgo de proceso: el `DELETE CASCADE` de `companies` choca con el trigger de
+auditoría (borra padre antes que hijos y el log huérfano viola la FK). La
+limpieza debió hacerse hijos→padre (§6 actualizado). Lección para prod: nunca
+borrar empresas en cascada; usar borrado suave.
 
 ```sql
-DELETE FROM public.companies WHERE slug IN ('test-org-a','test-org-b');
--- cascada: bodegas, inventario y movimientos de TEST-ORG-A/B.
+-- orden que funciona (inmutable desactivado solo durante la ventana):
+-- movimientos → inventario → bodegas → company_users → purga audit_logs →
+-- companies → profiles → reactivar trigger.
 ```
