@@ -1,18 +1,27 @@
+import { getStockStatus, isAlertStatus } from './inventoryStatus';
+
 export const calculateMetrics = (items = [], warehouses = []) => {
   const totalItemsCount = items.length;
-  const lowStockCount = items.filter(item => item.quantity < item.minQuantity).length;
+  const criticalCount = items.filter(item => isAlertStatus(getStockStatus(item))).length;
 
-  // Calculate dynamic Bodega Central occupancy
-  const centralWh = warehouses.find(w => w.nombre.toLowerCase().includes('central'));
-  const centralItems = items.filter(item => item.warehouseId === centralWh?.id);
-  const totalCentralQty = centralItems.reduce((acc, item) => acc + item.quantity, 0);
-  const occupancyPercentage = Math.min(100, Math.round((totalCentralQty / 500) * 100)) || 0;
+  // Ocupación global real (trigger trg_inventario_occupancy, migración 061).
+  // Solo bodegas con capacidad definida; null si ninguna la tiene.
+  const withCap = warehouses.filter(w => Number(w.capacidad) > 0);
+  const globalOccupancy = withCap.length === 0
+    ? null
+    : Math.min(100, Math.round(
+        withCap.reduce((acc, w) => acc + (Number(w.ocupacion) || 0), 0) /
+        withCap.reduce((acc, w) => acc + Number(w.capacidad), 0) * 100
+      ));
 
   return {
     totalItemsCount,
-    lowStockCount,
+    lowStockCount: criticalCount,
+    criticalCount,
     warehousesCount: warehouses.length,
-    occupancyPercentage
+    occupancyPercentage: globalOccupancy,
+    // Compat: antes era % de "Bodega Central" con /500 hardcodeado.
+    occupancyLabel: withCap.length === 0 ? 'Sin capacidad definida' : 'Ocupación global'
   };
 };
 
@@ -35,7 +44,13 @@ export const getWarehouseStats = (items = [], warehouses = []) => {
       coordenadaY: w.coordenadaY,
       responsable_id: w.responsableId,
       responsableId: w.responsableId,
-      count: items.filter(item => item.warehouseId === w.id).length
+      capacidad: w.capacidad,
+      ocupacion: w.ocupacion,
+      occupancyPct: Number(w.capacidad) > 0
+        ? Math.min(100, Math.round((Number(w.ocupacion) || 0) / Number(w.capacidad) * 100))
+        : null,
+      count: items.filter(item => item.warehouseId === w.id).length,
+      alerts: items.filter(item => item.warehouseId === w.id && isAlertStatus(getStockStatus(item))).length
     }))
   ];
 };

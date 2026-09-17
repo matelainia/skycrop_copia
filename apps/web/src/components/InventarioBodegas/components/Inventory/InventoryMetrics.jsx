@@ -5,11 +5,14 @@ export default function InventoryMetrics({
   totalItemsCount = 0,
   lowStockCount = 0,
   warehousesCount = 0,
-  occupancyPercentage = 0
+  occupancyPercentage = null,
+  occupancyLabel = 'Ocupación global',
+  onShowAlerts,
+  onShowAll
 }) {
   return (
     <div className="metrics-grid">
-      <div className="glass-card primary-edge">
+      <div className="glass-card primary-edge" onClick={onShowAll} style={{ cursor: onShowAll ? 'pointer' : 'default' }} title="Limpiar filtros">
         <div className="card-title-section">
           <span className="card-label">Total Insumos</span>
           <div className="card-icon-box green">
@@ -20,7 +23,7 @@ export default function InventoryMetrics({
         <div className="card-desc">Artículos registrados en catálogo</div>
       </div>
 
-      <div className="glass-card danger-edge">
+      <div className="glass-card danger-edge" onClick={onShowAlerts} style={{ cursor: onShowAlerts ? 'pointer' : 'default' }} title="Filtrar con alerta">
         <div className="card-title-section">
           <span className="card-label">Bajo Stock Crítico</span>
           <div className="card-icon-box red">
@@ -28,7 +31,7 @@ export default function InventoryMetrics({
           </div>
         </div>
         <div className="card-value">{lowStockCount}</div>
-        <div className="card-desc">Requieren reabastecimiento urgente</div>
+        <div className="card-desc">Críticos + agotados · clic para filtrar</div>
       </div>
 
       <div className="glass-card info-edge">
@@ -44,15 +47,17 @@ export default function InventoryMetrics({
 
       <div className="glass-card primary-edge">
         <div className="card-title-section">
-          <span className="card-label">Ocupación Bodega Central</span>
+          <span className="card-label">{occupancyLabel}</span>
           <div className="card-icon-box green">
             <Layers size={18} />
           </div>
         </div>
-        <div className="card-value">{occupancyPercentage}%</div>
-        <div className="progress-bar-container">
-          <div className="progress-bar-fill" style={{ width: `${occupancyPercentage}%` }}></div>
-        </div>
+        <div className="card-value">{occupancyPercentage === null ? '—' : `${occupancyPercentage}%`}</div>
+        {occupancyPercentage !== null && (
+          <div className="progress-bar-container">
+            <div className="progress-bar-fill" style={{ width: `${occupancyPercentage}%` }}></div>
+          </div>
+        )}
       </div>
     </div>
   );

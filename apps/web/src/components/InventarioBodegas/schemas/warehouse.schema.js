@@ -27,6 +27,12 @@ export const validateWarehouse = (data) => {
     errors.categoriaOtro = "Debe especificar la categoría alternativa.";
   }
 
+  if (data.capacidad !== undefined && data.capacidad !== null && data.capacidad !== '') {
+    if (!Number.isInteger(Number(data.capacidad)) || Number(data.capacidad) < 1) {
+      errors.capacidad = "La capacidad debe ser un entero mayor que cero.";
+    }
+  }
+
   return {
     success: Object.keys(errors).length === 0,
     errors,
