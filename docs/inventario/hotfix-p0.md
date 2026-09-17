@@ -15,7 +15,7 @@ Proyecto staging, DB vacía (D1: `inv=0, bod=0, mov=0`). Orgs de prueba `org_tes
 | B7 bodega de otra org | `23503 fk_inventario_bodega_tenant` ✅ |
 | B9 salida 999999 vs stock 10 | `[CONFLICT]`, stock intacto ✅ |
 | Feliz +10 / −5 | `antes/despues` 10→20→15 encadenan ✅ |
-| Concurrencia paralela real | ⏳ pendiente reintento limpio tras `063` (ver §0.2) |
+| Concurrencia paralela real | ⏳ pendiente reintento limpio tras `063` (ver §0.2) → ✅ VERDE 2026-09-17: reset 999→10, salida 10→0 OK, 2.ª salida `[CONFLICT]`, stock intacto |
 | Casos 1–3, 5, 6, 8, 10–12 | ⏳ pendientes de JWTs reales de 2 orgs (vía app); la simulación con `SET ROLE` cubrió el núcleo S1/S2/S3 |
 | Regresión app (§3) | ⏳ pendiente: abrir Inventario y Bodegas contra staging y probar un ajuste |
 
@@ -39,6 +39,13 @@ posterior leyó 0 y respondió `[CONFLICT]`: la RPC operó bien, pero el bypass 
 debía existir. Remedio: migración `063` (trigger `trg_inventario_guard_quantity`
 + flag `app.inventory_rpc` en las 3 RPCs) y `updateItem` ya no envía `quantity`;
 servicio `updateStock` (bypass sin uso) eliminado.
+
+## 0.3 Gate de concurrencia VERDE + guard `063` verificado (2026-09-17)
+
+Secuencia: ajuste reset a 10 (`antes:999` confirmó que el paso 0 previo había
+escrito sin `063`) → salida 10 OK (`10→0`) → 2.ª salida `[CONFLICT]`, stock
+intacto en 0. Tras aplicar `063`, el UPDATE directo se rechaza con
+`[PERMISSION] El stock solo cambia vía movimientos (RPC)`.
 
 ## 1. Matriz de aislamiento (100% verde para merge)
 
