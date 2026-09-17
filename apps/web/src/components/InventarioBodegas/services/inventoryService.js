@@ -50,18 +50,11 @@ export const deleteItem = async (id) => {
   return id;
 };
 
-export const updateStock = async (id, newQty) => {
-  const { error } = await supabase
-    .from('inventario')
-    .update({ quantity: newQty })
-    .eq('id', id);
-
-  if (error) throw error;
-  return newQty;
-};
-
 export const updateItem = async (id, itemForm) => {
+  // Defensa en profundidad (063): el stock NUNCA viaja en un UPDATE directo,
+  // solo cambia vía RPC. Se excluye quantity aunque venga en el form.
   const dbItem = inventoryToDatabase(itemForm);
+  delete dbItem.quantity;
 
   const { data, error } = await supabase
     .from('inventario')
