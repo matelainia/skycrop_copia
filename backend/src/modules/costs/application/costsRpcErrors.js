@@ -61,7 +61,15 @@ export function mapCostsRpcError(err, fallbackMessage = 'Error del motor de cost
   }
 }
 
+export function isAuthRpcError(err) {
+  return /invalid\s*(api\s*)?key|jwt|expired|unauthorized|permission denied|not authorized|no api key/i.test(
+    err?.message || ''
+  );
+}
+
 export function isMissingRpcError(err) {
+  if (!err) return false;
+  if (isAuthRpcError(err)) return false; // un error de key NUNCA es "RPC ausente"
   return (
     err?.code === '42883' ||
     /costos_register_event|costos_value_event|costos_allocate_event|costos_post_event|costos_reverse_event|costos_recalculate/.test(

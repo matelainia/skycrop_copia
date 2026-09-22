@@ -1,8 +1,9 @@
 ﻿import React, { useState, useEffect } from 'react';
-import { Users, Package, Tractor, HeartPulse, Sprout, Sun, Moon, CloudSun, Calendar, LogOut, Settings, ShieldCheck } from 'lucide-react';
+import { Users, Package, Tractor, HeartPulse, Sprout, Sun, Moon, CloudSun, Calendar, LogOut, Settings, ShieldCheck, Coins } from 'lucide-react';
 import TalentoHumano from '../modules/talento-humano';
 import InventarioBodegas from '../components/InventarioBodegas/InventarioBodegas';
 import Maquinaria from '../modules/maquinaria';
+import CostsConsole from '../modules/costs';
 import ManejoSanitario from '../components/manejo-sanitario/ManejoSanitarioModule';
 import CosechaPostcosecha from '../components/CosechaPostcosecha/CosechaPostcosecha';
 import Climate from '../modules/Climate';
@@ -20,6 +21,7 @@ export default function App() {
     { id: 'sanitario', label: 'Manejo Sanitario', icon: <HeartPulse size={18} />, recurso: 'aplicaciones' },
     { id: 'cosecha', label: 'Cosecha y Postcosecha', icon: <Sprout size={18} />, recurso: 'cosechas' },
     { id: 'trazabilidad', label: 'Trazabilidad', icon: <ShieldCheck size={18} />, recurso: 'lotes' },
+    { id: 'costos', label: 'Costos (validación)', icon: <Coins size={18} />, recurso: 'costos' },
     { id: 'clima', label: 'Clima', icon: <Sun size={18} />, recurso: 'lotes' },
   ].filter(item => {
     const permitted = hasPermission(item.recurso, 'leer');
@@ -103,6 +105,8 @@ export default function App() {
         return <CosechaPostcosecha />;
       case 'trazabilidad':
         return <TraceabilityModule />;
+      case 'costos':
+        return <CostsConsole />;
       case 'clima':
         return <Climate />;
       default:
@@ -118,6 +122,7 @@ export default function App() {
       case 'sanitario': return 'Manejo Sanitario';
       case 'cosecha': return 'Rendimiento Cosecha y Postcosecha';
       case 'trazabilidad': return 'Trazabilidad — Bitácora oficial del predio';
+      case 'costos': return 'Costos de Producción — Consola de validación (draft)';
       case 'clima': return 'Centro de Inteligencia ClimÃ¡tica';
       default: return 'Panel Principal';
     }

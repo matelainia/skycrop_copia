@@ -120,10 +120,14 @@ END; $$;
 -- (revocados para authenticated/anon/PUBLIC); las RPC públicas exigen
 -- permiso siempre. No queda ninguna referencia a set_config/GUC en costos.
 
+-- NOTA HASH (incidente dev 2026-09-21): hashes de deduplicación, no
+-- criptográficos: md5() del core (siempre visible) en vez de digest() de
+-- pgcrypto, cuyo esquema varía por entorno y rompía con search_path
+-- endurecido. 048 tiene el mismo riesgo latente: revisar fuera de este módulo.
 CREATE OR REPLACE FUNCTION public.costos_private_payload_hash(p_payload JSONB)
 RETURNS TEXT LANGUAGE plpgsql IMMUTABLE SECURITY DEFINER SET search_path = public, pg_temp AS $$
 BEGIN
-  RETURN encode(digest(COALESCE(p_payload::text, ''), 'sha256'), 'hex');
+  RETURN md5(COALESCE(p_payload::text, ''));
 END; $$;
 
 CREATE OR REPLACE FUNCTION public.costos_private_valuation_hash(
@@ -131,10 +135,9 @@ CREATE OR REPLACE FUNCTION public.costos_private_valuation_hash(
   p_unit_price NUMERIC, p_amount NUMERIC, p_currency TEXT, p_fx NUMERIC)
 RETURNS TEXT LANGUAGE plpgsql IMMUTABLE SECURITY DEFINER SET search_path = public, pg_temp AS $$
 BEGIN
-  RETURN encode(digest(
+  RETURN md5(
     COALESCE(p_company_id::text,'') || '|' || COALESCE(p_event_id::text,'') || '|' || COALESCE(p_version::text,'') || '|' ||
-    COALESCE(p_unit_price::text,'') || '|' || COALESCE(p_amount::text,'') || '|' || COALESCE(p_currency,'') || '|' || COALESCE(p_fx::text,''),
-    'sha256'), 'hex');
+    COALESCE(p_unit_price::text,'') || '|' || COALESCE(p_amount::text,'') || '|' || COALESCE(p_currency,'') || '|' || COALESCE(p_fx::text,''));
 END; $$;
 
 CREATE OR REPLACE FUNCTION public.costos_private_entry_hash(
@@ -142,11 +145,10 @@ CREATE OR REPLACE FUNCTION public.costos_private_entry_hash(
   p_amount_base NUMERIC, p_method TEXT, p_quality TEXT, p_valuation_hash TEXT)
 RETURNS TEXT LANGUAGE plpgsql IMMUTABLE SECURITY DEFINER SET search_path = public, pg_temp AS $$
 BEGIN
-  RETURN encode(digest(
+  RETURN md5(
     COALESCE(p_company_id::text,'') || '|' || COALESCE(p_event_id::text,'') || '|' || COALESCE(p_kind,'') || '|' ||
     COALESCE(p_class,'') || '|' || COALESCE(p_amount_base::text,'') || '|' || COALESCE(p_method,'') || '|' ||
-    COALESCE(p_quality,'') || '|' || COALESCE(p_valuation_hash,''),
-    'sha256'), 'hex');
+    COALESCE(p_quality,'') || '|' || COALESCE(p_valuation_hash,''));
 END; $$;
 
 CREATE OR REPLACE FUNCTION public.costos_private_create_issue(

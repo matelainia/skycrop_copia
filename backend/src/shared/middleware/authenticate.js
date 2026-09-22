@@ -29,12 +29,33 @@ const isProduction = env.NODE_ENV === 'production';
 const companyUuidCache = new Map();
 const COMPANY_CACHE_TTL_MS = 10 * 60 * 1000;
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 async function resolveCompanyUuid(orgId) {
   if (!orgId) return null;
   const cached = companyUuidCache.get(orgId);
   if (cached && cached.expiresAt > Date.now()) return cached.uuid;
 
   try {
+    // El JWT emitido por este backend trae org_id = companies.id (UUID) para
+    // que RLS (current_company) lo use directo. Si ya es un UUID de empresa
+    // válido, usarlo sin pasar por clerk_org_id (si no, el lookup falla y el
+    // tenant queda null → "Empresa no identificada" en todos los módulos).
+    if (UUID_RE.test(orgId)) {
+      const { data: byId, error: errById } = await supabaseAdmin
+        .from('companies')
+        .select('id')
+        .eq('id', orgId)
+        .limit(1)
+        .maybeSingle();
+      if (!errById && byId?.id) {
+        companyUuidCache.set(orgId, {
+          uuid: byId.id,
+          expiresAt: Date.now() + COMPANY_CACHE_TTL_MS
+        });
+        return byId.id;
+      }
+    }
     const { data, error } = await supabaseAdmin
       .from('companies')
       .select('id')

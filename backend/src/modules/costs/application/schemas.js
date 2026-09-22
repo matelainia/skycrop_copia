@@ -111,6 +111,30 @@ export const recalculateCostsSchema = z.object({
 
 export const uuidParamSchema = z.object({ id: z.string().uuid() });
 
+export const listCostEventsSchema = z.object({
+  status: z
+    .enum([
+      'received',
+      'validated',
+      'invalid',
+      'pending_price',
+      'pending_allocation',
+      'priced',
+      'allocated',
+      'posted',
+      'reversed',
+      'ignored'
+    ])
+    .nullable()
+    .optional(),
+  source_module: z.string().max(40).nullable().optional(),
+  event_type: z.string().max(40).nullable().optional(),
+  lote_id: uuidOpt,
+  maquinaria_id: uuidOpt,
+  page: z.coerce.number().int().min(1).default(1).optional(),
+  limit: z.coerce.number().int().min(1).max(100).default(20).optional()
+});
+
 export const listEntriesSchema = z.object({
   labor_id: uuidOpt,
   lote_id: uuidOpt,

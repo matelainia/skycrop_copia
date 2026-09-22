@@ -12,6 +12,7 @@ import { GetLaborCostSummaryUseCase } from '../../../application/usecases/GetLab
 import { GetLoteCostSummaryUseCase } from '../../../application/usecases/GetLoteCostSummaryUseCase.js';
 import { GetCostEntriesUseCase } from '../../../application/usecases/GetCostEntriesUseCase.js';
 import { GetCostIssuesUseCase } from '../../../application/usecases/GetCostIssuesUseCase.js';
+import { GetCostEventsUseCase } from '../../../application/usecases/GetCostEventsUseCase.js';
 import { RecalculateCostsUseCase } from '../../../application/usecases/RecalculateCostsUseCase.js';
 import { ExpressCostsController } from './ExpressCostsController.js';
 
@@ -28,6 +29,7 @@ const controller = new ExpressCostsController({
   loteSummaryUC: new GetLoteCostSummaryUseCase(repository),
   entriesUC: new GetCostEntriesUseCase(repository),
   issuesUC: new GetCostIssuesUseCase(repository),
+  eventsUC: new GetCostEventsUseCase(repository),
   recalcUC: new RecalculateCostsUseCase(repository),
   repository
 });
@@ -49,6 +51,7 @@ router.get('/predios/:id/kpis', controller.predioKpis);
 router.get('/maquinaria/:id/kpis', controller.machineryKpis);
 router.get('/entradas', controller.entries);
 router.get('/issues', controller.issues);
+router.get('/eventos', controller.events);
 
 export const costsRouter = router;
 export default costsRouter;

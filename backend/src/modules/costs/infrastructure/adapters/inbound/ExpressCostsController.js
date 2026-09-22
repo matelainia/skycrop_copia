@@ -19,6 +19,7 @@ export class ExpressCostsController {
     loteSummaryUC,
     entriesUC,
     issuesUC,
+    eventsUC,
     recalcUC,
     repository
   }) {
@@ -31,6 +32,7 @@ export class ExpressCostsController {
     this.loteSummaryUC = loteSummaryUC;
     this.entriesUC = entriesUC;
     this.issuesUC = issuesUC;
+    this.eventsUC = eventsUC;
     this.recalcUC = recalcUC;
     this.repository = repository;
   }
@@ -185,6 +187,25 @@ export class ExpressCostsController {
     try {
       const { companyId, userId } = this._getTenant(req);
       const result = await this.issuesUC.execute(companyId, userId, req.query);
+      return res.json({
+        success: true,
+        data: result.data,
+        pagination: {
+          total: result.total,
+          page: result.page,
+          limit: result.limit,
+          totalPages: result.totalPages
+        }
+      });
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  events = async (req, res, next) => {
+    try {
+      const { companyId, userId } = this._getTenant(req);
+      const result = await this.eventsUC.execute(companyId, userId, req.query);
       return res.json({
         success: true,
         data: result.data,

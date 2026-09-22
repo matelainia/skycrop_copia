@@ -17,6 +17,8 @@ import { evaluationRouter } from './modules/evaluation/infrastructure/adapters/i
 import { fertilizationRouter } from './modules/fertilization/infrastructure/adapters/inbound/ExpressFertilizationRouter.js';
 import { harvestRouter } from './modules/harvest/infrastructure/adapters/inbound/ExpressHarvestRouter.js';
 import { traceabilityRouter } from './modules/traceability/infrastructure/adapters/inbound/ExpressTraceabilityRouter.js';
+import { costsRouter } from './modules/costs/infrastructure/adapters/inbound/ExpressCostsRouter.js';
+import { subscribeCostsEvents } from './modules/costs/infrastructure/CostsEventSubscriber.js';
 import { subscribeTraceabilityEvents } from './modules/traceability/infrastructure/TraceabilityEventSubscriber.js';
 
 const app = express();
@@ -205,12 +207,18 @@ app.use('/api/v1/evaluaciones', evaluationRouter);
 app.use('/api/v1/fertilizacion', fertilizationRouter);
 app.use('/api/v1/cosechas', harvestRouter);
 app.use('/api/v1/trazabilidad', traceabilityRouter);
+app.use('/api/v1/costos', costsRouter);
 
 // SkyCrop Core: el sistema es el único generador de evidencia inmutable.
 try {
   subscribeTraceabilityEvents();
 } catch (err) {
   console.error('[Traceability] No se pudo suscribir event_generator:', err?.message || err);
+}
+try {
+  subscribeCostsEvents();
+} catch (err) {
+  console.error('[Costs] No se pudo suscribir eventos de costos:', err?.message || err);
 }
 
 // Compatibilidad hacia atrás (intersección del flujo legando antes de ir al monolito)
@@ -225,6 +233,7 @@ app.use('/api/evaluaciones', evaluationRouter); // POST/GET /api/evaluaciones/*
 app.use('/api/fertilizacion', fertilizationRouter); // GET/POST/PATCH /api/fertilizacion/*
 app.use('/api/cosechas', harvestRouter); // GET/POST /api/cosechas
 app.use('/api/trazabilidad', traceabilityRouter); // GET/POST /api/trazabilidad (bitácora oficial)
+app.use('/api/costos', costsRouter); // Costos de producción (eventos, resúmenes, issues)
 
 // --- DELEGACIÓN AL MONOLITO LEGADO ---
 // Todo lo que no coincida con el nuevo enrutador será resuelto por el Express heredado

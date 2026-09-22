@@ -24,6 +24,9 @@ export class CostsRepositoryPort {
   async getEventById(_companyId, _eventId) {
     throw new Error('Not implemented');
   }
+  async listEvents(_companyId, _filters) {
+    throw new Error('Not implemented');
+  }
   async getLaborSummary(_companyId, _laborId) {
     throw new Error('Not implemented');
   }

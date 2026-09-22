@@ -1,0 +1,37 @@
+/* Consola de validación Costos — estilos autocontenidos (prefijo costv-). Draft. */
+.costv-page { padding: 20px; max-width: 1100px; }
+.costv-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 12px; }
+.costv-head h2 { margin: 0 0 4px; font-size: 1.3rem; }
+.costv-head p { margin: 0; opacity: 0.75; font-size: 0.9rem; }
+.costv-pill { font-size: 0.7rem; background: #f59e0b33; border: 1px solid #f59e0b; border-radius: 999px; padding: 2px 10px; vertical-align: middle; }
+.costv-tabs { display: flex; gap: 8px; margin: 12px 0 16px; }
+.costv-tabs button { padding: 8px 14px; border-radius: 8px; border: 1px solid #8885; background: transparent; cursor: pointer; }
+.costv-tabs button.active { background: #16a34a22; border-color: #16a34a; font-weight: 600; }
+.costv-form h3, .costv-page h3 { margin: 4px 0 12px; }
+.costv-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; margin-bottom: 12px; }
+.costv-grid label { display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem; }
+.costv-grid input, .costv-grid select, .costv-row select, .costv-row input { padding: 7px 9px; border-radius: 7px; border: 1px solid #8886; background: inherit; color: inherit; }
+.costv-span { grid-column: 1 / -1; }
+.costv-row { display: flex; gap: 8px; align-items: center; margin-bottom: 12px; flex-wrap: wrap; }
+.costv-row button, .costv-form > button, .costv-head > button, .costv-actions button { padding: 7px 12px; border-radius: 7px; border: 1px solid #8886; background: #16a34a22; cursor: pointer; }
+.costv-row button:disabled, .costv-form > button:disabled { opacity: 0.5; cursor: default; }
+.costv-table { width: 100%; border-collapse: collapse; margin: 10px 0 18px; font-size: 0.88rem; }
+.costv-table th, .costv-table td { border-bottom: 1px solid #8883; padding: 7px 8px; text-align: left; vertical-align: top; }
+.costv-num { text-align: right; font-variant-numeric: tabular-nums; }
+.costv-mono { font-family: ui-monospace, monospace; font-size: 0.8rem; }
+.costv-mut { opacity: 0.7; font-size: 0.8rem; }
+.costv-actions { white-space: nowrap; }
+.costv-actions button { padding: 3px 8px; margin-right: 4px; font-size: 0.8rem; }
+.costv-badge { font-size: 0.75rem; border: 1px solid #8886; border-radius: 999px; padding: 1px 9px; }
+.costv-badge.warn { border-color: #f59e0b; background: #f59e0b22; }
+.costv-badge.bad { border-color: #ef4444; background: #ef444422; }
+.costv-badge.ok { border-color: #16a34a; background: #16a34a22; }
+.costv-alert { border-radius: 8px; padding: 10px 12px; margin: 10px 0; font-size: 0.88rem; }
+.costv-alert pre { white-space: pre-wrap; font-size: 0.78rem; max-height: 260px; overflow: auto; }
+.costv-ok { border: 1px solid #16a34a; background: #16a34a14; }
+.costv-err { border: 1px solid #ef4444; background: #ef444414; }
+.costv-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 10px; margin: 12px 0; }
+.costv-card { border: 1px solid #8884; border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 4px; }
+.costv-card span { font-size: 0.78rem; opacity: 0.7; }
+.costv-card b { font-size: 1.02rem; }
+.costv-page h4 { margin: 14px 0 4px; }

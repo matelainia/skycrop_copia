@@ -1,7 +1,16 @@
 import { CostsRepositoryPort } from '../../../domain/ports/CostsRepositoryPort.js';
 import { supabaseAdmin } from '../../../../../shared/database/supabase.js';
-import { DatabaseError, NotFoundError, AppError } from '../../../../../shared/errors/AppErrors.js';
-import { mapCostsRpcError, isMissingRpcError } from '../../../application/costsRpcErrors.js';
+import {
+  DatabaseError,
+  NotFoundError,
+  AppError,
+  AuthenticationError
+} from '../../../../../shared/errors/AppErrors.js';
+import {
+  mapCostsRpcError,
+  isMissingRpcError,
+  isAuthRpcError
+} from '../../../application/costsRpcErrors.js';
 
 /**
  * Repositorio Costos — RPCs 066 + lecturas.
@@ -13,7 +22,14 @@ import { mapCostsRpcError, isMissingRpcError } from '../../../application/costsR
 export class SupabaseCostsRepository extends CostsRepositoryPort {
   async _callRpc(fn, args, fallbackMessage) {
     const { data, error } = await supabaseAdmin.rpc(fn, args);
-    if (error) throw mapCostsRpcError(error, fallbackMessage);
+    if (error) {
+      if (isAuthRpcError(error)) {
+        throw new AuthenticationError(
+          'Backend sin acceso a Supabase: revisa SUPABASE_URL y SUPABASE_SERVICE_ROLE_KEY del backend (.env dev).'
+        );
+      }
+      throw mapCostsRpcError(error, fallbackMessage);
+    }
     return data;
   }
 
@@ -28,7 +44,17 @@ export class SupabaseCostsRepository extends CostsRepositoryPort {
         'Error registrando evento de costo'
       );
     } catch (err) {
-      if (isMissingRpcError(err?.rawError || err)) {
+      const raw = err?.rawError || err;
+      console.error(
+        '[costos] registerEvent RPC error crudo:',
+        JSON.stringify({
+          message: raw?.message,
+          code: raw?.code,
+          details: raw?.details,
+          hint: raw?.hint
+        })
+      );
+      if (isMissingRpcError(raw)) {
         throw new AppError(
           'Motor de costos no disponible: migración 066 pendiente en la base.',
           503,
@@ -338,6 +364,40 @@ export class SupabaseCostsRepository extends CostsRepositoryPort {
       };
     } catch (err) {
       throw new DatabaseError('Error listando entradas de costo', err);
+    }
+  }
+
+  async listEvents(companyId, f) {
+    try {
+      const page = f.page || 1;
+      const limit = Math.min(f.limit || 20, 100);
+      const from = (page - 1) * limit;
+      const to = from + limit - 1;
+      let q = supabaseAdmin
+        .from('costos_eventos')
+        .select(
+          'id, source_module, source_entity, source_id, event_type, status, occurred_at, business_date, lote_id, labor_id, maquinaria_id, quantity, source_unit, valued_amount, amount_base, currency',
+          { count: 'exact' }
+        )
+        .eq('company_id', companyId)
+        .order('occurred_at', { ascending: false })
+        .range(from, to);
+      if (f.status) q = q.eq('status', f.status);
+      if (f.source_module) q = q.eq('source_module', f.source_module);
+      if (f.event_type) q = q.eq('event_type', f.event_type);
+      if (f.lote_id) q = q.eq('lote_id', f.lote_id);
+      if (f.maquinaria_id) q = q.eq('maquinaria_id', f.maquinaria_id);
+      const { data, error, count } = await q;
+      if (error) throw error;
+      return {
+        data: data || [],
+        total: count || 0,
+        page,
+        limit,
+        totalPages: Math.ceil((count || 0) / limit)
+      };
+    } catch (err) {
+      throw new DatabaseError('Error listando eventos de costo', err);
     }
   }
 

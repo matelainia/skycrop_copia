@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { mapCostsRpcError } from '../application/costsRpcErrors.js';
+import {
+  mapCostsRpcError,
+  isMissingRpcError,
+  isAuthRpcError
+} from '../application/costsRpcErrors.js';
 import {
   AppError,
   ValidationError,
@@ -39,5 +43,19 @@ describe('costos — mapeo costos/<codigo> → HTTP (066 §9)', () => {
   it('códigos 409/422 exponen costs_code para el frontend', () => {
     const mapped = mapCostsRpcError(new Error('costos/closed_period: cerrado'));
     expect(mapped.details).toEqual({ costs_code: 'closed_period' });
+  });
+});
+
+describe('costos — detector de RPC ausente no enmascara auth (post-503 fantasma)', () => {
+  it('42883 sí es ausente', () => {
+    expect(isMissingRpcError({ code: '42883', message: 'function does not exist' })).toBe(true);
+  });
+  it('key inválida NO es ausente aunque mencione la función', () => {
+    const err = { message: 'Invalid API key for function costos_register_event' };
+    expect(isAuthRpcError(err)).toBe(true);
+    expect(isMissingRpcError(err)).toBe(false);
+  });
+  it('JWT expirado NO es ausente', () => {
+    expect(isMissingRpcError({ message: 'JWT expired' })).toBe(false);
   });
 });

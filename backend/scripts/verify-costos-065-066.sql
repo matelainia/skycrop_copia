@@ -9,6 +9,27 @@
 CREATE TEMP TABLE IF NOT EXISTS costos_checks(check_id TEXT PRIMARY KEY, ok BOOLEAN, detail TEXT);
 DELETE FROM costos_checks;
 
+-- ── 10.0 · Dependencias base (037/041/060): sin esto las RPCs fallan en runtime ──
+INSERT INTO costos_checks
+SELECT 'base_rpc_assert', count(*) = 1, 'rpc_assert_tenant_access(UUID,TEXT) existe'
+FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+WHERE n.nspname = 'public' AND p.proname = 'rpc_assert_tenant_access'
+  AND pg_get_function_identity_arguments(p.oid) = 'p_company_id uuid, p_user_id text';
+INSERT INTO costos_checks
+SELECT 'base_assert_fixed', count(*) = 1, 'rpc_assert sin bug text->>unknown (068)'
+FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+WHERE n.nspname = 'public' AND p.proname = 'rpc_assert_tenant_access'
+  AND pg_get_functiondef(p.oid) NOT LIKE '%v_claims := v_claims::jsonb%';
+INSERT INTO costos_checks
+SELECT 'no_bare_digest', count(*) = 0, 'funciones costos con digest() de pgcrypto'
+FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+WHERE n.nspname = 'public' AND p.proname LIKE 'costos\_%' ESCAPE '\'
+  AND pg_get_functiondef(p.oid) LIKE '%digest(%';
+INSERT INTO costos_checks
+SELECT 'base_tenant_fns', count(*) = 3, 'current_company/current_role_id/has_permission existen'
+FROM pg_proc p JOIN pg_namespace n ON n.oid = p.pronamespace
+WHERE n.nspname = 'public' AND p.proname IN ('current_company', 'current_role_id', 'has_permission');
+
 -- ── 10.1a · 11 tablas ────────────────────────────────────────────────────────
 INSERT INTO costos_checks
 SELECT 'tablas_11', count(*) = 11, 'tablas costos_* = ' || count(*)::text
